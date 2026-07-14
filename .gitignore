@@ -1,0 +1,43 @@
+# Secrets — never commit real .env files (matches secrets-guard hook assumptions)
+.env
+.env.local
+.env.production
+.env.development
+.env.test
+backend/.env
+frontend/.env.local
+!.env.example
+!frontend/.env.example
+
+# Backend (Gradle)
+backend/.gradle/
+backend/build/
+backend/out/
+!backend/gradle/wrapper/gradle-wrapper.jar
+
+# Frontend (Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/.turbo/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local infra state
+infra/postgres-data/
+infra/backups/
+
+# Claude Code personal overrides (project-scoped, not team-shared)
+.claude/settings.local.json

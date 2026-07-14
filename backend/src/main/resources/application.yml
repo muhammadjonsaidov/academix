@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: backend
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/academix}
+    username: ${DATABASE_USERNAME:academix}
+    password: ${DATABASE_PASSWORD:academix}
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+academix:
+  jwt:
+    secret: ${JWT_SECRET:}
+    access-token-ttl-minutes: 15
+    refresh-token-ttl-days: 7
+  ai:
+    qwen:
+      api-key: ${QWEN_API_KEY:}
+      base-url: ${QWEN_BASE_URL:https://dashscope-intl.aliyuncs.com/compatible-mode/v1}
+      model-text: ${QWEN_MODEL_TEXT:qwen3.7-max}
+      model-vision: ${QWEN_MODEL_VISION:qwen3.7-plus}
+    google-vision:
+      api-key: ${GOOGLE_VISION_API_KEY:}
+  storage:
+    seaweedfs:
+      endpoint: ${SEAWEEDFS_S3_ENDPOINT:}
+      access-key: ${SEAWEEDFS_ACCESS_KEY:}
+      secret-key: ${SEAWEEDFS_SECRET_KEY:}
