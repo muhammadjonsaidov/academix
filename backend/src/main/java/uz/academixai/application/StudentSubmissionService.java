@@ -87,7 +87,7 @@ public class StudentSubmissionService {
     HomeworkSubmission saved =
         submissionRepository.save(HomeworkSubmissionEntity.fromDomain(submission)).toDomain();
 
-    queueProducer.publish(saved.id());
+    queueProducer.publish(saved.id(), schoolId);
     return saved;
   }
 

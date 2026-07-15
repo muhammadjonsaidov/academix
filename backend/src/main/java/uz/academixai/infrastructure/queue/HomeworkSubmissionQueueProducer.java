@@ -17,6 +17,12 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * TransactionSynchronizationManager.registerSynchronization(afterCommit)} defers the publish until
  * the row genuinely exists. Falls back to publishing immediately when no transaction is active
  * (e.g. a future non-request caller).
+ *
+ * <p><b>{@code schoolId} rides along in the message on purpose</b> — the listener has no HTTP
+ * request to derive it from (unlike every other RLS-touching code path), so it can't run its own
+ * {@code SET LOCAL app.current_school_id} without already knowing it. Confirmed necessary by a real
+ * {@code invalid input syntax for type uuid: ""} failure the first time the consumer tried to read
+ * the RLS-enabled {@code homework_submissions} table with no session variable set at all.
  */
 @Component
 public class HomeworkSubmissionQueueProducer {
@@ -27,22 +33,22 @@ public class HomeworkSubmissionQueueProducer {
     this.rabbitTemplate = rabbitTemplate;
   }
 
-  public void publish(UUID submissionId) {
+  public void publish(UUID submissionId, UUID schoolId) {
     if (TransactionSynchronizationManager.isSynchronizationActive()) {
       TransactionSynchronizationManager.registerSynchronization(
           new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-              doPublish(submissionId);
+              doPublish(submissionId, schoolId);
             }
           });
     } else {
-      doPublish(submissionId);
+      doPublish(submissionId, schoolId);
     }
   }
 
-  private void doPublish(UUID submissionId) {
+  private void doPublish(UUID submissionId, UUID schoolId) {
     rabbitTemplate.convertAndSend(
-        HomeworkQueueConfig.SUBMISSIONS_QUEUE, new SubmissionQueueMessage(submissionId));
+        HomeworkQueueConfig.SUBMISSIONS_QUEUE, new SubmissionQueueMessage(submissionId, schoolId));
   }
 }

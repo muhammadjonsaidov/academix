@@ -48,6 +48,13 @@ public class AIFeedbackEntity {
 
   private String feedback;
 
+  // Column is jsonb (backend_tdd.md §4.1 table 10) — without @JdbcTypeCode(SqlTypes.JSON),
+  // Hibernate binds a plain String as varchar and Postgres rejects the implicit cast, confirmed
+  // by a real "column is of type jsonb but expression is of type character varying" failure the
+  // first time a real AIFeedback (with this field null) was ever persisted. Always null today —
+  // no prompt path populates it yet (see AIAnalysisService's class comment) — but the column type
+  // still has to match even for nulls.
+  @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "highlighted_errors")
   private String highlightedErrors;
 
