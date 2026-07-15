@@ -28,6 +28,15 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
+	// Boot 4's fully modular starter split doesn't pull RestClient autoconfig in via webmvc —
+	// confirmed by a real startup failure ("No qualifying bean of type RestClient.Builder")
+	// with only spring-boot-starter-webmvc on the classpath. Needed for GoogleVisionClient/
+	// QwenAIClient's outbound HTTP calls.
+	implementation("org.springframework.boot:spring-boot-starter-restclient")
+	// Same story for a shared ObjectMapper bean — webmvc's own Jackson message converter builds
+	// one internally without exposing it, confirmed by a real startup failure the moment
+	// QwenAIClient tried to inject ObjectMapper directly (needed to parse Qwen's JSON response).
+	implementation("org.springframework.boot:spring-boot-starter-jackson")
 	implementation("org.flywaydb:flyway-database-postgresql")
 	runtimeOnly("org.postgresql:postgresql")
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
@@ -49,6 +58,14 @@ dependencies {
 
 	// Handwriting biometrics: pgvector JDBC support
 	implementation("com.pgvector:pgvector:0.1.6")
+
+	// Bulk import: .xlsx parsing (POST /admin/students/bulk-import/*)
+	implementation("org.apache.poi:poi-ooxml:5.5.1")
+
+	// SeaweedFS is S3-compatible — plain AWS SDK v2 S3 client pointed at its endpoint, no
+	// SeaweedFS-specific SDK needed (see CLAUDE.md "Reality checks" for why SeaweedFS over MinIO)
+	implementation(platform("software.amazon.awssdk:bom:2.47.6"))
+	implementation("software.amazon.awssdk:s3")
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-amqp-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")

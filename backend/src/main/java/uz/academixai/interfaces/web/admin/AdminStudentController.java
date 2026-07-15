@@ -1,0 +1,76 @@
+package uz.academixai.interfaces.web.admin;
+
+import java.util.List;
+import java.util.UUID;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import uz.academixai.application.StudentManagementService;
+import uz.academixai.domain.StudentProfile;
+import uz.academixai.infrastructure.security.AcademixPrincipal;
+
+/** academix_tz.md §2.2 "O'quvchilar" — exact contract, don't drift path/shape from the spec. */
+@RestController
+@RequestMapping("/api/v1/admin/students")
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminStudentController {
+
+  private final StudentManagementService studentService;
+
+  public AdminStudentController(StudentManagementService studentService) {
+    this.studentService = studentService;
+  }
+
+  @GetMapping
+  public List<StudentResponse> list(
+      @AuthenticationPrincipal AcademixPrincipal principal,
+      @RequestParam(required = false) UUID classId,
+      @RequestParam(required = false) String search) {
+    return studentService.list(principal.schoolId(), classId, search).stream()
+        .map(StudentResponse::from)
+        .toList();
+  }
+
+  @PostMapping
+  public ResponseEntity<StudentResponse> create(
+      @AuthenticationPrincipal AcademixPrincipal principal,
+      @RequestBody CreateStudentRequest request) {
+    StudentProfile created =
+        studentService.create(
+            principal.schoolId(),
+            request.firstName(),
+            request.lastName(),
+            request.phone(),
+            request.classId(),
+            request.studentNumber(),
+            request.birthDate());
+    var response =
+        new StudentResponse(
+            created.userId(),
+            request.firstName(),
+            request.lastName(),
+            request.phone(),
+            created.classId(),
+            created.studentNumber(),
+            created.birthDate(),
+            created.isActive());
+    return ResponseEntity.ok(response);
+  }
+
+  @PutMapping("/{studentId}/transfer-class")
+  public ResponseEntity<Void> transferClass(
+      @AuthenticationPrincipal AcademixPrincipal principal,
+      @PathVariable UUID studentId,
+      @RequestBody TransferClassRequest request) {
+    studentService.transferClass(principal.schoolId(), studentId, request.newClassId());
+    return ResponseEntity.noContent().build();
+  }
+}

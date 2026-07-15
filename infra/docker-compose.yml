@@ -1,7 +1,9 @@
-# Local dev: `docker-compose up -d` (no profile) starts only the infra deps —
+# Local dev: `docker-compose up -d` starts only the infra deps below —
 # run backend/frontend locally via ./gradlew bootRun / npm run dev against them.
-# Full stack (matches production, single-server per CLAUDE.md "Reality checks"):
-# `docker-compose --profile prod up -d` also builds/runs backend, frontend, nginx.
+# The full app stack (backend/frontend/nginx/certbot, matching production —
+# single-server per CLAUDE.md "Reality checks") is commented out further down;
+# it's slow to build and not needed for routine local iteration. Uncomment it
+# when actually testing a real container deploy.
 
 services:
   postgres:
@@ -9,15 +11,23 @@ services:
     # migration during Sprint 0. See CLAUDE.md "Reality checks".
     image: pgvector/pgvector:pg18
     environment:
+      # POSTGRES_USER is a superuser with BYPASSRLS by default (official image
+      # behavior) — reserved for Flyway migrations only (CREATE EXTENSION etc.
+      # genuinely need it). The app's actual runtime connection uses the
+      # restricted academix_app role created by postgres-init/01-app-role.sh —
+      # confirmed necessary by a real test showing RLS is silently inert for a
+      # superuser/BYPASSRLS role. See CLAUDE.md "Reality checks".
       POSTGRES_USER: ${DATABASE_USERNAME:-academix}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-academix}
       POSTGRES_DB: academix
+      ACADEMIX_APP_PASSWORD: ${DATABASE_APP_PASSWORD:-academix_app_local_dev_only}
     ports:
       - "5432:5432"
     volumes:
       # Postgres 18's official image changed convention: mount the parent dir, not
       # /var/lib/postgresql/data — confirmed by a real container startup failure.
       - postgres-data:/var/lib/postgresql
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-academix}"]
       interval: 5s
@@ -37,12 +47,19 @@ services:
 
   seaweedfs:
     image: chrislusf/seaweedfs:latest
-    command: server -s3 -dir=/data
+    # Plain `-s3` with no `-s3.config` rejects ALL signed requests outright ("Signed request
+    # requires setting up SeaweedFS S3 authentication") — confirmed by a real AWS SDK v2 PUT
+    # failing with InvalidRequestException even though unsigned GETs worked fine. The AWS SDK
+    # always signs (SigV4) when given credentials, so the backend's S3Client can't talk to an
+    # unconfigured SeaweedFS at all. Fixed by giving it a real identity matching the backend's
+    # SEAWEEDFS_ACCESS_KEY/SECRET_KEY defaults (see application.yml) via seaweedfs-config/s3-config.json.
+    command: server -s3 -s3.config=/etc/seaweedfs/s3-config.json -dir=/data
     ports:
       - "8333:8333" # S3 API
       - "9333:9333" # master UI
     volumes:
       - seaweedfs-data:/data
+      - ./seaweedfs-config/s3-config.json:/etc/seaweedfs/s3-config.json:ro
 
   postgres-backup:
     image: prodrigestivill/postgres-backup-local:latest
@@ -61,66 +78,81 @@ services:
       - ./backups:/backups
     profiles: ["prod"]
 
-  backend:
-    build:
-      context: ../backend
-    environment:
-      DATABASE_URL: jdbc:postgresql://postgres:5432/academix
-      DATABASE_USERNAME: ${DATABASE_USERNAME:-academix}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-academix}
-      REDIS_HOST: redis
-      RABBITMQ_HOST: rabbitmq
-      JWT_SECRET: ${JWT_SECRET}
-      QWEN_API_KEY: ${QWEN_API_KEY}
-      GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY}
-      SEAWEEDFS_S3_ENDPOINT: http://seaweedfs:8333
-      SEAWEEDFS_ACCESS_KEY: ${SEAWEEDFS_ACCESS_KEY}
-      SEAWEEDFS_SECRET_KEY: ${SEAWEEDFS_SECRET_KEY}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-    profiles: ["prod"]
-
-  frontend:
-    build:
-      context: ../frontend
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://academixai.uz/api/v1}
-        NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
-        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
-    depends_on:
-      - backend
-    profiles: ["prod"]
-
-  nginx:
-    image: nginx:latest
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - certbot-www:/var/www/certbot
-      - certbot-certs:/etc/letsencrypt
-    depends_on:
-      - backend
-      - frontend
-    profiles: ["prod"]
-
-  certbot:
-    image: certbot/certbot:latest
-    volumes:
-      - certbot-www:/var/www/certbot
-      - certbot-certs:/etc/letsencrypt
-    entrypoint: >
-      sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done"
-    profiles: ["prod"]
+  # --- App-build services, intentionally commented out during Sprint 0+ local dev ---
+  # Building backend/frontend via Docker is slow and gives no live output/debugging —
+  # run them directly instead: `cd backend && ./gradlew bootRun`,
+  # `cd frontend && npm run dev`, both against the infra services above. Uncomment
+  # this whole block (and see deploy-release skill) when actually testing/running a
+  # real container deploy, not for routine local iteration.
+  #
+  # backend:
+  #   build:
+  #     context: ../backend
+  #   environment:
+  #     # App runtime connection: restricted academix_app role, NOT the migration
+  #     # superuser below — see CLAUDE.md "Reality checks" (RLS is inert for a
+  #     # superuser/BYPASSRLS role).
+  #     DATABASE_URL: jdbc:postgresql://postgres:5432/academix
+  #     DATABASE_APP_USERNAME: academix_app
+  #     DATABASE_APP_PASSWORD: ${DATABASE_APP_PASSWORD:-academix_app_local_dev_only}
+  #     # Flyway migration connection: superuser (CREATE EXTENSION etc. need it)
+  #     FLYWAY_USERNAME: ${DATABASE_USERNAME:-academix}
+  #     FLYWAY_PASSWORD: ${DATABASE_PASSWORD:-academix}
+  #     REDIS_HOST: redis
+  #     RABBITMQ_HOST: rabbitmq
+  #     JWT_SECRET: ${JWT_SECRET}
+  #     QWEN_API_KEY: ${QWEN_API_KEY}
+  #     GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY}
+  #     SEAWEEDFS_S3_ENDPOINT: http://seaweedfs:8333
+  #     SEAWEEDFS_ACCESS_KEY: ${SEAWEEDFS_ACCESS_KEY}
+  #     SEAWEEDFS_SECRET_KEY: ${SEAWEEDFS_SECRET_KEY}
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_started
+  #     rabbitmq:
+  #       condition: service_started
+  #   profiles: ["prod"]
+  #
+  # frontend:
+  #   build:
+  #     context: ../frontend
+  #     args:
+  #       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://academixai.uz/api/v1}
+  #       NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
+  #       NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
+  #   depends_on:
+  #     - backend
+  #   profiles: ["prod"]
+  #
+  # nginx:
+  #   image: nginx:latest
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  #     - certbot-www:/var/www/certbot
+  #     - certbot-certs:/etc/letsencrypt
+  #   depends_on:
+  #     - backend
+  #     - frontend
+  #   profiles: ["prod"]
+  #
+  # certbot:
+  #   image: certbot/certbot:latest
+  #   volumes:
+  #     - certbot-www:/var/www/certbot
+  #     - certbot-certs:/etc/letsencrypt
+  #   entrypoint: >
+  #     sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done"
+  #   profiles: ["prod"]
 
 volumes:
   postgres-data:
   seaweedfs-data:
-  certbot-www:
-  certbot-certs:
+  # certbot-www / certbot-certs only used by the commented-out nginx/certbot
+  # services above — uncomment alongside them.
+  # certbot-www:
+  # certbot-certs:

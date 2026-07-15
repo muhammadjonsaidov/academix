@@ -2,14 +2,21 @@ spring:
   application:
     name: backend
 
+  # App's own runtime queries use a restricted, non-superuser role — RLS is silently
+  # inert for a superuser/BYPASSRLS role (the POSTGRES_USER default), confirmed by a
+  # real test. Migrations (below) still need the superuser for CREATE EXTENSION etc.
+  # See CLAUDE.md "Reality checks" and infra/postgres-init/01-app-role.sh.
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/academix}
-    username: ${DATABASE_USERNAME:academix}
-    password: ${DATABASE_PASSWORD:academix}
+    username: ${DATABASE_APP_USERNAME:academix_app}
+    password: ${DATABASE_APP_PASSWORD:academix_app_local_dev_only}
 
   flyway:
     enabled: true
     locations: classpath:db/migration
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/academix}
+    user: ${DATABASE_USERNAME:academix}
+    password: ${DATABASE_PASSWORD:academix}
 
   data:
     redis:
@@ -30,8 +37,13 @@ management:
         include: health,info
 
 academix:
+  # CORS — frontend and backend are different origins in local dev (see CLAUDE.md
+  # "Reality checks": a real browser test silently failed with zero requests reaching
+  # the backend before this existed; curl doesn't enforce CORS so it went undetected).
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
   jwt:
-    secret: ${JWT_SECRET:}
+    # dev-only placeholder — real deploys must set JWT_SECRET, never rely on this
+    secret: ${JWT_SECRET:local-dev-only-placeholder-not-for-production-use}
     access-token-ttl-minutes: 15
     refresh-token-ttl-days: 7
   ai:
@@ -44,6 +56,27 @@ academix:
       api-key: ${GOOGLE_VISION_API_KEY:}
   storage:
     seaweedfs:
-      endpoint: ${SEAWEEDFS_S3_ENDPOINT:}
-      access-key: ${SEAWEEDFS_ACCESS_KEY:}
-      secret-key: ${SEAWEEDFS_SECRET_KEY:}
+      # Must match the identity in infra/seaweedfs-config/s3-config.json — plain `seaweedfs -s3`
+      # with no -s3.config rejects every signed request outright (confirmed by a real AWS SDK v2
+      # call failing), so these aren't just placeholders, the container is actually configured to
+      # require them. See CLAUDE.md "Reality checks".
+      endpoint: ${SEAWEEDFS_S3_ENDPOINT:http://localhost:8333}
+      access-key: ${SEAWEEDFS_ACCESS_KEY:local-dev-access-key}
+      secret-key: ${SEAWEEDFS_SECRET_KEY:local-dev-secret-key}
+      bucket: ${SEAWEEDFS_BUCKET:homeworks}
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      # CLAUDE.md "Resilience" — shared by every AI vendor call (Qwen, Google Vision).
+      default:
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 75
+        slow-call-duration-threshold: 5s
+        sliding-window-size: 10
+        wait-duration-in-open-state: 60s
+    instances:
+      googleVision:
+        base-config: default
+      qwen:
+        base-config: default
