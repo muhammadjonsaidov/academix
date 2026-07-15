@@ -2,6 +2,7 @@ package uz.academixai.interfaces.web;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -14,6 +15,21 @@ public class GlobalExceptionHandler {
         .body(
             new ApiErrorResponse(
                 e.getStatus().value(), e.getCode(), e.getMessage(), e.getMitigation()));
+  }
+
+  // Without this, Spring Security's AccessDeniedException (thrown by @PreAuthorize denials, e.g.
+  // a STUDENT token hitting a hasRole('TEACHER') endpoint) falls through to the generic
+  // Exception.class handler below and comes back as a 500 — confirmed by a real request. A wrong
+  // role should read as "forbidden," not "server broke."
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException e) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(
+            new ApiErrorResponse(
+                403,
+                "ERR_ACCESS_DENIED",
+                "Ushbu ma'lumotni ko'rishga ruxsatingiz yo'q.",
+                "Ruxsat chegarasini tekshiring."));
   }
 
   @ExceptionHandler(Exception.class)

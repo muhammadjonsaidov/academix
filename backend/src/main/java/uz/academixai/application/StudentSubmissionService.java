@@ -11,12 +11,18 @@ import org.springframework.web.multipart.MultipartFile;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.domain.SubmissionType;
+import uz.academixai.infrastructure.persistence.AIFeedbackEntity;
+import uz.academixai.infrastructure.persistence.AIFeedbackRepository;
+import uz.academixai.infrastructure.persistence.GradeEntity;
+import uz.academixai.infrastructure.persistence.GradeRepository;
 import uz.academixai.infrastructure.persistence.HomeworkAssignmentEntity;
 import uz.academixai.infrastructure.persistence.HomeworkAssignmentRepository;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionEntity;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
+import uz.academixai.infrastructure.persistence.SubjectEntity;
+import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.infrastructure.queue.HomeworkSubmissionQueueProducer;
 import uz.academixai.infrastructure.storage.FileStorageService;
 import uz.academixai.interfaces.web.ApiException;
@@ -37,6 +43,9 @@ public class StudentSubmissionService {
   private final HomeworkAssignmentRepository assignmentRepository;
   private final HomeworkSubmissionRepository submissionRepository;
   private final StudentProfileRepository studentProfileRepository;
+  private final SubjectRepository subjectRepository;
+  private final AIFeedbackRepository aiFeedbackRepository;
+  private final GradeRepository gradeRepository;
   private final FileStorageService fileStorageService;
   private final HomeworkSubmissionQueueProducer queueProducer;
 
@@ -44,13 +53,121 @@ public class StudentSubmissionService {
       HomeworkAssignmentRepository assignmentRepository,
       HomeworkSubmissionRepository submissionRepository,
       StudentProfileRepository studentProfileRepository,
+      SubjectRepository subjectRepository,
+      AIFeedbackRepository aiFeedbackRepository,
+      GradeRepository gradeRepository,
       FileStorageService fileStorageService,
       HomeworkSubmissionQueueProducer queueProducer) {
     this.assignmentRepository = assignmentRepository;
     this.submissionRepository = submissionRepository;
     this.studentProfileRepository = studentProfileRepository;
+    this.subjectRepository = subjectRepository;
+    this.aiFeedbackRepository = aiFeedbackRepository;
+    this.gradeRepository = gradeRepository;
     this.fileStorageService = fileStorageService;
     this.queueProducer = queueProducer;
+  }
+
+  public record StudentHomeworkItem(
+      UUID assignmentId,
+      String subjectName,
+      String title,
+      LocalDateTime deadlineAt,
+      boolean isLate,
+      String submissionStatus) {}
+
+  public record StudentSubmissionDetail(
+      HomeworkSubmission submission, AIFeedbackEntity feedback, GradeEntity grade) {}
+
+  public List<StudentHomeworkItem> listHomework(UUID schoolId, UUID studentId) {
+    UUID classId = requireStudentClassId(schoolId, studentId);
+    return assignmentRepository
+        .findBySchoolIdAndClassIdOrderByDeadlineAtDesc(schoolId, classId)
+        .stream()
+        .map(a -> buildHomeworkItem(a, studentId))
+        .toList();
+  }
+
+  public StudentHomeworkItem getHomeworkDetail(UUID schoolId, UUID studentId, UUID assignmentId) {
+    HomeworkAssignmentEntity assignment = requireAssignment(schoolId, assignmentId);
+    requireStudentInClass(schoolId, studentId, assignment.getClassId());
+    return buildHomeworkItem(assignment, studentId);
+  }
+
+  public List<HomeworkSubmission> listSubmissions(UUID schoolId, UUID studentId) {
+    return submissionRepository.findByStudentIdOrderBySubmittedAtDesc(studentId).stream()
+        .map(HomeworkSubmissionEntity::toDomain)
+        .filter(s -> schoolId.equals(s.schoolId()))
+        .toList();
+  }
+
+  public StudentSubmissionDetail getSubmissionDetail(
+      UUID schoolId, UUID studentId, UUID submissionId) {
+    HomeworkSubmissionEntity subEntity =
+        submissionRepository
+            .findByIdAndSchoolId(submissionId, schoolId)
+            .orElseThrow(
+                () ->
+                    new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "ERR_HW_NOT_FOUND",
+                        "Topshiriq topilmadi.",
+                        "ID ni tekshiring yoki sahifani yangilang."));
+    if (!subEntity.getStudentId().equals(studentId)) {
+      throw new ApiException(
+          HttpStatus.FORBIDDEN,
+          "ERR_ACCESS_DENIED",
+          "Ushbu ma'lumotni ko'rishga ruxsatingiz yo'q.",
+          "Faqat o'zingizning topshiriqlaringizni ko'rishingiz mumkin.");
+    }
+    return new StudentSubmissionDetail(
+        subEntity.toDomain(),
+        aiFeedbackRepository.findBySubmissionId(submissionId).orElse(null),
+        gradeRepository.findBySubmissionId(submissionId).orElse(null));
+  }
+
+  private StudentHomeworkItem buildHomeworkItem(
+      HomeworkAssignmentEntity assignmentEntity, UUID studentId) {
+    var assignment = assignmentEntity.toDomain();
+    String subjectName =
+        subjectRepository
+            .findById(assignment.subjectId())
+            .map(SubjectEntity::getName)
+            .orElse("Fan");
+    var existingSubmission =
+        submissionRepository
+            .findByAssignmentIdAndStudentId(assignment.id(), studentId)
+            .map(HomeworkSubmissionEntity::toDomain);
+    String submissionStatus =
+        existingSubmission
+            .map(s -> s.status() == SubmissionStatus.GRADED ? "GRADED" : "SUBMITTED")
+            .orElse("PENDING");
+    boolean isLate =
+        existingSubmission
+            .map(HomeworkSubmission::isLate)
+            .orElseGet(() -> LocalDateTime.now().isAfter(assignment.deadlineAt()));
+    return new StudentHomeworkItem(
+        assignment.id(),
+        subjectName,
+        assignment.title(),
+        assignment.deadlineAt(),
+        isLate,
+        submissionStatus);
+  }
+
+  private UUID requireStudentClassId(UUID schoolId, UUID studentId) {
+    return studentProfileRepository
+        .findByUserId(studentId)
+        .map(StudentProfileEntity::toDomain)
+        .filter(p -> schoolId.equals(p.schoolId()))
+        .map(p -> p.classId())
+        .orElseThrow(
+            () ->
+                new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "ERR_ACCESS_DENIED",
+                    "Ushbu ma'lumotni ko'rishga ruxsatingiz yo'q.",
+                    "O'quvchi profili topilmadi."));
   }
 
   public HomeworkSubmission submit(
