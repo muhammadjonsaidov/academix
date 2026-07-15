@@ -66,6 +66,15 @@ dependencies {
 	// SeaweedFS-specific SDK needed (see CLAUDE.md "Reality checks" for why SeaweedFS over MinIO)
 	implementation(platform("software.amazon.awssdk:bom:2.47.6"))
 	implementation("software.amazon.awssdk:s3")
+
+	// homework.submissions.queue retry (3 attempts -> DLX, backend_tdd.md §6.3) — spring-retry is
+	// present transitively already but not on the compile classpath until declared directly.
+	// No separate "spring-boot-starter-aop" — confirmed real: it was discontinued after the 4.0.0-M2
+	// milestone (no 4.0/4.1 GA release exists on Maven Central at all). AOP proxying already works
+	// without it (resilience4j's @CircuitBreaker already proxies beans via spring-context's own
+	// transitive spring-aop, same as @Transactional does) — this interceptor uses that same machinery.
+	implementation("org.springframework.retry:spring-retry:2.0.13")
+
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-amqp-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
