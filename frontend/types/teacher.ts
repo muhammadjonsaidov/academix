@@ -25,6 +25,7 @@ export interface Homework {
   maxScore: number;
   isActive: boolean;
   syllabusReference: string | null;
+  tasksPublished: boolean;
 }
 
 export interface CreateHomeworkRequest {
@@ -100,4 +101,70 @@ export interface GradeSubmissionRequest {
   score: number;
   fivePointGrade: number;
   teacherComment: string;
+}
+
+export type FileType = "PDF" | "DOCX" | "IMAGE";
+
+export interface Syllabus {
+  id: string;
+  subjectId: string;
+  classId: string;
+  title: string;
+  fileUrl: string;
+  fileType: FileType;
+  isProcessed: boolean;
+  uploadedAt: string;
+}
+
+export interface LessonActivity {
+  description: string;
+  durationMinutes: number;
+}
+
+export interface LessonPlanContent {
+  objectives: string[];
+  activities: LessonActivity[];
+  materials: string[];
+  homeworkSuggestion: string;
+}
+
+export interface LessonPlan {
+  lessonPlanId: string;
+  subjectId: string;
+  classId: string;
+  syllabusId: string;
+  topic: string;
+  aiGeneratedPlan: LessonPlanContent | null;
+  teacherEditedPlan: string | null;
+  isApproved: boolean;
+  lessonDate: string;
+  createdAt: string;
+}
+
+export interface GenerateLessonPlanRequest {
+  syllabusId: string;
+  topic: string;
+  lessonDate: string;
+  classId: string;
+}
+
+export interface UpdateLessonPlanRequest {
+  teacherEditedPlan: string;
+  isApproved: boolean;
+}
+
+export interface CriteriaItem {
+  name: string;
+  weightPercent: number;
+  description: string;
+}
+
+export interface UniqueTask {
+  taskId: string;
+  studentId: string;
+  studentName: string;
+  taskContent: string;
+  isApproved: boolean;
+  flaggedForReview: boolean;
+  fallbackToStandard: boolean;
 }
