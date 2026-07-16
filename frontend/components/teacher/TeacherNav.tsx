@@ -5,6 +5,7 @@ const LINKS = [
   { href: "/dashboard/teacher/homework", label: "Uy vazifalari" },
   { href: "/dashboard/teacher/submissions", label: "Topshirilgan ishlar" },
   { href: "/dashboard/teacher/exams", label: "Nazorat ishlari" },
+  { href: "/dashboard/teacher/psychological-signals", label: "Psixologik signallar" },
   { href: "/dashboard/teacher/syllabuses", label: "Darsliklar" },
   { href: "/dashboard/teacher/lesson-plans", label: "Dars rejalari" },
   { href: "/dashboard/teacher/grading-criteria", label: "Baholash mezonlari" },

@@ -248,3 +248,30 @@ export interface GradeExamSubmissionRequest {
   fivePointGrade: number;
   teacherComment: string;
 }
+
+// Psychological signals: academix_tz.md §2.3 "Psixologik signallar (faqat sinf rahbari
+// ko'radi)" — exact paths, response shape is a deviation (see backend's
+// TeacherPsychologyService).
+
+export type SignalSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export type SignalType =
+  | "LATE_NIGHT_ACTIVITY"
+  | "MOTIVATION_DROP"
+  | "NEGATIVE_LANGUAGE"
+  | "SUDDEN_PERFORMANCE_DROP"
+  | "SUBMISSION_STOP"
+  | "AGGRESSIVE_LANGUAGE"
+  | "MANIPULATION_ATTEMPT";
+
+export interface TeacherPsychologicalSignal {
+  signalId: string;
+  studentId: string;
+  studentName: string;
+  type: SignalType;
+  severity: SignalSeverity;
+  description: string | null;
+  resolved: boolean;
+  detectedAt: string;
+  resolvedAt: string | null;
+}

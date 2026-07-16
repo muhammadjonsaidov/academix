@@ -10,7 +10,9 @@ import type {
   Homework,
   LessonPlan,
   Syllabus,
+  SignalSeverity,
   TeacherClass,
+  TeacherPsychologicalSignal,
   TeacherStudent,
   TeacherSubject,
   TeacherSubmissionDetail,
@@ -23,6 +25,7 @@ interface TeacherState {
   classes: TeacherClass[];
   subjects: TeacherSubject[];
   classStudents: TeacherStudent[];
+  psychologicalSignals: TeacherPsychologicalSignal[];
   homework: Homework[];
   submissions: TeacherSubmissionListItem[];
   selectedSubmission: TeacherSubmissionDetail | null;
@@ -34,6 +37,8 @@ interface TeacherState {
   fetchClasses: () => Promise<void>;
   fetchSubjects: () => Promise<void>;
   fetchClassStudents: (classId: string) => Promise<void>;
+  fetchPsychologicalSignals: (severity?: SignalSeverity) => Promise<void>;
+  resolvePsychologicalSignal: (signalId: string) => Promise<void>;
   fetchHomework: (filters?: { classId?: string; subjectId?: string }) => Promise<void>;
   createHomework: (request: CreateHomeworkRequest) => Promise<Homework>;
   fetchSubmissions: (filters?: { assignmentId?: string; classId?: string }) => Promise<void>;
@@ -81,6 +86,7 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
   gradingCriteria: [],
   uniqueTasks: [],
   classStudents: [],
+  psychologicalSignals: [],
 
   fetchClasses: async () => {
     const { data } = await apiClient.get<TeacherClass[]>("/teacher/classes");
@@ -97,6 +103,19 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
       `/teacher/classes/${classId}/students`,
     );
     set({ classStudents: data });
+  },
+
+  fetchPsychologicalSignals: async (severity) => {
+    const { data } = await apiClient.get<TeacherPsychologicalSignal[]>(
+      "/teacher/psychological-signals",
+      { params: severity ? { severity } : undefined },
+    );
+    set({ psychologicalSignals: data });
+  },
+
+  resolvePsychologicalSignal: async (signalId) => {
+    await apiClient.put(`/teacher/psychological-signals/${signalId}/resolve`);
+    await get().fetchPsychologicalSignals();
   },
 
   fetchHomework: async (filters) => {
