@@ -105,3 +105,36 @@ export interface XpHistoryItem {
   xp: number;
   reason: string;
 }
+
+// Exams: gap-fill deviation, judgment call — no student-facing exam-results endpoint exists in
+// academix_tz.md (see backend's StudentExamController / CLAUDE.md). handwritingMatchScore is
+// deliberately never exposed, same rule as StudentAiFeedback above.
+
+export interface StudentExamGrade {
+  score: number;
+  fivePointGrade: number;
+  teacherComment: string | null;
+}
+
+export interface StudentExamListItem {
+  examId: string;
+  subject: string;
+  title: string;
+  examDate: string;
+  myGrade: StudentExamGrade | null;
+}
+
+export interface StudentExamAiFeedback {
+  feedback: string;
+  criteriaScores: CriteriaScore[];
+  stepAnalyses: StepAnalysis[];
+}
+
+export interface StudentExamDetail {
+  examId: string;
+  title: string;
+  examDate: string;
+  status: FullSubmissionStatus;
+  aiFeedback: StudentExamAiFeedback | null;
+  grade: StudentExamGrade | null;
+}

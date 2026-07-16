@@ -180,3 +180,64 @@ export interface HandwritingResetResponse {
   newProfileVersion: string;
   resetCountThisSemester: number;
 }
+
+// Exams: academix_tz.md §2.3 "Nazorat ishi" — GET (list) is a gap-fill deviation, see
+// backend's TeacherExamController / CLAUDE.md.
+
+export interface CreateExamRequest {
+  classId: string;
+  subjectId: string;
+  title: string;
+  examDate: string;
+  maxScore: number;
+}
+
+export interface CreateExamResponse {
+  examId: string;
+  estimatedAiCalls: number;
+  remainingExamBudget: number;
+  warning: string | null;
+}
+
+export interface ExamListItem {
+  examId: string;
+  classId: string;
+  subjectId: string;
+  title: string;
+  examDate: string;
+  maxScore: number;
+  submissionsCount: number;
+  gradedCount: number;
+}
+
+export interface ExamAiFeedback {
+  extractedText: string;
+  stepAnalyses: StepAnalysis[];
+  criteriaScores: CriteriaScore[];
+  aiScorePercent: number;
+  feedback: string;
+  handwritingMatchScore: number;
+}
+
+export interface ExamSubmission {
+  submissionId: string;
+  studentId: string;
+  studentName: string;
+  uploadedAt: string;
+  status: SubmissionStatus;
+  flaggedForReview: boolean;
+  aiFeedback: ExamAiFeedback | null;
+  score: number | null;
+  fivePointGrade: number | null;
+  teacherComment: string | null;
+}
+
+export interface BulkUploadExamSubmissionsResponse {
+  queued: number;
+}
+
+export interface GradeExamSubmissionRequest {
+  score: number;
+  fivePointGrade: number;
+  teacherComment: string;
+}
