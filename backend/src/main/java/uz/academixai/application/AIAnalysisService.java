@@ -35,11 +35,11 @@ import uz.academixai.infrastructure.storage.FileStorageService;
  * {@code homework.submissions.queue} consumer. OCR (Google Vision) + combined grading/plagiarism
  * (Qwen, one call) with budget-gated graceful degradation.
  *
- * <p><b>Scope note (deliberate, see ROADMAP.md):</b> XP/streak awarding (§4 XPService) is Sprint 3+
- * — {@code xpEarned} stays 0 here regardless of outcome. {@code SubjectGradingCriteria}
- * (teacher-configurable weights, TZ §1.19/§2.3) isn't built either; this uses the spec's own
- * documented default-fallback criteria (the exact 3-criterion example from TZ §3.2) rather than
- * inventing new behavior — TZ §1.19 explicitly allows falling back to a default when unconfigured.
+ * <p><b>Scope note (deliberate, see ROADMAP.md):</b> XP/streak awarding (§4 XPService) is Sprint 4+
+ * — {@code xpEarned} stays 0 here regardless of outcome. Grading criteria come from {@link
+ * GradingCriteriaService} (Sprint 3, TZ §1.19/§2.3) when the teacher has configured them for the
+ * assignment's subject, falling back to the spec's own documented default set (the exact
+ * 3-criterion example from TZ §3.2) when unconfigured — TZ §1.19 explicitly allows this fallback.
  */
 @Service
 public class AIAnalysisService {
@@ -63,6 +63,7 @@ public class AIAnalysisService {
   private final GoogleVisionClient googleVisionClient;
   private final QwenAIClient qwenAIClient;
   private final AiBudgetService aiBudgetService;
+  private final GradingCriteriaService gradingCriteriaService;
 
   public AIAnalysisService(
       HomeworkSubmissionRepository submissionRepository,
@@ -73,7 +74,8 @@ public class AIAnalysisService {
       FileStorageService fileStorageService,
       GoogleVisionClient googleVisionClient,
       QwenAIClient qwenAIClient,
-      AiBudgetService aiBudgetService) {
+      AiBudgetService aiBudgetService,
+      GradingCriteriaService gradingCriteriaService) {
     this.submissionRepository = submissionRepository;
     this.assignmentRepository = assignmentRepository;
     this.subjectRepository = subjectRepository;
@@ -83,6 +85,7 @@ public class AIAnalysisService {
     this.googleVisionClient = googleVisionClient;
     this.qwenAIClient = qwenAIClient;
     this.aiBudgetService = aiBudgetService;
+    this.gradingCriteriaService = gradingCriteriaService;
   }
 
   public void analyzeSubmission(UUID submissionId) {
@@ -127,10 +130,11 @@ public class AIAnalysisService {
             .findById(submission.assignmentId())
             .orElseThrow(() -> new IllegalStateException("Assignment missing for submission"));
     String subjectAndGrade = subjectAndGrade(assignment);
+    List<GradingCriterion> criteria = resolveCriteria(assignment);
 
     QwenGradingResult result;
     try {
-      result = qwenAIClient.gradeSubmission(subjectAndGrade, DEFAULT_CRITERIA, extractedText);
+      result = qwenAIClient.gradeSubmission(subjectAndGrade, criteria, extractedText);
     } catch (QwenUnavailableException e) {
       saveOcrOnlyFeedback(submission, extractedText);
       updateStatus(submission, SubmissionStatus.AI_SKIPPED);
@@ -156,6 +160,12 @@ public class AIAnalysisService {
       return submission.textContent() + "\n" + ocrText;
     }
     return ocrText;
+  }
+
+  private List<GradingCriterion> resolveCriteria(HomeworkAssignmentEntity assignment) {
+    List<GradingCriterion> configured =
+        gradingCriteriaService.getForGrading(assignment.getTeacherId(), assignment.getSubjectId());
+    return configured.isEmpty() ? DEFAULT_CRITERIA : configured;
   }
 
   private String subjectAndGrade(HomeworkAssignmentEntity assignment) {
