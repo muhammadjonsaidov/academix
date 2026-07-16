@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.application.DataDeletionService;
 import uz.academixai.application.ParentDashboardService;
 import uz.academixai.application.ParentLinkService;
+import uz.academixai.application.ParentProgressService;
+import uz.academixai.application.StudentSubmissionService.StudentHomeworkItem;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 
 /** academix_tz.md §2.5 "Parent API" — exact paths, some response shapes deviate. */
@@ -26,14 +28,17 @@ public class ParentController {
   private final DataDeletionService dataDeletionService;
   private final ParentLinkService parentLinkService;
   private final ParentDashboardService parentDashboardService;
+  private final ParentProgressService parentProgressService;
 
   public ParentController(
       DataDeletionService dataDeletionService,
       ParentLinkService parentLinkService,
-      ParentDashboardService parentDashboardService) {
+      ParentDashboardService parentDashboardService,
+      ParentProgressService parentProgressService) {
     this.dataDeletionService = dataDeletionService;
     this.parentLinkService = parentLinkService;
     this.parentDashboardService = parentDashboardService;
+    this.parentProgressService = parentProgressService;
   }
 
   @GetMapping("/dashboard")
@@ -69,5 +74,32 @@ public class ParentController {
       @RequestBody SetBiometricConsentRequest request) {
     parentLinkService.setBiometricConsent(principal.userId(), studentId, request.consentGiven());
     return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/children/{studentId}/progress")
+  public ParentProgressResponse progress(
+      @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID studentId) {
+    return ParentProgressResponse.from(
+        parentProgressService.progress(principal.userId(), studentId));
+  }
+
+  @GetMapping("/children/{studentId}/homework")
+  public List<StudentHomeworkItem> homework(
+      @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID studentId) {
+    return parentProgressService.homework(principal.userId(), studentId);
+  }
+
+  @GetMapping("/children/{studentId}/submissions")
+  public List<ParentSubmissionResponse> submissions(
+      @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID studentId) {
+    return parentProgressService.submissions(principal.userId(), studentId).stream()
+        .map(ParentSubmissionResponse::from)
+        .toList();
+  }
+
+  @GetMapping("/children/{studentId}/grades")
+  public ParentGradesResponse grades(
+      @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID studentId) {
+    return ParentGradesResponse.from(parentProgressService.grades(principal.userId(), studentId));
   }
 }
