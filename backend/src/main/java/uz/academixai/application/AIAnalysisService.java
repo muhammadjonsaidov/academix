@@ -35,8 +35,12 @@ import uz.academixai.infrastructure.storage.FileStorageService;
  * {@code homework.submissions.queue} consumer. OCR (Google Vision) + combined grading/plagiarism
  * (Qwen, one call) with budget-gated graceful degradation.
  *
- * <p><b>Scope note (deliberate, see ROADMAP.md):</b> XP/streak awarding (§4 XPService) is Sprint 4+
- * — {@code xpEarned} stays 0 here regardless of outcome. Grading criteria come from {@link
+ * <p><b>Scope note:</b> XP/streak (Sprint 4, §4 XPService) fire on every AI_DONE transition —
+ * including the empty/too-short-submission path, since a 0% score still needs to break the streak
+ * per TZ §4's XP table ("0% yoki EMPTY_SUBMISSION → 0 XP, Uziladi"). AI_SKIPPED does <i>not</i>
+ * award XP here — TZ §4 is explicit that XP only happens "AI_SKIPPED holatida — faqat o'qituvchi
+ * qo'lda baholagach" (only once a teacher manually grades it), handled in
+ * TeacherSubmissionService.grade() instead. Grading criteria come from {@link
  * GradingCriteriaService} (Sprint 3, TZ §1.19/§2.3) when the teacher has configured them for the
  * assignment's subject, falling back to the spec's own documented default set (the exact
  * 3-criterion example from TZ §3.2) when unconfigured — TZ §1.19 explicitly allows this fallback.
@@ -64,6 +68,7 @@ public class AIAnalysisService {
   private final QwenAIClient qwenAIClient;
   private final AiBudgetService aiBudgetService;
   private final GradingCriteriaService gradingCriteriaService;
+  private final XPService xpService;
 
   public AIAnalysisService(
       HomeworkSubmissionRepository submissionRepository,
@@ -75,7 +80,8 @@ public class AIAnalysisService {
       GoogleVisionClient googleVisionClient,
       QwenAIClient qwenAIClient,
       AiBudgetService aiBudgetService,
-      GradingCriteriaService gradingCriteriaService) {
+      GradingCriteriaService gradingCriteriaService,
+      XPService xpService) {
     this.submissionRepository = submissionRepository;
     this.assignmentRepository = assignmentRepository;
     this.subjectRepository = subjectRepository;
@@ -86,6 +92,7 @@ public class AIAnalysisService {
     this.qwenAIClient = qwenAIClient;
     this.aiBudgetService = aiBudgetService;
     this.gradingCriteriaService = gradingCriteriaService;
+    this.xpService = xpService;
   }
 
   public void analyzeSubmission(UUID submissionId) {
@@ -111,11 +118,12 @@ public class AIAnalysisService {
     }
 
     if (extractedText == null || extractedText.trim().length() < MIN_MEANINGFUL_TEXT_LENGTH) {
-      // Empty/meaningless submission — no AI call, no XP (backend_tdd.md §6.4). XP/streak
-      // awarding itself is Sprint 3+ scope (see class comment), so only the status transition
-      // happens here.
+      // Empty/meaningless submission — no AI call, but still breaks the streak (§4 XP table).
       saveEmptyFeedback(submission);
       updateStatus(submission, SubmissionStatus.AI_DONE);
+      xpService.calculateAndAwardXP(submission.id(), 0f, submission.isLate());
+      xpService.updateStreak(submission.studentId(), 0f);
+      xpService.checkAndAwardBadges(submission.studentId());
       return;
     }
 
@@ -145,6 +153,9 @@ public class AIAnalysisService {
     float aiScorePercent = weightedSum(result.criteriaScores());
     saveGradedFeedback(submission, extractedText, result, aiScorePercent);
     updateStatus(submission, SubmissionStatus.AI_DONE);
+    xpService.calculateAndAwardXP(submission.id(), aiScorePercent, submission.isLate());
+    xpService.updateStreak(submission.studentId(), aiScorePercent);
+    xpService.checkAndAwardBadges(submission.studentId());
   }
 
   private String extractText(HomeworkSubmission submission) {

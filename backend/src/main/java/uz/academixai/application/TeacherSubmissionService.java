@@ -34,18 +34,21 @@ public class TeacherSubmissionService {
   private final AIFeedbackRepository aiFeedbackRepository;
   private final GradeRepository gradeRepository;
   private final UserRepository userRepository;
+  private final XPService xpService;
 
   public TeacherSubmissionService(
       HomeworkSubmissionRepository submissionRepository,
       HomeworkAssignmentRepository assignmentRepository,
       AIFeedbackRepository aiFeedbackRepository,
       GradeRepository gradeRepository,
-      UserRepository userRepository) {
+      UserRepository userRepository,
+      XPService xpService) {
     this.submissionRepository = submissionRepository;
     this.assignmentRepository = assignmentRepository;
     this.aiFeedbackRepository = aiFeedbackRepository;
     this.gradeRepository = gradeRepository;
     this.userRepository = userRepository;
+    this.xpService = xpService;
   }
 
   public record SubmissionWithFeedback(
@@ -111,7 +114,8 @@ public class TeacherSubmissionService {
       UUID submissionId,
       int score,
       int fivePointGrade,
-      String teacherComment) {
+      String teacherComment,
+      boolean isExcellent) {
     HomeworkSubmissionEntity subEntity = requireSubmission(schoolId, submissionId);
     requireOwnedAssignment(schoolId, teacherId, subEntity.getAssignmentId());
 
@@ -151,6 +155,17 @@ public class TeacherSubmissionService {
             submission.submittedAt(),
             submission.xpEarned());
     submissionRepository.save(HomeworkSubmissionEntity.fromDomain(graded));
+
+    // academix_tz.md §4 — GRADED always (re-)runs XP using the teacher's score, not the AI's
+    // (XPService.calculateAndAwardXP is delta-based per submissionId, so a submission already
+    // XP'd at AI_DONE gets adjusted rather than double-awarded). isExcellent is a flat bonus on
+    // top, independent of the tier.
+    xpService.calculateAndAwardXP(submissionId, score, submission.isLate());
+    xpService.updateStreak(submission.studentId(), score);
+    if (isExcellent) {
+      xpService.awardExcellentBonus(submission.studentId());
+    }
+    xpService.checkAndAwardBadges(submission.studentId());
 
     return saved;
   }

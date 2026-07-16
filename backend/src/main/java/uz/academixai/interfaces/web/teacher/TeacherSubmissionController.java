@@ -59,7 +59,8 @@ public class TeacherSubmissionController {
             submissionId,
             request.score(),
             request.fivePointGrade(),
-            request.teacherComment());
+            request.teacherComment(),
+            request.isExcellent());
     return TeacherGradeResponse.from(saved);
   }
 }
