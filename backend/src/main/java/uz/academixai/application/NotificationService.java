@@ -2,8 +2,10 @@ package uz.academixai.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.Notification;
 import uz.academixai.domain.NotificationType;
@@ -11,6 +13,7 @@ import uz.academixai.infrastructure.persistence.NotificationEntity;
 import uz.academixai.infrastructure.persistence.NotificationRepository;
 import uz.academixai.infrastructure.persistence.TelegramConnectionRepository;
 import uz.academixai.infrastructure.telegram.TelegramClient;
+import uz.academixai.interfaces.web.ApiException;
 
 /**
  * academix_tz.md §1.15 / §4 {@code sendNotification(userId, type, params)}. Always persists a
@@ -71,6 +74,41 @@ public class NotificationService {
                 telegramClient.sendMessage(
                     connection.toDomain().telegramChatId(), title + "\n\n" + body))
         .orElse(false);
+  }
+
+  /** Deviation: no inbox endpoint is documented anywhere in academix_tz.md — flagged, not spec. */
+  public List<Notification> listForUser(UUID userId) {
+    return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+        .map(NotificationEntity::toDomain)
+        .toList();
+  }
+
+  public void markRead(UUID userId, UUID notificationId) {
+    Notification existing =
+        notificationRepository
+            .findById(notificationId)
+            .map(NotificationEntity::toDomain)
+            .filter(notification -> notification.userId().equals(userId))
+            .orElseThrow(
+                () ->
+                    new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "ERR_NOTIFICATION_NOT_FOUND",
+                        "Bildirishnoma topilmadi.",
+                        "Bildirishnoma ID to'g'riligini tekshiring."));
+    Notification updated =
+        new Notification(
+            existing.id(),
+            existing.userId(),
+            existing.type(),
+            existing.title(),
+            existing.body(),
+            existing.data(),
+            true,
+            existing.sentToTelegram(),
+            existing.createdAt(),
+            LocalDateTime.now());
+    notificationRepository.save(NotificationEntity.fromDomain(updated));
   }
 
   private String toJson(Map<String, String> data) {
