@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import uz.academixai.domain.SignalSeverity;
 
 public interface PsychologicalSignalRepository
@@ -31,4 +33,21 @@ public interface PsychologicalSignalRepository
   int countByResolvedAndResolvedAtAfter(boolean resolved, LocalDateTime after);
 
   List<PsychologicalSignalEntity> findByStudentIdOrderByDetectedAtDesc(UUID studentId);
+
+  /**
+   * {@code psychological_signals} has no {@code school_id} column (scoped only via joined {@code
+   * student_profiles}, see CLAUDE.md) — admin dashboard's {@code psychologicalAlerts} needs a
+   * school-scoped count, so this joins rather than reusing the unscoped {@code
+   * countBySeverityAndResolved} above.
+   */
+  @Query(
+      value =
+          """
+          SELECT COUNT(*) FROM psychological_signals ps
+          JOIN student_profiles sp ON sp.user_id = ps.student_id
+          WHERE sp.school_id = :schoolId AND ps.severity = :severity AND ps.resolved = false
+          """,
+      nativeQuery = true)
+  int countUnresolvedBySchoolAndSeverity(
+      @Param("schoolId") UUID schoolId, @Param("severity") String severity);
 }

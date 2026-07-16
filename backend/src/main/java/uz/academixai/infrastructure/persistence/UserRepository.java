@@ -15,4 +15,6 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
   List<UserEntity> findByRoleAndSchoolIdOrderByLastNameAscFirstNameAsc(Role role, UUID schoolId);
 
   Optional<UserEntity> findByIdAndRoleAndSchoolId(UUID id, Role role, UUID schoolId);
+
+  int countByRoleAndSchoolId(Role role, UUID schoolId);
 }
