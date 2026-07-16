@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/shared/NotificationBell";
+import { TelegramConnect } from "@/components/shared/TelegramConnect";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { Role } from "@/types/auth";
 
@@ -57,9 +59,13 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
             {user.firstName} {user.lastName}
           </h1>
         </div>
-        <Button variant="outline" onClick={handleLogout}>
-          Chiqish
-        </Button>
+        <div className="flex items-center gap-3">
+          <TelegramConnect />
+          <NotificationBell />
+          <Button variant="outline" onClick={handleLogout}>
+            Chiqish
+          </Button>
+        </div>
       </header>
       <main className="p-6">{children}</main>
     </div>
