@@ -100,9 +100,13 @@ public class StudentManagementService {
             0,
             null,
             true);
-    return studentProfileRepository.save(StudentProfileEntity.fromDomain(profile)).toDomain();
+    StudentProfile saved =
+        studentProfileRepository.save(StudentProfileEntity.fromDomain(profile)).toDomain();
+    classRepository.incrementStudentCount(classId);
+    return saved;
   }
 
+  @Transactional
   public StudentProfile transferClass(UUID schoolId, UUID studentId, UUID newClassId) {
     requireClassInSchool(schoolId, newClassId);
     StudentProfile existing =
@@ -124,7 +128,13 @@ public class StudentManagementService {
             existing.maxStreak(),
             existing.lastSubmissionDate(),
             existing.isActive());
-    return studentProfileRepository.save(StudentProfileEntity.fromDomain(updated)).toDomain();
+    StudentProfile saved =
+        studentProfileRepository.save(StudentProfileEntity.fromDomain(updated)).toDomain();
+    if (existing.classId() != null && !existing.classId().equals(newClassId)) {
+      classRepository.decrementStudentCount(existing.classId());
+      classRepository.incrementStudentCount(newClassId);
+    }
+    return saved;
   }
 
   private void requireClassInSchool(UUID schoolId, UUID classId) {
