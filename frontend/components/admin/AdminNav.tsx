@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/dashboard/admin/students", label: "O'quvchilar" },
   { href: "/dashboard/admin/analytics", label: "Tahlil" },
   { href: "/dashboard/admin/reports", label: "Hisobotlar" },
+  { href: "/dashboard/admin/settings", label: "Sozlamalar" },
 ];
 
 export function AdminNav() {

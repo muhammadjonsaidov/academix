@@ -52,3 +52,28 @@ export interface CreateStudentRequest {
   studentNumber?: string;
   birthDate?: string;
 }
+
+// academix_tz.md §2.2 "Maktab" — GET/PUT /admin/school.
+export interface School {
+  id: string;
+  name: string;
+  address: string;
+  region: string;
+  district: string;
+  phone: string | null;
+  email: string | null;
+  totalClasses: number;
+  isActive: boolean;
+  subscribedAt: string | null;
+  subscriptionEndsAt: string | null;
+  monthlyAiCallLimit: number;
+  currentMonthAiUsage: number;
+}
+
+export interface UpdateSchoolRequest {
+  name: string;
+  address: string;
+  region: string;
+  district: string;
+  phone: string | null;
+}

@@ -4,15 +4,18 @@ import type {
   CreateClassRequest,
   CreateStudentRequest,
   InviteTeacherRequest,
+  School,
   SchoolClass,
   Student,
   Teacher,
+  UpdateSchoolRequest,
 } from "@/types/admin";
 
 interface AdminState {
   classes: SchoolClass[];
   teachers: Teacher[];
   students: Student[];
+  school: School | null;
 
   fetchClasses: () => Promise<void>;
   createClass: (request: CreateClassRequest) => Promise<void>;
@@ -25,6 +28,9 @@ interface AdminState {
   fetchStudents: (filters?: { classId?: string; search?: string }) => Promise<void>;
   createStudent: (request: CreateStudentRequest) => Promise<void>;
   unlockHandwritingReset: (studentId: string) => Promise<void>;
+
+  fetchSchool: () => Promise<void>;
+  updateSchool: (request: UpdateSchoolRequest) => Promise<void>;
 }
 
 // One store for all three admin CRUD areas (classes/teachers/students) — they're a single
@@ -34,6 +40,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   classes: [],
   teachers: [],
   students: [],
+  school: null,
 
   fetchClasses: async () => {
     const { data } = await apiClient.get<SchoolClass[]>("/admin/classes");
@@ -77,5 +84,15 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   unlockHandwritingReset: async (studentId) => {
     await apiClient.put(`/admin/students/${studentId}/handwriting/unlock-reset`);
+  },
+
+  fetchSchool: async () => {
+    const { data } = await apiClient.get<School>("/admin/school");
+    set({ school: data });
+  },
+
+  updateSchool: async (request) => {
+    const { data } = await apiClient.put<School>("/admin/school", request);
+    set({ school: data });
   },
 }));
