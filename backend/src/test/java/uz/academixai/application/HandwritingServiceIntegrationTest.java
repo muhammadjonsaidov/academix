@@ -38,12 +38,14 @@ class HandwritingServiceIntegrationTest {
   private UUID studentId;
   private UUID teacherId;
   private UUID schoolId;
+  private UUID classId;
 
   @BeforeEach
   void createStudentAndTeacher() {
     studentId = UUID.randomUUID();
     teacherId = UUID.randomUUID();
     schoolId = UUID.randomUUID();
+    classId = UUID.randomUUID();
     transactionTemplate.executeWithoutResult(
         status -> {
           entityManager
@@ -54,6 +56,26 @@ class HandwritingServiceIntegrationTest {
               .executeUpdate();
           insertUser(studentId, "Test", "Student", "STUDENT");
           insertUser(teacherId, "Test", "Teacher", "TEACHER");
+          // resetProfile() requires the caller to be this student's class/homeroom teacher
+          // (school_classes.class_teacher_id), not just any teacher at the school.
+          entityManager
+              .createNativeQuery(
+                  "INSERT INTO school_classes (id, school_id, grade, letter, full_name,"
+                      + " class_teacher_id, academic_year) VALUES (:id, :schoolId, 9, 'A', '9-A',"
+                      + " :teacherId, '2026-2027')")
+              .setParameter("id", classId)
+              .setParameter("schoolId", schoolId)
+              .setParameter("teacherId", teacherId)
+              .executeUpdate();
+          entityManager
+              .createNativeQuery(
+                  "INSERT INTO student_profiles (id, user_id, class_id, school_id) VALUES"
+                      + " (:id, :userId, :classId, :schoolId)")
+              .setParameter("id", UUID.randomUUID())
+              .setParameter("userId", studentId)
+              .setParameter("classId", classId)
+              .setParameter("schoolId", schoolId)
+              .executeUpdate();
         });
   }
 
@@ -81,6 +103,14 @@ class HandwritingServiceIntegrationTest {
           entityManager
               .createNativeQuery("DELETE FROM handwriting_profiles WHERE student_id = :id")
               .setParameter("id", studentId)
+              .executeUpdate();
+          entityManager
+              .createNativeQuery("DELETE FROM student_profiles WHERE user_id = :id")
+              .setParameter("id", studentId)
+              .executeUpdate();
+          entityManager
+              .createNativeQuery("DELETE FROM school_classes WHERE id = :id")
+              .setParameter("id", classId)
               .executeUpdate();
           entityManager
               .createNativeQuery("DELETE FROM users WHERE id IN (:s, :t)")
@@ -224,6 +254,18 @@ class HandwritingServiceIntegrationTest {
                     schoolId, studentId, teacherId, ResetReason.OTHER, null))
         .isInstanceOf(uz.academixai.interfaces.web.ApiException.class)
         .hasMessageContaining("limit");
+  }
+
+  @Test
+  void resetDeniedForATeacherWhoIsNotTheClassTeacher() {
+    UUID otherTeacherId = UUID.randomUUID();
+
+    org.assertj.core.api.Assertions.assertThatThrownBy(
+            () ->
+                handwritingService.resetProfile(
+                    schoolId, studentId, otherTeacherId, ResetReason.OTHER, null))
+        .isInstanceOf(uz.academixai.interfaces.web.ApiException.class)
+        .hasMessageContaining("sinf rahbari");
   }
 
   @Test

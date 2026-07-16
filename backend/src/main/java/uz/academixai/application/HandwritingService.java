@@ -20,6 +20,10 @@ import uz.academixai.infrastructure.persistence.HandwritingProfileEntity;
 import uz.academixai.infrastructure.persistence.HandwritingProfileRepository;
 import uz.academixai.infrastructure.persistence.HandwritingResetLogEntity;
 import uz.academixai.infrastructure.persistence.HandwritingResetLogRepository;
+import uz.academixai.infrastructure.persistence.SchoolClassEntity;
+import uz.academixai.infrastructure.persistence.SchoolClassRepository;
+import uz.academixai.infrastructure.persistence.StudentProfileEntity;
+import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.interfaces.web.ApiException;
 
 /**
@@ -58,16 +62,22 @@ public class HandwritingService {
   private final HandwritingResetLogRepository resetLogRepository;
   private final HandwritingFeatureExtractor featureExtractor;
   private final EntityManager entityManager;
+  private final StudentProfileRepository studentProfileRepository;
+  private final SchoolClassRepository classRepository;
 
   public HandwritingService(
       HandwritingProfileRepository profileRepository,
       HandwritingResetLogRepository resetLogRepository,
       HandwritingFeatureExtractor featureExtractor,
-      EntityManager entityManager) {
+      EntityManager entityManager,
+      StudentProfileRepository studentProfileRepository,
+      SchoolClassRepository classRepository) {
     this.profileRepository = profileRepository;
     this.resetLogRepository = resetLogRepository;
     this.featureExtractor = featureExtractor;
     this.entityManager = entityManager;
+    this.studentProfileRepository = studentProfileRepository;
+    this.classRepository = classRepository;
   }
 
   // Required: writeFeatureVector/clearFeatureVector run a raw EntityManager native UPDATE, which
@@ -132,6 +142,7 @@ public class HandwritingService {
   @Transactional
   public ResetResult resetProfile(
       UUID schoolId, UUID studentId, UUID teacherId, ResetReason reason, String notes) {
+    requireClassTeacher(schoolId, studentId, teacherId);
     Optional<HandwritingProfileEntity> existing = profileRepository.findByStudentId(studentId);
     int currentResetCount =
         existing.map(HandwritingProfileEntity::getResetCountThisSemester).orElse(0);
@@ -209,6 +220,42 @@ public class HandwritingService {
   }
 
   public record ResetResult(String newProfileVersion, int resetCountThisSemester) {}
+
+  /**
+   * academix_tz.md §2.2 "faqat sinf rahbari" (only the class/homeroom teacher) — resolved via
+   * {@code school_classes.class_teacher_id}, the same column {@code AdminClassController} already
+   * writes at class-creation time (Sprint 1). Not the same concept as a subject teacher's {@code
+   * class_subject_teachers} link.
+   */
+  private void requireClassTeacher(UUID schoolId, UUID studentId, UUID teacherId) {
+    StudentProfileEntity profile =
+        studentProfileRepository
+            .findByUserIdAndSchoolId(studentId, schoolId)
+            .orElseThrow(
+                () ->
+                    new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "ERR_NOT_FOUND",
+                        "O'quvchi topilmadi.",
+                        "ID ni tekshiring."));
+    SchoolClassEntity schoolClass =
+        classRepository
+            .findById(profile.getClassId())
+            .orElseThrow(
+                () ->
+                    new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "ERR_NOT_FOUND",
+                        "Sinf topilmadi.",
+                        "ID ni tekshiring."));
+    if (!teacherId.equals(schoolClass.getClassTeacherId())) {
+      throw new ApiException(
+          HttpStatus.FORBIDDEN,
+          "ERR_ACCESS_DENIED",
+          "Faqat sinf rahbari yozuv profilini reset qila oladi.",
+          "Bu o'quvchining sinf rahbari bilan bog'laning.");
+    }
+  }
 
   private void saveProfileUpdate(
       HandwritingProfileEntity dbEntity, int samplesCount, boolean isReliable, float[] vector) {
