@@ -42,3 +42,6 @@ infra/backups/
 
 # Claude Code personal overrides (project-scoped, not team-shared)
 .claude/settings.local.json
+
+# CI/CD workflow — kept locally, skipped on GitHub for now
+.github/workflows/
