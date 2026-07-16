@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import uz.academixai.application.HandwritingService;
 import uz.academixai.application.StudentManagementService;
 import uz.academixai.domain.StudentProfile;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
@@ -24,9 +25,12 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 public class AdminStudentController {
 
   private final StudentManagementService studentService;
+  private final HandwritingService handwritingService;
 
-  public AdminStudentController(StudentManagementService studentService) {
+  public AdminStudentController(
+      StudentManagementService studentService, HandwritingService handwritingService) {
     this.studentService = studentService;
+    this.handwritingService = handwritingService;
   }
 
   @GetMapping
@@ -71,6 +75,12 @@ public class AdminStudentController {
       @PathVariable UUID studentId,
       @RequestBody TransferClassRequest request) {
     studentService.transferClass(principal.schoolId(), studentId, request.newClassId());
+    return ResponseEntity.noContent().build();
+  }
+
+  @PutMapping("/{studentId}/handwriting/unlock-reset")
+  public ResponseEntity<Void> unlockHandwritingReset(@PathVariable UUID studentId) {
+    handwritingService.unlockReset(studentId);
     return ResponseEntity.noContent().build();
   }
 }
