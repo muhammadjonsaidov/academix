@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.application.HomeworkService;
+import uz.academixai.application.UniqueTaskReviewService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 
 /**
@@ -26,9 +27,12 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 public class TeacherHomeworkController {
 
   private final HomeworkService homeworkService;
+  private final UniqueTaskReviewService uniqueTaskReviewService;
 
-  public TeacherHomeworkController(HomeworkService homeworkService) {
+  public TeacherHomeworkController(
+      HomeworkService homeworkService, UniqueTaskReviewService uniqueTaskReviewService) {
     this.homeworkService = homeworkService;
+    this.uniqueTaskReviewService = uniqueTaskReviewService;
   }
 
   @PostMapping
@@ -90,6 +94,13 @@ public class TeacherHomeworkController {
   public ResponseEntity<Void> delete(
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID assignmentId) {
     homeworkService.delete(principal.schoolId(), principal.userId(), assignmentId);
+    return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("/{assignmentId}/submit")
+  public ResponseEntity<Void> submit(
+      @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID assignmentId) {
+    uniqueTaskReviewService.submit(principal.schoolId(), principal.userId(), assignmentId);
     return ResponseEntity.noContent().build();
   }
 }

@@ -17,12 +17,15 @@ public class HomeworkService {
 
   private final HomeworkAssignmentRepository assignmentRepository;
   private final TeacherContextService teacherContextService;
+  private final UniqueTaskGenerationService uniqueTaskGenerationService;
 
   public HomeworkService(
       HomeworkAssignmentRepository assignmentRepository,
-      TeacherContextService teacherContextService) {
+      TeacherContextService teacherContextService,
+      UniqueTaskGenerationService uniqueTaskGenerationService) {
     this.assignmentRepository = assignmentRepository;
     this.teacherContextService = teacherContextService;
+    this.uniqueTaskGenerationService = uniqueTaskGenerationService;
   }
 
   public HomeworkAssignment create(
@@ -53,8 +56,17 @@ public class HomeworkService {
             maxScore,
             true,
             syllabusReference,
-            null);
-    return assignmentRepository.save(HomeworkAssignmentEntity.fromDomain(assignment)).toDomain();
+            null,
+            // UNIQUE_GENERATED assignments stay hidden from students until the teacher reviews
+            // and publishes generated tasks via POST .../submit (academix_tz.md §2.3) — STANDARD
+            // has no review step, visible immediately.
+            type != AssignmentType.UNIQUE_GENERATED);
+    HomeworkAssignment saved =
+        assignmentRepository.save(HomeworkAssignmentEntity.fromDomain(assignment)).toDomain();
+    if (type == AssignmentType.UNIQUE_GENERATED) {
+      uniqueTaskGenerationService.generateUniqueTasks(schoolId, teacherId, saved.id());
+    }
+    return saved;
   }
 
   // classId/subjectId filters are documented (academix_tz.md §2.3); the query also lists a
@@ -102,7 +114,8 @@ public class HomeworkService {
             maxScore,
             existing.isActive(),
             syllabusReference,
-            existing.aiGenerationPrompt());
+            existing.aiGenerationPrompt(),
+            existing.tasksPublished());
     return assignmentRepository.save(HomeworkAssignmentEntity.fromDomain(updated)).toDomain();
   }
 

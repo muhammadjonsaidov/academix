@@ -21,4 +21,5 @@ public record HomeworkAssignment(
     int maxScore,
     boolean isActive,
     String syllabusReference,
-    String aiGenerationPrompt) {}
+    String aiGenerationPrompt,
+    boolean tasksPublished) {}

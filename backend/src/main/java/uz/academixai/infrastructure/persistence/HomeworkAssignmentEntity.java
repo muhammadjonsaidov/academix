@@ -60,6 +60,9 @@ public class HomeworkAssignmentEntity {
   @Column(name = "ai_generation_prompt")
   private String aiGenerationPrompt;
 
+  @Column(name = "tasks_published", nullable = false)
+  private boolean tasksPublished;
+
   protected HomeworkAssignmentEntity() {}
 
   public HomeworkAssignmentEntity(
@@ -76,7 +79,8 @@ public class HomeworkAssignmentEntity {
       int maxScore,
       boolean isActive,
       String syllabusReference,
-      String aiGenerationPrompt) {
+      String aiGenerationPrompt,
+      boolean tasksPublished) {
     this.id = id;
     this.schoolId = schoolId;
     this.classId = classId;
@@ -91,6 +95,7 @@ public class HomeworkAssignmentEntity {
     this.isActive = isActive;
     this.syllabusReference = syllabusReference;
     this.aiGenerationPrompt = aiGenerationPrompt;
+    this.tasksPublished = tasksPublished;
   }
 
   public static HomeworkAssignmentEntity fromDomain(HomeworkAssignment domain) {
@@ -108,7 +113,8 @@ public class HomeworkAssignmentEntity {
         domain.maxScore(),
         domain.isActive(),
         domain.syllabusReference(),
-        domain.aiGenerationPrompt());
+        domain.aiGenerationPrompt(),
+        domain.tasksPublished());
   }
 
   public HomeworkAssignment toDomain() {
@@ -126,7 +132,8 @@ public class HomeworkAssignmentEntity {
         maxScore,
         isActive,
         syllabusReference,
-        aiGenerationPrompt);
+        aiGenerationPrompt,
+        tasksPublished);
   }
 
   public UUID getId() {
@@ -155,5 +162,9 @@ public class HomeworkAssignmentEntity {
 
   public boolean isActive() {
     return isActive;
+  }
+
+  public boolean isTasksPublished() {
+    return tasksPublished;
   }
 }

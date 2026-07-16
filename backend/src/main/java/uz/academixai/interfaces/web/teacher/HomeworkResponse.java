@@ -16,7 +16,8 @@ public record HomeworkResponse(
     LocalDateTime deadlineAt,
     int maxScore,
     boolean isActive,
-    String syllabusReference) {
+    String syllabusReference,
+    boolean tasksPublished) {
 
   public static HomeworkResponse from(HomeworkAssignment domain) {
     return new HomeworkResponse(
@@ -30,6 +31,7 @@ public record HomeworkResponse(
         domain.deadlineAt(),
         domain.maxScore(),
         domain.isActive(),
-        domain.syllabusReference());
+        domain.syllabusReference(),
+        domain.tasksPublished());
   }
 }
