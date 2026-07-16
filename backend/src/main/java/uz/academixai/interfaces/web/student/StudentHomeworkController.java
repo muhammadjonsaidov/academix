@@ -7,6 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import uz.academixai.application.StudentDashboardService;
 import uz.academixai.application.StudentSubmissionService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 
@@ -16,9 +17,19 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 public class StudentHomeworkController {
 
   private final StudentSubmissionService submissionService;
+  private final StudentDashboardService dashboardService;
 
-  public StudentHomeworkController(StudentSubmissionService submissionService) {
+  public StudentHomeworkController(
+      StudentSubmissionService submissionService, StudentDashboardService dashboardService) {
     this.submissionService = submissionService;
+    this.dashboardService = dashboardService;
+  }
+
+  @GetMapping("/api/v1/student/dashboard")
+  public StudentDashboardResponse getDashboard(
+      @AuthenticationPrincipal AcademixPrincipal principal) {
+    return StudentDashboardResponse.from(
+        dashboardService.getDashboard(principal.schoolId(), principal.userId()));
   }
 
   @GetMapping("/api/v1/student/homework")
