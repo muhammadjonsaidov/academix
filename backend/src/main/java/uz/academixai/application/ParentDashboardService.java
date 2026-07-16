@@ -63,7 +63,8 @@ public class ParentDashboardService {
       String className,
       boolean todayActivity,
       int pendingHomeworkCount,
-      RecentGrade recentGrade) {}
+      RecentGrade recentGrade,
+      boolean biometricConsentGiven) {}
 
   public record Dashboard(List<ChildSummary> children) {}
 
@@ -73,8 +74,7 @@ public class ParentDashboardService {
 
   public List<ChildSummary> children(UUID parentUserId) {
     return parentLinkService.myChildren(parentUserId).stream()
-        .map(ParentStudentLink::studentUserId)
-        .map(this::buildSummary)
+        .map(link -> buildSummary(link.studentUserId(), link.biometricConsentGiven()))
         .toList();
   }
 
@@ -87,7 +87,13 @@ public class ParentDashboardService {
 
   public ChildOverview overview(UUID parentUserId, UUID studentId) {
     parentLinkService.requireLinkedChild(parentUserId, studentId);
-    ChildSummary summary = buildSummary(studentId);
+    boolean consentGiven =
+        parentLinkService.myChildren(parentUserId).stream()
+            .filter(link -> link.studentUserId().equals(studentId))
+            .findFirst()
+            .map(ParentStudentLink::biometricConsentGiven)
+            .orElse(false);
+    ChildSummary summary = buildSummary(studentId, consentGiven);
     UUID schoolId =
         studentProfileRepository
             .findByUserId(studentId)
@@ -112,7 +118,7 @@ public class ParentDashboardService {
     return new ChildOverview(summary, pendingHomework, recentGrades);
   }
 
-  private ChildSummary buildSummary(UUID studentId) {
+  private ChildSummary buildSummary(UUID studentId, boolean biometricConsentGiven) {
     String name =
         userRepository
             .findById(studentId)
@@ -150,6 +156,12 @@ public class ParentDashboardService {
                 g -> new RecentGrade(g.submissionId(), g.score(), g.fivePointGrade(), g.gradedAt()))
             .orElse(null);
     return new ChildSummary(
-        studentId, name, className, todayActivity, pendingHomeworkCount, recentGrade);
+        studentId,
+        name,
+        className,
+        todayActivity,
+        pendingHomeworkCount,
+        recentGrade,
+        biometricConsentGiven);
   }
 }
