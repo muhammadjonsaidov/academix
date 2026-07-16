@@ -12,9 +12,11 @@ export default function AdminAnalyticsPage() {
   const classesComparison = useAdminAnalyticsStore((state) => state.classesComparison);
   const teachersRanking = useAdminAnalyticsStore((state) => state.teachersRanking);
   const schoolProgress = useAdminAnalyticsStore((state) => state.schoolProgress);
+  const aiUsage = useAdminAnalyticsStore((state) => state.aiUsage);
   const fetchClassesComparison = useAdminAnalyticsStore((state) => state.fetchClassesComparison);
   const fetchTeachersRanking = useAdminAnalyticsStore((state) => state.fetchTeachersRanking);
   const fetchSchoolProgress = useAdminAnalyticsStore((state) => state.fetchSchoolProgress);
+  const fetchAiUsage = useAdminAnalyticsStore((state) => state.fetchAiUsage);
   const [period, setPeriod] = useState<Period>("monthly");
   const [error, setError] = useState<string | null>(null);
 
@@ -23,8 +25,9 @@ export default function AdminAnalyticsPage() {
       fetchClassesComparison(period),
       fetchTeachersRanking(),
       fetchSchoolProgress(period),
+      fetchAiUsage(period),
     ]).catch(() => setError("Tahlil ma'lumotlarini yuklab bo'lmadi."));
-  }, [period, fetchClassesComparison, fetchTeachersRanking, fetchSchoolProgress]);
+  }, [period, fetchClassesComparison, fetchTeachersRanking, fetchSchoolProgress, fetchAiUsage]);
 
   return (
     <DashboardShell role="ADMIN">
@@ -113,6 +116,67 @@ export default function AdminAnalyticsPage() {
             <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
           ) : null}
         </ul>
+      </div>
+
+      <div className="mt-6">
+        <h3 className="mb-2 text-sm font-semibold">
+          AI foydalanish (faqat baholash chaqiruvlari)
+        </h3>
+        <div className="grid grid-cols-3 gap-6">
+          <div>
+            <p className="mb-2 text-xs text-muted-foreground">Sinflar bo&apos;yicha</p>
+            <ul className="space-y-2">
+              {aiUsage?.byClass.map((c) => (
+                <li
+                  key={c.classId}
+                  className="flex justify-between rounded-md border border-border p-3 text-sm"
+                >
+                  <span>{c.className}</span>
+                  <span className="text-muted-foreground">{c.callCount}</span>
+                </li>
+              ))}
+              {!aiUsage?.byClass.length ? (
+                <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
+              ) : null}
+            </ul>
+          </div>
+          <div>
+            <p className="mb-2 text-xs text-muted-foreground">Fanlar bo&apos;yicha</p>
+            <ul className="space-y-2">
+              {aiUsage?.bySubject.map((s) => (
+                <li
+                  key={s.subjectId}
+                  className="flex justify-between rounded-md border border-border p-3 text-sm"
+                >
+                  <span>{s.subjectName}</span>
+                  <span className="text-muted-foreground">{s.callCount}</span>
+                </li>
+              ))}
+              {!aiUsage?.bySubject.length ? (
+                <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
+              ) : null}
+            </ul>
+          </div>
+          <div>
+            <p className="mb-2 text-xs text-muted-foreground">O&apos;qituvchilar bo&apos;yicha</p>
+            <ul className="space-y-2">
+              {aiUsage?.byTeacher.map((t) => (
+                <li
+                  key={t.teacherId}
+                  className="flex justify-between rounded-md border border-border p-3 text-sm"
+                >
+                  <span>
+                    {t.firstName} {t.lastName}
+                  </span>
+                  <span className="text-muted-foreground">{t.callCount}</span>
+                </li>
+              ))}
+              {!aiUsage?.byTeacher.length ? (
+                <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
+              ) : null}
+            </ul>
+          </div>
+        </div>
       </div>
     </DashboardShell>
   );

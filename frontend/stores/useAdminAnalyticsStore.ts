@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { apiClient } from "@/lib/api/client";
 import type {
   AdminDashboard,
+  AiUsage,
   ClassProgress,
   PeriodProgress,
   TeacherRanking,
@@ -12,11 +13,13 @@ interface AdminAnalyticsState {
   classesComparison: ClassProgress[];
   teachersRanking: TeacherRanking[];
   schoolProgress: PeriodProgress[];
+  aiUsage: AiUsage | null;
 
   fetchDashboard: () => Promise<void>;
   fetchClassesComparison: (period?: string) => Promise<void>;
   fetchTeachersRanking: () => Promise<void>;
   fetchSchoolProgress: (period?: string) => Promise<void>;
+  fetchAiUsage: (period?: string) => Promise<void>;
 }
 
 // Separate from useAdminStore (classes/teachers/students CRUD) — analytics is a distinct,
@@ -26,6 +29,7 @@ export const useAdminAnalyticsStore = create<AdminAnalyticsState>((set) => ({
   classesComparison: [],
   teachersRanking: [],
   schoolProgress: [],
+  aiUsage: null,
 
   fetchDashboard: async () => {
     const { data } = await apiClient.get<AdminDashboard>("/admin/dashboard");
@@ -49,5 +53,12 @@ export const useAdminAnalyticsStore = create<AdminAnalyticsState>((set) => ({
       params: { period },
     });
     set({ schoolProgress: data });
+  },
+
+  fetchAiUsage: async (period) => {
+    const { data } = await apiClient.get<AiUsage>("/admin/analytics/ai-usage", {
+      params: { period },
+    });
+    set({ aiUsage: data });
   },
 }));

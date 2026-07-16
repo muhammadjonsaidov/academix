@@ -36,3 +36,10 @@ export interface PeriodProgress {
   avgScore: number;
   gradedCount: number;
 }
+
+// academix_tz.md §8 "Admin dashboard cost showback" — grading calls only (HOMEWORK/EXAM).
+export interface AiUsage {
+  byClass: { classId: string; className: string; callCount: number }[];
+  bySubject: { subjectId: string; subjectName: string; callCount: number }[];
+  byTeacher: { teacherId: string; firstName: string; lastName: string; callCount: number }[];
+}
