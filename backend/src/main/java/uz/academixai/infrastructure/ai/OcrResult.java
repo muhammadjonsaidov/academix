@@ -1,8 +1,9 @@
 package uz.academixai.infrastructure.ai;
 
 /**
- * academix_tz.md §3.1 — only {@code fullTextAnnotation.text} for now. Bounding-box/layout data
- * (per-block/paragraph coordinates) is also in the real Vision response but unused until the
- * handwriting-biometrics sprint; not modeled here to avoid parsing a shape nothing reads yet.
+ * academix_tz.md §3.1 — {@code fullTextAnnotation.text} plus, since Sprint 5, the same response's
+ * symbol-level bounding-box layout ({@link DocumentTextLayout}), needed for handwriting biometrics
+ * (§1.13). One Vision call produces both — no reason to spend a second API call (and second
+ * AI-budget deduction) just to also get the layout.
  */
-public record OcrResult(String extractedText) {}
+public record OcrResult(String extractedText, DocumentTextLayout layout) {}

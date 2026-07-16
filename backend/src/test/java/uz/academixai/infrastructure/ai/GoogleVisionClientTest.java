@@ -48,4 +48,88 @@ class GoogleVisionClientTest {
   void returnsEmptyStringForNullResponse() {
     assertThat(GoogleVisionClient.parseFullText(null)).isEmpty();
   }
+
+  @Test
+  void parsesLayoutSymbolsWithBreaks() throws Exception {
+    var response =
+        objectMapper.readTree(
+            """
+            {
+              "responses": [
+                {
+                  "fullTextAnnotation": {
+                    "text": "Hi x",
+                    "pages": [
+                      {
+                        "blocks": [
+                          {
+                            "paragraphs": [
+                              {
+                                "words": [
+                                  {
+                                    "symbols": [
+                                      {
+                                        "text": "H",
+                                        "boundingBox": {
+                                          "vertices": [
+                                            {"x": 10, "y": 10}, {"x": 20, "y": 10},
+                                            {"x": 20, "y": 30}, {"x": 10, "y": 30}
+                                          ]
+                                        }
+                                      },
+                                      {
+                                        "text": "i",
+                                        "boundingBox": {
+                                          "vertices": [
+                                            {"x": 21, "y": 10}, {"x": 26, "y": 10},
+                                            {"x": 26, "y": 30}, {"x": 21, "y": 30}
+                                          ]
+                                        },
+                                        "property": { "detectedBreak": { "type": "SPACE" } }
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "symbols": [
+                                      {
+                                        "text": "x",
+                                        "boundingBox": {
+                                          "vertices": [
+                                            {"x": 40, "y": 10}, {"x": 50, "y": 10},
+                                            {"x": 50, "y": 30}, {"x": 40, "y": 30}
+                                          ]
+                                        },
+                                        "property": { "detectedBreak": { "type": "LINE_BREAK" } }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+            """);
+
+    DocumentTextLayout layout = GoogleVisionClient.parseLayout(response);
+
+    assertThat(layout.characters()).hasSize(3);
+    assertThat(layout.characters().get(0).text()).isEqualTo("H");
+    assertThat(layout.characters().get(0).breakAfter()).isEqualTo(CharacterBox.BreakType.NONE);
+    assertThat(layout.characters().get(0).width()).isEqualTo(10.0);
+    assertThat(layout.characters().get(0).height()).isEqualTo(20.0);
+    assertThat(layout.characters().get(1).breakAfter()).isEqualTo(CharacterBox.BreakType.SPACE);
+    assertThat(layout.characters().get(2).breakAfter())
+        .isEqualTo(CharacterBox.BreakType.LINE_BREAK);
+  }
+
+  @Test
+  void returnsEmptyLayoutForNullResponse() {
+    assertThat(GoogleVisionClient.parseLayout(null).characters()).isEmpty();
+  }
 }
