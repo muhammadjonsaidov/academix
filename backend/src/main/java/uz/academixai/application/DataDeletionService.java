@@ -14,34 +14,86 @@ import uz.academixai.domain.DataDeletionRequest;
 import uz.academixai.domain.DeletionRequestStatus;
 import uz.academixai.infrastructure.persistence.DataDeletionRequestEntity;
 import uz.academixai.infrastructure.persistence.DataDeletionRequestRepository;
+import uz.academixai.infrastructure.persistence.ParentStudentLinkRepository;
+import uz.academixai.infrastructure.persistence.StudentProfileEntity;
+import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.interfaces.web.ApiException;
 
 /**
  * academix_tz.md §5.6 / §7.6 — retention for minors' biometric/psychological data. Real pseudocode
  * is given verbatim (backend_tdd.md §7.6), followed exactly.
  *
- * <p><b>Real, flagged gap:</b> §2.7's {@code POST
- * /parent/children/{studentId}/data-deletion-request} (the creation endpoint) is NOT built here —
- * it needs {@code parent_student_links} to verify the requesting parent is actually linked to that
- * student, and that table doesn't exist anywhere in this codebase yet (the exact same pre-existing
- * gap {@link SchoolContextResolver}'s Javadoc already documents for PARENT resolution generally).
- * Building a parent-facing creation endpoint with no way to check "is this really your child" would
- * be a real authorization hole, not a shortcut — deferred until that link table exists. This sprint
- * builds the admin-side (list pending, approve) and the actual retention/nulling logic, which don't
- * depend on it — a request row can still be inserted directly (e.g. by a future admin tool) and
- * processed correctly.
+ * <p><b>Sprint 8 update:</b> {@link #requestDeletion} (backing §2.7's {@code POST
+ * /parent/children/{studentId}/data-deletion-request}) is now built — Sprint 7 deferred it because
+ * it needs {@code parent_student_links} to verify "is this really your child" before accepting a
+ * request, and that table didn't exist yet. It does now.
  */
 @Service
 public class DataDeletionService {
 
   private final DataDeletionRequestRepository requestRepository;
+  private final ParentStudentLinkRepository parentStudentLinkRepository;
+  private final StudentProfileRepository studentProfileRepository;
   private final EntityManager entityManager;
   private static final Logger log = LoggerFactory.getLogger(DataDeletionService.class);
 
   public DataDeletionService(
-      DataDeletionRequestRepository requestRepository, EntityManager entityManager) {
+      DataDeletionRequestRepository requestRepository,
+      ParentStudentLinkRepository parentStudentLinkRepository,
+      StudentProfileRepository studentProfileRepository,
+      EntityManager entityManager) {
     this.requestRepository = requestRepository;
+    this.parentStudentLinkRepository = parentStudentLinkRepository;
+    this.studentProfileRepository = studentProfileRepository;
     this.entityManager = entityManager;
+  }
+
+  /**
+   * academix_tz.md §2.5 — {@code POST /parent/children/{studentId}/data-deletion-request}, "only if
+   * student isActive=false" (read as {@code student_profiles.is_active} — a student who has left
+   * the school, e.g. graduated/transferred, not a currently-enrolled one). Unblocks Sprint 7's
+   * deferred gap now that {@code parent_student_links} exists to verify "is this really your child"
+   * before accepting the request.
+   */
+  public DataDeletionRequest requestDeletion(UUID parentUserId, UUID studentId) {
+    boolean isLinked =
+        parentStudentLinkRepository.existsByParentUserIdAndStudentUserIdAndIsActiveTrue(
+            parentUserId, studentId);
+    if (!isLinked) {
+      throw new ApiException(
+          HttpStatus.FORBIDDEN,
+          "ERR_ACCESS_DENIED",
+          "Bu farzandingiz emas.",
+          "Faqat o'zingizga bog'langan farzandlar uchun so'rov yuborishingiz mumkin.");
+    }
+    StudentProfileEntity profile =
+        studentProfileRepository
+            .findByUserId(studentId)
+            .orElseThrow(
+                () ->
+                    new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "ERR_STUDENT_NOT_FOUND",
+                        "O'quvchi topilmadi.",
+                        "ID ni tekshiring."));
+    if (profile.isActive()) {
+      throw new ApiException(
+          HttpStatus.BAD_REQUEST,
+          "ERR_STUDENT_STILL_ACTIVE",
+          "Faol o'quvchi uchun ma'lumotlarni o'chirish so'rovi yuborib bo'lmaydi.",
+          "O'quvchi maktabni tark etgandan so'ng qayta urinib ko'ring.");
+    }
+
+    DataDeletionRequest request =
+        new DataDeletionRequest(
+            UUID.randomUUID(),
+            profile.getSchoolId(),
+            studentId,
+            parentUserId,
+            DeletionRequestStatus.PENDING,
+            LocalDateTime.now(),
+            null);
+    return requestRepository.save(DataDeletionRequestEntity.fromDomain(request)).toDomain();
   }
 
   public List<DataDeletionRequest> listPending(UUID schoolId) {

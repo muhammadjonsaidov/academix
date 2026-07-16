@@ -23,6 +23,8 @@ import uz.academixai.infrastructure.ai.QwenAIClient;
 import uz.academixai.infrastructure.ai.QwenUnavailableException;
 import uz.academixai.infrastructure.persistence.ExamSubmissionRepository;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
+import uz.academixai.infrastructure.persistence.ParentStudentLinkEntity;
+import uz.academixai.infrastructure.persistence.ParentStudentLinkRepository;
 import uz.academixai.infrastructure.persistence.PsychologicalSignalEntity;
 import uz.academixai.infrastructure.persistence.PsychologicalSignalRepository;
 import uz.academixai.infrastructure.persistence.SchoolClassEntity;
@@ -51,11 +53,10 @@ import uz.academixai.infrastructure.persistence.XpHistoryRepository;
  * response contract (§3.3) and may return any of the 7 types; the ones needing chat context just
  * won't have real evidence to draw on with an empty activity summary for that portion.
  *
- * <p><b>Second real, flagged gap:</b> CRITICAL severity's notify matrix requires notifying the
- * parent, but no {@code parent_student_links} table exists anywhere in this codebase (confirmed —
- * {@link SchoolContextResolver}'s own Javadoc already documents PARENT as unresolved). {@code
- * notifiedParent} is therefore always left {@code false} for now — the notify matrix code path
- * exists and is ready, it just has no real recipient to resolve yet.
+ * <p><b>Sprint 8 update:</b> CRITICAL severity's parent notification is now wired to real {@code
+ * parent_student_links} rows — previously flagged as a no-op gap (no such table existed). A student
+ * with no linked parent still can't be notified (logged, not silent) — that's a genuine "this
+ * student has no parent account linked yet" state, not a missing feature.
  */
 @Service
 public class PsychologyService {
@@ -72,6 +73,7 @@ public class PsychologyService {
   private final SchoolClassRepository classRepository;
   private final UserRepository userRepository;
   private final PsychologicalSignalRepository signalRepository;
+  private final ParentStudentLinkRepository parentStudentLinkRepository;
   private final NotificationService notificationService;
   private final QwenAIClient qwenAIClient;
   private final ObjectMapper objectMapper;
@@ -84,6 +86,7 @@ public class PsychologyService {
       SchoolClassRepository classRepository,
       UserRepository userRepository,
       PsychologicalSignalRepository signalRepository,
+      ParentStudentLinkRepository parentStudentLinkRepository,
       NotificationService notificationService,
       QwenAIClient qwenAIClient,
       ObjectMapper objectMapper) {
@@ -94,6 +97,7 @@ public class PsychologyService {
     this.classRepository = classRepository;
     this.userRepository = userRepository;
     this.signalRepository = signalRepository;
+    this.parentStudentLinkRepository = parentStudentLinkRepository;
     this.notificationService = notificationService;
     this.qwenAIClient = qwenAIClient;
     this.objectMapper = objectMapper;
@@ -175,7 +179,8 @@ public class PsychologyService {
         severity == SignalSeverity.MEDIUM
             || severity == SignalSeverity.HIGH
             || severity == SignalSeverity.CRITICAL;
-    boolean notifyParent = severity == SignalSeverity.CRITICAL;
+    boolean shouldNotifyParent = severity == SignalSeverity.CRITICAL;
+    boolean parentNotified = shouldNotifyParent && notifyParent(studentId, type, severity);
 
     PsychologicalSignal signal =
         new PsychologicalSignal(
@@ -187,7 +192,7 @@ public class PsychologyService {
             toJson(evidence),
             isManipulation,
             notifyTeacherAndPsychologist,
-            false, // notifiedParent — see class Javadoc, no parent_student_links table exists yet
+            parentNotified,
             notifyTeacherAndPsychologist,
             false,
             LocalDateTime.now(),
@@ -201,16 +206,35 @@ public class PsychologyService {
       notifyClassTeacher(studentId, type, severity);
       notifyPsychologists(studentId, type, severity);
     }
-    if (notifyParent) {
-      // Intentionally a no-op today — see class Javadoc's second flagged gap. The matrix branch
-      // exists so wiring in a real parent_student_links resolution later is a one-line change,
-      // not a rediscovery of this whole method.
+    if (shouldNotifyParent && !parentNotified) {
+      // Real, flagged case: this student has no active parent_student_links row yet (no admin
+      // has linked a parent to them) — CRITICAL severity still can't reach a parent who was
+      // never linked. Not silently skipped: logged so it's visible in ops.
       log.warn(
-          "CRITICAL psychological signal for student {} would notify parent, but no"
-              + " parent_student_links resolution exists yet — skipped, flagged not silent.",
+          "CRITICAL psychological signal for student {} has no linked parent to notify.",
           studentId);
     }
     return saved;
+  }
+
+  /**
+   * Sprint 8 — resolves real parent(s) via {@code parent_student_links}, unblocking Sprint 7's
+   * flagged gap. Returns whether at least one parent was actually notified.
+   */
+  private boolean notifyParent(UUID studentId, SignalType type, SignalSeverity severity) {
+    List<ParentStudentLinkEntity> links =
+        parentStudentLinkRepository.findByStudentUserIdAndIsActiveTrue(studentId);
+    for (ParentStudentLinkEntity link : links) {
+      notificationService.sendNotification(
+          link.getParentUserId(),
+          NotificationType.PSYCHOLOGICAL_ALERT,
+          "Diqqat talab qiluvchi holat",
+          "Farzandingizda e'tibor talab qiluvchi holat aniqlandi. Batafsil ma'lumot uchun"
+              + " maktab psixologi bilan bog'laning.",
+          Map.of(
+              "studentId", studentId.toString(), "type", type.name(), "severity", severity.name()));
+    }
+    return !links.isEmpty();
   }
 
   private void notifyClassTeacher(UUID studentId, SignalType type, SignalSeverity severity) {
