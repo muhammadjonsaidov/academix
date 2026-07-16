@@ -11,6 +11,7 @@ import type {
   LessonPlan,
   Syllabus,
   TeacherClass,
+  TeacherStudent,
   TeacherSubject,
   TeacherSubmissionDetail,
   TeacherSubmissionListItem,
@@ -21,6 +22,7 @@ import type {
 interface TeacherState {
   classes: TeacherClass[];
   subjects: TeacherSubject[];
+  classStudents: TeacherStudent[];
   homework: Homework[];
   submissions: TeacherSubmissionListItem[];
   selectedSubmission: TeacherSubmissionDetail | null;
@@ -31,6 +33,7 @@ interface TeacherState {
 
   fetchClasses: () => Promise<void>;
   fetchSubjects: () => Promise<void>;
+  fetchClassStudents: (classId: string) => Promise<void>;
   fetchHomework: (filters?: { classId?: string; subjectId?: string }) => Promise<void>;
   createHomework: (request: CreateHomeworkRequest) => Promise<Homework>;
   fetchSubmissions: (filters?: { assignmentId?: string; classId?: string }) => Promise<void>;
@@ -77,6 +80,7 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
   lessonPlans: [],
   gradingCriteria: [],
   uniqueTasks: [],
+  classStudents: [],
 
   fetchClasses: async () => {
     const { data } = await apiClient.get<TeacherClass[]>("/teacher/classes");
@@ -86,6 +90,13 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
   fetchSubjects: async () => {
     const { data } = await apiClient.get<TeacherSubject[]>("/teacher/subjects");
     set({ subjects: data });
+  },
+
+  fetchClassStudents: async (classId) => {
+    const { data } = await apiClient.get<TeacherStudent[]>(
+      `/teacher/classes/${classId}/students`,
+    );
+    set({ classStudents: data });
   },
 
   fetchHomework: async (filters) => {

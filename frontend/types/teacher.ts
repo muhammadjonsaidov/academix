@@ -6,6 +6,13 @@ export interface TeacherClass {
   studentCount: number;
 }
 
+export interface TeacherStudent {
+  id: string;
+  firstName: string;
+  lastName: string;
+  studentNumber: string | null;
+}
+
 export interface TeacherSubject {
   id: string;
   name: string;
