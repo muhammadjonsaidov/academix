@@ -49,4 +49,11 @@ public class AdminAnalyticsController {
         .map(PeriodProgressResponse::from)
         .toList();
   }
+
+  @GetMapping("/ai-usage")
+  public AiUsageResponse aiUsage(
+      @AuthenticationPrincipal AcademixPrincipal principal,
+      @RequestParam(required = false) String period) {
+    return AiUsageResponse.from(analyticsService.aiUsage(principal.schoolId(), period));
+  }
 }

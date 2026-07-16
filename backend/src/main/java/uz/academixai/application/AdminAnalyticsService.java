@@ -4,6 +4,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import uz.academixai.infrastructure.persistence.AiUsageLogRepository;
+import uz.academixai.infrastructure.persistence.AiUsageLogRepository.ByClassRow;
+import uz.academixai.infrastructure.persistence.AiUsageLogRepository.BySubjectRow;
+import uz.academixai.infrastructure.persistence.AiUsageLogRepository.ByTeacherRow;
 import uz.academixai.infrastructure.persistence.GradeRepository;
 import uz.academixai.infrastructure.persistence.GradeRepository.ClassProgressRow;
 import uz.academixai.infrastructure.persistence.GradeRepository.PeriodProgressRow;
@@ -24,9 +28,12 @@ public class AdminAnalyticsService {
   private static final int SEMESTER_WINDOW_DAYS = 180;
 
   private final GradeRepository gradeRepository;
+  private final AiUsageLogRepository aiUsageLogRepository;
 
-  public AdminAnalyticsService(GradeRepository gradeRepository) {
+  public AdminAnalyticsService(
+      GradeRepository gradeRepository, AiUsageLogRepository aiUsageLogRepository) {
     this.gradeRepository = gradeRepository;
+    this.aiUsageLogRepository = aiUsageLogRepository;
   }
 
   public List<ClassProgressRow> classesComparison(UUID schoolId, UUID subjectId, String period) {
@@ -39,6 +46,19 @@ public class AdminAnalyticsService {
 
   public List<PeriodProgressRow> schoolProgress(UUID schoolId, String period) {
     return gradeRepository.schoolProgress(schoolId, windowSince(period));
+  }
+
+  public record AiUsage(
+      List<ByClassRow> byClass, List<BySubjectRow> bySubject, List<ByTeacherRow> byTeacher) {}
+
+  // academix_tz.md §8 "Admin dashboard cost showback" — grading calls only (HOMEWORK/EXAM),
+  // never CHAT, see ai_usage_log's migration comment.
+  public AiUsage aiUsage(UUID schoolId, String period) {
+    LocalDateTime since = windowSince(period);
+    return new AiUsage(
+        aiUsageLogRepository.usageByClass(schoolId, since),
+        aiUsageLogRepository.usageBySubject(schoolId, since),
+        aiUsageLogRepository.usageByTeacher(schoolId, since));
   }
 
   private LocalDateTime windowSince(String period) {
