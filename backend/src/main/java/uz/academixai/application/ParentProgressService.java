@@ -94,6 +94,19 @@ public class ParentProgressService {
 
   public Progress progress(UUID parentUserId, UUID studentId) {
     parentLinkService.requireLinkedChild(parentUserId, studentId);
+    return computeProgress(studentId);
+  }
+
+  /**
+   * Sprint 14 — {@code GET /student/progress} reuses the exact same subject-progress/monthly-XP
+   * computation, just without the parent-link authorization gate (a student always owns their own
+   * data).
+   */
+  public Progress progressForStudent(UUID studentId) {
+    return computeProgress(studentId);
+  }
+
+  private Progress computeProgress(UUID studentId) {
     StudentProfileEntity profile = studentProfileRepository.findByUserId(studentId).orElseThrow();
     UUID schoolId = profile.getSchoolId();
 

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.application.StudentDashboardService;
+import uz.academixai.application.StudentProgressService;
 import uz.academixai.application.StudentSubmissionService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 
@@ -18,11 +19,21 @@ public class StudentHomeworkController {
 
   private final StudentSubmissionService submissionService;
   private final StudentDashboardService dashboardService;
+  private final StudentProgressService progressService;
 
   public StudentHomeworkController(
-      StudentSubmissionService submissionService, StudentDashboardService dashboardService) {
+      StudentSubmissionService submissionService,
+      StudentDashboardService dashboardService,
+      StudentProgressService progressService) {
     this.submissionService = submissionService;
     this.dashboardService = dashboardService;
+    this.progressService = progressService;
+  }
+
+  @GetMapping("/api/v1/student/progress")
+  public StudentProgressResponse getProgress(@AuthenticationPrincipal AcademixPrincipal principal) {
+    return StudentProgressResponse.from(
+        progressService.progress(principal.schoolId(), principal.userId()));
   }
 
   @GetMapping("/api/v1/student/dashboard")
