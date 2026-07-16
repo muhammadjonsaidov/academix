@@ -106,6 +106,29 @@ export interface XpHistoryItem {
   reason: string;
 }
 
+// academix_tz.md §2.4 GET /student/progress — streakHistory always empty, see backend's
+// StudentProgressService Javadoc (no streak-history log exists, only current/max snapshots).
+export interface StudentSubjectProgress {
+  subject: string;
+  currentAvg: number;
+  previousMonthAvg: number;
+  growth: number;
+  submissionRate: number;
+  trend: string;
+}
+
+export interface StudentProgress {
+  xpHistory: XpHistoryItem[];
+  subjectStats: StudentSubjectProgress[];
+  badges: Badge[];
+  streakHistory: string[];
+  myGrowth: {
+    thisMonth: { avgScore: number };
+    lastMonth: { avgScore: number };
+    growth: string;
+  };
+}
+
 // Exams: gap-fill deviation, judgment call — no student-facing exam-results endpoint exists in
 // academix_tz.md (see backend's StudentExamController / CLAUDE.md). handwritingMatchScore is
 // deliberately never exposed, same rule as StudentAiFeedback above.

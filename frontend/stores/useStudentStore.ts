@@ -4,6 +4,7 @@ import type {
   Badge,
   StudentDashboard,
   StudentHomework,
+  StudentProgress,
   StudentSubmissionDetail,
   StudentSubmissionListItem,
   SubmissionType,
@@ -18,6 +19,7 @@ interface StudentState {
   dashboard: StudentDashboard | null;
   badges: Badge[];
   xpHistory: XpHistoryItem[];
+  progress: StudentProgress | null;
 
   fetchHomework: () => Promise<void>;
   submitHomework: (
@@ -31,6 +33,7 @@ interface StudentState {
   fetchDashboard: () => Promise<void>;
   fetchBadges: () => Promise<void>;
   fetchXpHistory: () => Promise<void>;
+  fetchProgress: () => Promise<void>;
 }
 
 // One store for the student homework area (assignments + own submissions + gamification) —
@@ -42,6 +45,7 @@ export const useStudentStore = create<StudentState>((set, get) => ({
   dashboard: null,
   badges: [],
   xpHistory: [],
+  progress: null,
 
   fetchHomework: async () => {
     const { data } = await apiClient.get<StudentHomework[]>("/student/homework");
@@ -91,5 +95,10 @@ export const useStudentStore = create<StudentState>((set, get) => ({
   fetchXpHistory: async () => {
     const { data } = await apiClient.get<XpHistoryItem[]>("/student/xp-history");
     set({ xpHistory: data });
+  },
+
+  fetchProgress: async () => {
+    const { data } = await apiClient.get<StudentProgress>("/student/progress");
+    set({ progress: data });
   },
 }));
