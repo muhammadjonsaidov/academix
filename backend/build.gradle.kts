@@ -17,6 +17,11 @@ java {
 
 repositories {
 	mavenCentral()
+	// jasperreports-pdf 7.0.7 depends on a Jaspersoft-forked OpenPDF artifact
+	// (com.github.librepdf:openpdf:1.3.43.jaspersoft.1) not published to Maven Central —
+	// confirmed by a real "Could not find ... .jaspersoft.1" resolution failure, and confirmed
+	// this repo actually serves it (real HTTP 200, following the JFrog redirect).
+	maven { url = uri("https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts/") }
 }
 
 dependencies {
@@ -61,6 +66,14 @@ dependencies {
 
 	// Bulk import: .xlsx parsing (POST /admin/students/bulk-import/*)
 	implementation("org.apache.poi:poi-ooxml:5.5.1")
+
+	// Semester report PDFs (POST /admin/reports/generate) — LGPL, chosen over iText for licensing
+	// reasons (academix_backend_tdd.md §"Supporting tooling"). Confirmed real on Maven Central.
+	// jasperreports-pdf is a SEPARATE required module in 7.x (PDF export was split out of the core
+	// artifact) — confirmed by a real JRRuntimeException ("Missing JasperReports PDF Extension")
+	// when only the core jar was on the classpath.
+	implementation("net.sf.jasperreports:jasperreports:7.0.7")
+	implementation("net.sf.jasperreports:jasperreports-pdf:7.0.7")
 
 	// SeaweedFS is S3-compatible — plain AWS SDK v2 S3 client pointed at its endpoint, no
 	// SeaweedFS-specific SDK needed (see CLAUDE.md "Reality checks" for why SeaweedFS over MinIO)
