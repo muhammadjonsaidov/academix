@@ -11,6 +11,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import uz.academixai.domain.CriteriaScore;
+import uz.academixai.domain.LessonActivity;
+import uz.academixai.domain.LessonPlanContent;
 import uz.academixai.domain.StepAnalysis;
 
 /**
@@ -43,6 +45,21 @@ public class QwenAIClient {
         "plagiarismScore": 0.0,
         "plagiarismType": "CLEAN|SUSPICIOUS|AI_GENERATED",
         "plagiarismEvidence": "..."
+      }""";
+
+  // academix_tz.md §1.18/§2.3 doesn't define a prompt contract for lesson-plan generation (unlike
+  // §3.2's worked grading example) — judgment call, see ROADMAP.md Sprint 3.
+  private static final String LESSON_PLAN_SYSTEM_PROMPT =
+      """
+      Sen maktab o'qituvchisi uchun dars rejasi tuzuvchi yordamchisan. Berilgan fan, sinf, mavzu \
+      va (agar mavjud bo'lsa) darslik matni asosida bitta dars uchun aniq, amaliy reja tuz.
+
+      Javobni FAQAT quyidagi JSON formatida qaytar, boshqa matn qo'shma:
+      {
+        "objectives": ["..."],
+        "activities": [{"description": "...", "durationMinutes": 0}],
+        "materials": ["..."],
+        "homeworkSuggestion": "..."
       }""";
 
   private final RestClient restClient;
@@ -88,6 +105,71 @@ public class QwenAIClient {
       String extractedText,
       Throwable cause) {
     throw new QwenUnavailableException("Qwen grading unavailable", cause);
+  }
+
+  @CircuitBreaker(name = "qwen", fallbackMethod = "generateLessonPlanFallback")
+  public LessonPlanContent generateLessonPlan(
+      String subjectAndGrade, String topic, String syllabusExtractedContent) {
+    String userContent =
+        "Fan/sinf: %s. Mavzu: %s.%s"
+            .formatted(
+                subjectAndGrade,
+                topic,
+                syllabusExtractedContent == null || syllabusExtractedContent.isBlank()
+                    ? ""
+                    : " Darslik matni: " + syllabusExtractedContent);
+
+    Map<String, Object> requestBody =
+        Map.of(
+            "model", properties.modelText(),
+            "messages",
+                List.of(
+                    Map.of("role", "system", "content", LESSON_PLAN_SYSTEM_PROMPT),
+                    Map.of("role", "user", "content", userContent)));
+
+    JsonNode response =
+        restClient
+            .post()
+            .uri(properties.baseUrl() + "/chat/completions")
+            .header("Authorization", "Bearer " + properties.apiKey())
+            .body(requestBody)
+            .retrieve()
+            .body(JsonNode.class);
+
+    return parseLessonPlanContent(response, objectMapper);
+  }
+
+  @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
+  private LessonPlanContent generateLessonPlanFallback(
+      String subjectAndGrade, String topic, String syllabusExtractedContent, Throwable cause) {
+    throw new QwenUnavailableException("Qwen lesson-plan generation unavailable", cause);
+  }
+
+  static LessonPlanContent parseLessonPlanContent(JsonNode response, ObjectMapper objectMapper) {
+    String content = response.path("choices").path(0).path("message").path("content").asText("");
+    String json = stripMarkdownFence(content);
+
+    try {
+      JsonNode root = objectMapper.readTree(json);
+      List<String> objectives = new ArrayList<>();
+      for (JsonNode node : root.path("objectives")) {
+        objectives.add(node.asText());
+      }
+      List<LessonActivity> activities = new ArrayList<>();
+      for (JsonNode node : root.path("activities")) {
+        activities.add(
+            new LessonActivity(
+                node.path("description").asText(), node.path("durationMinutes").asInt()));
+      }
+      List<String> materials = new ArrayList<>();
+      for (JsonNode node : root.path("materials")) {
+        materials.add(node.asText());
+      }
+      return new LessonPlanContent(
+          objectives, activities, materials, root.path("homeworkSuggestion").asText(""));
+    } catch (Exception e) {
+      throw new QwenUnavailableException("Qwen response was not valid JSON: " + content, e);
+    }
   }
 
   static String buildUserContent(
