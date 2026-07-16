@@ -89,7 +89,9 @@ public class TeacherPsychologyService {
             domain.notifiedPsychologist(),
             true,
             domain.detectedAt(),
-            LocalDateTime.now());
+            LocalDateTime.now(),
+            domain.resolutionNotes(),
+            domain.actionTaken());
     return signalRepository.save(PsychologicalSignalEntity.fromDomain(resolved)).toDomain();
   }
 

@@ -191,6 +191,8 @@ public class PsychologyService {
             notifyTeacherAndPsychologist,
             false,
             LocalDateTime.now(),
+            null,
+            null,
             null);
     PsychologicalSignal saved =
         signalRepository.save(PsychologicalSignalEntity.fromDomain(signal)).toDomain();

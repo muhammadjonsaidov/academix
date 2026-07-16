@@ -67,6 +67,12 @@ public class PsychologicalSignalEntity {
   @Column(name = "resolved_at")
   private LocalDateTime resolvedAt;
 
+  @Column(name = "resolution_notes")
+  private String resolutionNotes;
+
+  @Column(name = "action_taken")
+  private String actionTaken;
+
   protected PsychologicalSignalEntity() {}
 
   public PsychologicalSignalEntity(
@@ -82,7 +88,9 @@ public class PsychologicalSignalEntity {
       boolean notifiedPsychologist,
       boolean resolved,
       LocalDateTime detectedAt,
-      LocalDateTime resolvedAt) {
+      LocalDateTime resolvedAt,
+      String resolutionNotes,
+      String actionTaken) {
     this.id = id;
     this.studentId = studentId;
     this.type = type;
@@ -96,6 +104,8 @@ public class PsychologicalSignalEntity {
     this.resolved = resolved;
     this.detectedAt = detectedAt;
     this.resolvedAt = resolvedAt;
+    this.resolutionNotes = resolutionNotes;
+    this.actionTaken = actionTaken;
   }
 
   public static PsychologicalSignalEntity fromDomain(PsychologicalSignal domain) {
@@ -112,7 +122,9 @@ public class PsychologicalSignalEntity {
         domain.notifiedPsychologist(),
         domain.resolved(),
         domain.detectedAt(),
-        domain.resolvedAt());
+        domain.resolvedAt(),
+        domain.resolutionNotes(),
+        domain.actionTaken());
   }
 
   public PsychologicalSignal toDomain() {
@@ -129,7 +141,9 @@ public class PsychologicalSignalEntity {
         notifiedPsychologist,
         resolved,
         detectedAt,
-        resolvedAt);
+        resolvedAt,
+        resolutionNotes,
+        actionTaken);
   }
 
   public UUID getId() {

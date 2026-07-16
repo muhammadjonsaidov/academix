@@ -18,6 +18,8 @@ public interface StudentProfileRepository extends JpaRepository<StudentProfileEn
 
   List<StudentProfileEntity> findByClassIdAndSchoolId(UUID classId, UUID schoolId);
 
+  List<StudentProfileEntity> findBySchoolId(UUID schoolId);
+
   int countByClassIdAndSchoolId(UUID classId, UUID schoolId);
 
   /**
