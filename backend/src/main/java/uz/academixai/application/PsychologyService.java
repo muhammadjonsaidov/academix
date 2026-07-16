@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Limit;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.NotificationType;
@@ -21,6 +22,8 @@ import uz.academixai.infrastructure.ai.PsychologyAnalysisResult;
 import uz.academixai.infrastructure.ai.PsychologySignalCandidate;
 import uz.academixai.infrastructure.ai.QwenAIClient;
 import uz.academixai.infrastructure.ai.QwenUnavailableException;
+import uz.academixai.infrastructure.persistence.AiChatMessageEntity;
+import uz.academixai.infrastructure.persistence.AiChatMessageRepository;
 import uz.academixai.infrastructure.persistence.ExamSubmissionRepository;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
 import uz.academixai.infrastructure.persistence.ParentStudentLinkEntity;
@@ -39,19 +42,15 @@ import uz.academixai.infrastructure.persistence.XpHistoryRepository;
  * academix_tz.md §1.14/§3.3/§4 PsychologyService — nightly silent behavior analysis + the strict
  * severity notify matrix.
  *
- * <p><b>Real, flagged scope limit (not silently skipped):</b> TZ §3.3's prompt asks for analysis of
- * "kirish vaqtlari, AI chat bilan yozishmalari" (login times + AI chat transcripts), but neither
- * input actually exists in this codebase yet — there's no login-history table (only a single {@code
- * users.last_login_at} timestamp), and the AI Tutor chat feature itself (§2.4/§3.4, {@code
- * ai_chat_messages}) hasn't been built (no entity/migration anywhere). Building either is a
- * separate, sprint-sized feature on its own. This implementation substitutes the activity signal
- * that IS real and available — homework/exam submission timestamps, XP history, and {@code
- * last_submission_date} — which still supports 4 of the 7 {@link SignalType} values
- * (LATE_NIGHT_ACTIVITY, MOTIVATION_DROP, SUDDEN_PERFORMANCE_DROP, SUBMISSION_STOP) meaningfully.
- * The 3 chat-dependent types (NEGATIVE_LANGUAGE, AGGRESSIVE_LANGUAGE, MANIPULATION_ATTEMPT) simply
- * won't ever fire until the AI Tutor chat feature lands — Qwen is still told the exact same
- * response contract (§3.3) and may return any of the 7 types; the ones needing chat context just
- * won't have real evidence to draw on with an empty activity summary for that portion.
+ * <p><b>Real, flagged scope limit (partially closed in Sprint 12):</b> TZ §3.3's prompt asks for
+ * analysis of "kirish vaqtlari, AI chat bilan yozishmalari" (login times + AI chat transcripts).
+ * Chat transcripts are now real — {@code ai_chat_messages} (§2.3/§3.4) shipped in Sprint 12, and
+ * {@link #buildChatTranscriptSummary} feeds the student's own recent chat messages into the same
+ * Qwen call, so NEGATIVE_LANGUAGE/AGGRESSIVE_LANGUAGE/MANIPULATION_ATTEMPT can now actually fire
+ * when there's real evidence. Login-time analysis is still a gap — there's no login-history table
+ * (only a single {@code users.last_login_at} timestamp, no per-login record), so
+ * LATE_NIGHT_ACTIVITY still infers from submission timestamps instead, which remains a reasonable
+ * proxy but not the literal spec'd signal.
  *
  * <p><b>Sprint 8 update:</b> CRITICAL severity's parent notification is now wired to real {@code
  * parent_student_links} rows — previously flagged as a no-op gap (no such table existed). A student
@@ -69,6 +68,7 @@ public class PsychologyService {
   private final StudentProfileRepository studentProfileRepository;
   private final HomeworkSubmissionRepository homeworkSubmissionRepository;
   private final ExamSubmissionRepository examSubmissionRepository;
+  private final AiChatMessageRepository aiChatMessageRepository;
   private final XpHistoryRepository xpHistoryRepository;
   private final SchoolClassRepository classRepository;
   private final UserRepository userRepository;
@@ -82,6 +82,7 @@ public class PsychologyService {
       StudentProfileRepository studentProfileRepository,
       HomeworkSubmissionRepository homeworkSubmissionRepository,
       ExamSubmissionRepository examSubmissionRepository,
+      AiChatMessageRepository aiChatMessageRepository,
       XpHistoryRepository xpHistoryRepository,
       SchoolClassRepository classRepository,
       UserRepository userRepository,
@@ -93,6 +94,7 @@ public class PsychologyService {
     this.studentProfileRepository = studentProfileRepository;
     this.homeworkSubmissionRepository = homeworkSubmissionRepository;
     this.examSubmissionRepository = examSubmissionRepository;
+    this.aiChatMessageRepository = aiChatMessageRepository;
     this.xpHistoryRepository = xpHistoryRepository;
     this.classRepository = classRepository;
     this.userRepository = userRepository;
@@ -316,14 +318,36 @@ public class PsychologyService {
     return """
         Oxirgi %d kunlik faollik: jami %d marta topshiriq yubordi, shulardan %d marotaba \
         tungi soat 23:00-05:00 oralig'ida. Oxirgi topshiriqdan beri %d kun o'tdi. \
-        Shu davrda jami %d XP to'pladi. AI chat yozishmalari mavjud emas (bu funksiya hali \
-        ishga tushirilmagan)."""
+        Shu davrda jami %d XP to'pladi.
+
+        %s"""
         .formatted(
             LOOKBACK_DAYS,
             submissionTimes.size(),
             nightSubmissions,
             daysSinceLastSubmission,
-            recentXp);
+            recentXp,
+            buildChatTranscriptSummary(studentId, since));
+  }
+
+  // Sprint 12 added AI Tutor chat (ai_chat_messages) — wired in here now that real data exists,
+  // closing the gap this class's own Javadoc previously flagged. Only the student's own messages
+  // are included (not AI responses) since tone/language is what NEGATIVE_LANGUAGE/
+  // AGGRESSIVE_LANGUAGE/MANIPULATION_ATTEMPT need to detect; capped at 20 most recent messages in
+  // the lookback window to keep the prompt bounded.
+  private String buildChatTranscriptSummary(UUID studentId, LocalDateTime since) {
+    List<AiChatMessageEntity> messages =
+        aiChatMessageRepository.findByStudentIdOrderByCreatedAtDesc(studentId, Limit.of(20));
+    List<String> recentMessages =
+        messages.stream()
+            .map(AiChatMessageEntity::toDomain)
+            .filter(m -> m.createdAt().isAfter(since))
+            .map(m -> "- " + m.message())
+            .toList();
+    if (recentMessages.isEmpty()) {
+      return "AI chat yozishmalari: shu davrda yo'q.";
+    }
+    return "AI chat orqali yuborilgan xabarlar:\n" + String.join("\n", recentMessages);
   }
 
   private static boolean isNightTime(LocalDateTime dateTime) {
