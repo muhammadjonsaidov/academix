@@ -4,6 +4,7 @@ const LINKS = [
   { href: "/dashboard/student", label: "Bosh sahifa" },
   { href: "/dashboard/student/homework", label: "Vazifalar" },
   { href: "/dashboard/student/submissions", label: "Topshirilgan ishlarim" },
+  { href: "/dashboard/student/exams", label: "Nazorat ishlarim" },
   { href: "/dashboard/student/badges", label: "Yutuqlar" },
   { href: "/dashboard/student/xp-history", label: "XP tarixi" },
 ];
