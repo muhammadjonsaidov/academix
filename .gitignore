@@ -45,3 +45,7 @@ infra/backups/
 
 # CI/CD workflow — kept locally, skipped on GitHub for now
 .github/workflows/
+
+# Internal docs — kept locally, not on GitHub
+/CLAUDE.md
+/ROADMAP.md
