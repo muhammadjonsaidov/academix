@@ -64,3 +64,39 @@ export interface StudentSubmissionDetail {
   aiFeedback: StudentAiFeedback | null;
   grade: StudentGrade | null;
 }
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  awardedAt: string;
+}
+
+export interface RecentGrade {
+  submissionId: string;
+  score: number;
+  fivePointGrade: number;
+  gradedAt: string;
+}
+
+export interface ProfileSummary {
+  firstName: string;
+  totalXp: number;
+  currentStreak: number;
+  maxStreak: number;
+}
+
+export interface StudentDashboard {
+  profile: ProfileSummary;
+  badges: Badge[];
+  pendingHomework: StudentHomework[];
+  recentGrades: RecentGrade[];
+  xpToNextBadge: number;
+}
+
+export interface XpHistoryItem {
+  date: string;
+  xp: number;
+  reason: string;
+}

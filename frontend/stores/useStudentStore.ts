@@ -1,17 +1,23 @@
 import { create } from "zustand";
 import { apiClient } from "@/lib/api/client";
 import type {
+  Badge,
+  StudentDashboard,
   StudentHomework,
   StudentSubmissionDetail,
   StudentSubmissionListItem,
   SubmissionType,
   SubmitHomeworkResponse,
+  XpHistoryItem,
 } from "@/types/student";
 
 interface StudentState {
   homework: StudentHomework[];
   submissions: StudentSubmissionListItem[];
   selectedSubmission: StudentSubmissionDetail | null;
+  dashboard: StudentDashboard | null;
+  badges: Badge[];
+  xpHistory: XpHistoryItem[];
 
   fetchHomework: () => Promise<void>;
   submitHomework: (
@@ -22,14 +28,20 @@ interface StudentState {
   ) => Promise<SubmitHomeworkResponse>;
   fetchSubmissions: () => Promise<void>;
   fetchSubmission: (submissionId: string) => Promise<void>;
+  fetchDashboard: () => Promise<void>;
+  fetchBadges: () => Promise<void>;
+  fetchXpHistory: () => Promise<void>;
 }
 
-// One store for the student homework area (assignments + own submissions) — mirrors
-// useAdminStore/useTeacherStore's shape: one cohesive UI section, not independent domains.
+// One store for the student homework area (assignments + own submissions + gamification) —
+// mirrors useAdminStore/useTeacherStore's shape: one cohesive UI section, not independent domains.
 export const useStudentStore = create<StudentState>((set, get) => ({
   homework: [],
   submissions: [],
   selectedSubmission: null,
+  dashboard: null,
+  badges: [],
+  xpHistory: [],
 
   fetchHomework: async () => {
     const { data } = await apiClient.get<StudentHomework[]>("/student/homework");
@@ -64,5 +76,20 @@ export const useStudentStore = create<StudentState>((set, get) => ({
       `/student/submissions/${submissionId}`,
     );
     set({ selectedSubmission: data });
+  },
+
+  fetchDashboard: async () => {
+    const { data } = await apiClient.get<StudentDashboard>("/student/dashboard");
+    set({ dashboard: data });
+  },
+
+  fetchBadges: async () => {
+    const { data } = await apiClient.get<Badge[]>("/student/badges");
+    set({ badges: data });
+  },
+
+  fetchXpHistory: async () => {
+    const { data } = await apiClient.get<XpHistoryItem[]>("/student/xp-history");
+    set({ xpHistory: data });
   },
 }));
