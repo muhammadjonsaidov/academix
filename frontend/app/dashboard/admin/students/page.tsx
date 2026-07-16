@@ -14,6 +14,7 @@ export default function AdminStudentsPage() {
   const fetchStudents = useAdminStore((state) => state.fetchStudents);
   const fetchClasses = useAdminStore((state) => state.fetchClasses);
   const createStudent = useAdminStore((state) => state.createStudent);
+  const unlockHandwritingReset = useAdminStore((state) => state.unlockHandwritingReset);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -22,6 +23,12 @@ export default function AdminStudentsPage() {
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [unlockingId, setUnlockingId] = useState<string | null>(null);
+  const [unlockMessage, setUnlockMessage] = useState<{
+    studentId: string;
+    text: string;
+    isError: boolean;
+  } | null>(null);
 
   useEffect(() => {
     fetchClasses().catch(() => {});
@@ -53,6 +60,24 @@ export default function AdminStudentsPage() {
 
   function classFullName(id: string | null) {
     return classes.find((c) => c.id === id)?.fullName ?? "—";
+  }
+
+  async function handleUnlockReset(studentId: string) {
+    setUnlockingId(studentId);
+    setUnlockMessage(null);
+    try {
+      await unlockHandwritingReset(studentId);
+      setUnlockMessage({ studentId, text: "Reset limiti tiklandi.", isError: false });
+    } catch (err) {
+      const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
+      setUnlockMessage({
+        studentId,
+        text: apiError?.message ?? "Reset limitini tiklab bo'lmadi.",
+        isError: true,
+      });
+    } finally {
+      setUnlockingId(null);
+    }
   }
 
   return (
@@ -157,6 +182,7 @@ export default function AdminStudentsPage() {
             <th className="py-2">Telefon</th>
             <th className="py-2">Sinf</th>
             <th className="py-2">Holati</th>
+            <th className="py-2">Yozuv profili</th>
           </tr>
         </thead>
         <tbody>
@@ -168,11 +194,31 @@ export default function AdminStudentsPage() {
               <td className="py-2">{student.phone}</td>
               <td className="py-2">{classFullName(student.classId)}</td>
               <td className="py-2">{student.isActive ? "Faol" : "Faol emas"}</td>
+              <td className="py-2">
+                <div className="flex flex-col items-start gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={unlockingId === student.id}
+                    onClick={() => handleUnlockReset(student.id)}
+                  >
+                    {unlockingId === student.id ? "Tiklanmoqda..." : "Reset limitini tiklash"}
+                  </Button>
+                  {unlockMessage?.studentId === student.id ? (
+                    <span
+                      className={`text-xs ${unlockMessage.isError ? "text-destructive" : "text-green-600"}`}
+                    >
+                      {unlockMessage.text}
+                    </span>
+                  ) : null}
+                </div>
+              </td>
             </tr>
           ))}
           {students.length === 0 ? (
             <tr>
-              <td colSpan={4} className="py-4 text-center text-muted-foreground">
+              <td colSpan={5} className="py-4 text-center text-muted-foreground">
                 Hozircha o&apos;quvchilar yo&apos;q.
               </td>
             </tr>

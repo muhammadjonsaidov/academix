@@ -24,6 +24,7 @@ interface AdminState {
 
   fetchStudents: (filters?: { classId?: string; search?: string }) => Promise<void>;
   createStudent: (request: CreateStudentRequest) => Promise<void>;
+  unlockHandwritingReset: (studentId: string) => Promise<void>;
 }
 
 // One store for all three admin CRUD areas (classes/teachers/students) — they're a single
@@ -72,5 +73,9 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   createStudent: async (request) => {
     await apiClient.post("/admin/students", request);
     await get().fetchStudents();
+  },
+
+  unlockHandwritingReset: async (studentId) => {
+    await apiClient.put(`/admin/students/${studentId}/handwriting/unlock-reset`);
   },
 }));
