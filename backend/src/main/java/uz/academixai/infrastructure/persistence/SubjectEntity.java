@@ -59,4 +59,8 @@ public class SubjectEntity {
   public String getName() {
     return name;
   }
+
+  public SubjectType getType() {
+    return type;
+  }
 }

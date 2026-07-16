@@ -62,6 +62,28 @@ public class QwenAIClient {
         "homeworkSuggestion": "..."
       }""";
 
+  // academix_tz.md §1.9's own worked example is a MATH linear equation; no prompt contract is
+  // given, so this wording is a judgment call, see ROADMAP.md Sprint 3.
+  private static final String UNIQUE_TASK_SYSTEM_PROMPT =
+      """
+      Sen maktab o'qituvchisi uchun har bir o'quvchiga alohida, bir xil qiyinlik darajasidagi \
+      unique topshiriq tuzuvchi yordamchisan. Berilgan standart topshiriq asosida, xuddi shu \
+      mavzu va qiyinlik darajasida, lekin BOSHQA raqamlar/holat bilan yangi topshiriq tuz.
+
+      Javobni FAQAT quyidagi JSON formatida qaytar, boshqa matn qo'shma:
+      {"taskContent": "..."}""";
+
+  // Deliberately independent/context-free (academix_tz.md §1.9 step 2) — no mention of how the
+  // task was generated, so a correlated failure in the generation call doesn't also corrupt this
+  // check.
+  private static final String VERIFY_TASK_SYSTEM_PROMPT =
+      """
+      Senga faqat bitta masala matni beriladi, boshqa hech qanday kontekst yo'q. Ushbu masalani \
+      yechib bo'ladimi, ya'ni to'g'ri va yagona yechimi bormi, tekshir.
+
+      Javobni FAQAT quyidagi JSON formatida qaytar, boshqa matn qo'shma:
+      {"solvable": true, "reason": "..."}""";
+
   private final RestClient restClient;
   private final QwenProperties properties;
   private final ObjectMapper objectMapper;
@@ -170,6 +192,76 @@ public class QwenAIClient {
     } catch (Exception e) {
       throw new QwenUnavailableException("Qwen response was not valid JSON: " + content, e);
     }
+  }
+
+  @CircuitBreaker(name = "qwen", fallbackMethod = "generateUniqueTaskFallback")
+  public String generateUniqueTask(String subjectAndGrade, String standardTaskDescription) {
+    String userContent =
+        "Fan/sinf: %s. Standart topshiriq: %s".formatted(subjectAndGrade, standardTaskDescription);
+
+    Map<String, Object> requestBody =
+        Map.of(
+            "model", properties.modelText(),
+            "messages",
+                List.of(
+                    Map.of("role", "system", "content", UNIQUE_TASK_SYSTEM_PROMPT),
+                    Map.of("role", "user", "content", userContent)));
+
+    JsonNode response =
+        restClient
+            .post()
+            .uri(properties.baseUrl() + "/chat/completions")
+            .header("Authorization", "Bearer " + properties.apiKey())
+            .body(requestBody)
+            .retrieve()
+            .body(JsonNode.class);
+
+    String content = response.path("choices").path(0).path("message").path("content").asText("");
+    String json = stripMarkdownFence(content);
+    try {
+      return objectMapper.readTree(json).path("taskContent").asText("");
+    } catch (Exception e) {
+      throw new QwenUnavailableException("Qwen response was not valid JSON: " + content, e);
+    }
+  }
+
+  @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
+  private String generateUniqueTaskFallback(
+      String subjectAndGrade, String standardTaskDescription, Throwable cause) {
+    throw new QwenUnavailableException("Qwen unique-task generation unavailable", cause);
+  }
+
+  @CircuitBreaker(name = "qwen", fallbackMethod = "verifyTaskSolvableFallback")
+  public boolean verifyTaskSolvable(String taskContent) {
+    Map<String, Object> requestBody =
+        Map.of(
+            "model", properties.modelText(),
+            "messages",
+                List.of(
+                    Map.of("role", "system", "content", VERIFY_TASK_SYSTEM_PROMPT),
+                    Map.of("role", "user", "content", taskContent)));
+
+    JsonNode response =
+        restClient
+            .post()
+            .uri(properties.baseUrl() + "/chat/completions")
+            .header("Authorization", "Bearer " + properties.apiKey())
+            .body(requestBody)
+            .retrieve()
+            .body(JsonNode.class);
+
+    String content = response.path("choices").path(0).path("message").path("content").asText("");
+    String json = stripMarkdownFence(content);
+    try {
+      return objectMapper.readTree(json).path("solvable").asBoolean(false);
+    } catch (Exception e) {
+      throw new QwenUnavailableException("Qwen response was not valid JSON: " + content, e);
+    }
+  }
+
+  @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
+  private boolean verifyTaskSolvableFallback(String taskContent, Throwable cause) {
+    throw new QwenUnavailableException("Qwen task verification unavailable", cause);
   }
 
   static String buildUserContent(

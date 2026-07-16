@@ -16,6 +16,8 @@ public interface StudentProfileRepository extends JpaRepository<StudentProfileEn
   // internal student_profiles surrogate id — matches what GET /admin/students returns.
   Optional<StudentProfileEntity> findByUserIdAndSchoolId(UUID userId, UUID schoolId);
 
+  List<StudentProfileEntity> findByClassIdAndSchoolId(UUID classId, UUID schoolId);
+
   /**
    * Joined view for GET /admin/students — no @ManyToOne relation is mapped (project convention; see
    * SchoolEntity/UserEntity), so the join to {@code users} is done here directly.
