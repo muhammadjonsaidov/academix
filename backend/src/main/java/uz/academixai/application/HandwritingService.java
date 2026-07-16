@@ -138,8 +138,20 @@ public class HandwritingService {
     return new HandwritingCheckResult(matchScore, wasReliable, type);
   }
 
-  /** backend_tdd.md §6.2 {@code resetHandwritingProfile} — teacher-direct, versioned, audited. */
-  @Transactional
+  /**
+   * backend_tdd.md §6.2 {@code resetHandwritingProfile} — teacher-direct, versioned, audited.
+   *
+   * <p>{@code noRollbackFor = ApiException.class}: this method participates in (joins, doesn't
+   * start) the outer HTTP-request transaction {@code RlsTransactionFilter} opens. Without this, the
+   * {@code ERR_RESET_LIMIT_EXCEEDED}/{@code ERR_ACCESS_DENIED} guard throws below would mark that
+   * *shared* transaction rollback-only — {@code GlobalExceptionHandler} still builds and flushes a
+   * clean 403 response, but the outer transaction then fails to commit with {@code
+   * UnexpectedRollbackException} *after* the response body is already committed, corrupting the
+   * response for real HTTP clients (confirmed via a real browser test: curl got a clean 403,
+   * Chrome's XHR saw an aborted/opaque response). Safe here specifically because both guards throw
+   * before any {@code save()}/write call in this method — there is nothing to accidentally commit.
+   */
+  @Transactional(noRollbackFor = ApiException.class)
   public ResetResult resetProfile(
       UUID schoolId, UUID studentId, UUID teacherId, ResetReason reason, String notes) {
     requireClassTeacher(schoolId, studentId, teacherId);
@@ -189,8 +201,12 @@ public class HandwritingService {
     return new ResetResult(newVersion, newResetCount);
   }
 
-  /** academix_tz.md §2.2 admin unlock — resets the semester counter after the 3-reset limit hit. */
-  @Transactional
+  /**
+   * academix_tz.md §2.2 admin unlock — resets the semester counter after the 3-reset limit hit.
+   * {@code noRollbackFor}: same reasoning as {@link #resetProfile} — the {@code ERR_NOT_FOUND}
+   * guard throws before any write.
+   */
+  @Transactional(noRollbackFor = ApiException.class)
   public void unlockReset(UUID studentId) {
     HandwritingProfileEntity entity =
         profileRepository

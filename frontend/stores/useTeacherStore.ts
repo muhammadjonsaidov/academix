@@ -5,6 +5,8 @@ import type {
   CriteriaItem,
   GenerateLessonPlanRequest,
   GradeSubmissionRequest,
+  HandwritingResetRequest,
+  HandwritingResetResponse,
   Homework,
   LessonPlan,
   Syllabus,
@@ -55,6 +57,11 @@ interface TeacherState {
   editUniqueTask: (assignmentId: string, taskId: string, taskContent: string) => Promise<void>;
   approveAllUniqueTasks: (assignmentId: string) => Promise<void>;
   submitHomework: (assignmentId: string) => Promise<void>;
+
+  resetHandwritingProfile: (
+    studentId: string,
+    request: HandwritingResetRequest,
+  ) => Promise<HandwritingResetResponse>;
 }
 
 // One store for the teacher homework area (classes/subjects/assignments/submissions/syllabuses/
@@ -187,5 +194,13 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
   submitHomework: async (assignmentId) => {
     await apiClient.post(`/teacher/homework/${assignmentId}/submit`);
     await get().fetchHomework();
+  },
+
+  resetHandwritingProfile: async (studentId, request) => {
+    const { data } = await apiClient.put<HandwritingResetResponse>(
+      `/teacher/students/${studentId}/handwriting/reset`,
+      request,
+    );
+    return data;
   },
 }));

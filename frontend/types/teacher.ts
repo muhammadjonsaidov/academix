@@ -168,3 +168,15 @@ export interface UniqueTask {
   flaggedForReview: boolean;
   fallbackToStandard: boolean;
 }
+
+export type ResetReason = "ILLNESS" | "INJURY" | "TRANSFER_STUDENT" | "OTHER";
+
+export interface HandwritingResetRequest {
+  reason: ResetReason;
+  notes?: string;
+}
+
+export interface HandwritingResetResponse {
+  newProfileVersion: string;
+  resetCountThisSemester: number;
+}

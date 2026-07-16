@@ -7,6 +7,14 @@ import { TeacherNav } from "@/components/teacher/TeacherNav";
 import { Button } from "@/components/ui/button";
 import { useTeacherStore } from "@/stores/useTeacherStore";
 import type { ApiErrorResponse } from "@/types/auth";
+import type { ResetReason } from "@/types/teacher";
+
+const RESET_REASONS: { value: ResetReason; label: string }[] = [
+  { value: "ILLNESS", label: "Kasallik" },
+  { value: "INJURY", label: "Jarohat" },
+  { value: "TRANSFER_STUDENT", label: "Boshqa maktabdan kelgan" },
+  { value: "OTHER", label: "Boshqa" },
+];
 
 export default function TeacherSubmissionDetailPage() {
   const params = useParams<{ submissionId: string }>();
@@ -14,11 +22,18 @@ export default function TeacherSubmissionDetailPage() {
   const submission = useTeacherStore((state) => state.selectedSubmission);
   const fetchSubmission = useTeacherStore((state) => state.fetchSubmission);
   const gradeSubmission = useTeacherStore((state) => state.gradeSubmission);
+  const resetHandwritingProfile = useTeacherStore((state) => state.resetHandwritingProfile);
 
   const [fivePointGrade, setFivePointGrade] = useState("5");
   const [teacherComment, setTeacherComment] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [resetReason, setResetReason] = useState<ResetReason>("ILLNESS");
+  const [resetNotes, setResetNotes] = useState("");
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetResult, setResetResult] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     fetchSubmission(submissionId).catch(() => setError("Topshiriqni yuklab bo'lmadi."));
@@ -45,6 +60,29 @@ export default function TeacherSubmissionDetailPage() {
       setError(apiError?.message ?? "Baholab bo'lmadi.");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleReset(event: FormEvent) {
+    event.preventDefault();
+    if (!submission) return;
+    setResetError(null);
+    setResetResult(null);
+    setIsResetting(true);
+    try {
+      const result = await resetHandwritingProfile(submission.studentId, {
+        reason: resetReason,
+        notes: resetNotes || undefined,
+      });
+      setResetResult(
+        `Profil qayta tiklandi: ${result.newProfileVersion} (bu semestrda ${result.resetCountThisSemester}-marta)`,
+      );
+      setResetNotes("");
+    } catch (err) {
+      const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
+      setResetError(apiError?.message ?? "Yozuv profilini qayta tiklab bo'lmadi.");
+    } finally {
+      setIsResetting(false);
     }
   }
 
@@ -100,6 +138,48 @@ export default function TeacherSubmissionDetailPage() {
       ) : (
         <p className="mb-6 text-sm text-muted-foreground">AI tahlili hali mavjud emas.</p>
       )}
+
+      <div className="mb-6 space-y-3 rounded-md border border-border p-4">
+        <p className="font-medium">Yozuv profilini qayta tiklash</p>
+        <p className="text-sm text-muted-foreground">
+          Faqat shu sinf rahbari o&apos;qituvchisi qayta tiklashi mumkin (semestrda 3 martagacha).
+        </p>
+        <form onSubmit={handleReset} className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <label htmlFor="resetReason" className="text-sm font-medium">
+              Sabab
+            </label>
+            <select
+              id="resetReason"
+              value={resetReason}
+              onChange={(e) => setResetReason(e.target.value as ResetReason)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              {RESET_REASONS.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="resetNotes" className="text-sm font-medium">
+              Izoh (ixtiyoriy)
+            </label>
+            <input
+              id="resetNotes"
+              value={resetNotes}
+              onChange={(e) => setResetNotes(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <Button type="submit" disabled={isResetting} variant="secondary">
+            {isResetting ? "Yuborilmoqda..." : "Qayta tiklash"}
+          </Button>
+        </form>
+        {resetResult ? <p className="text-sm text-green-600">{resetResult}</p> : null}
+        {resetError ? <p className="text-sm text-destructive">{resetError}</p> : null}
+      </div>
 
       {submission.previousGrade ? (
         <p className="mb-4 text-sm">
