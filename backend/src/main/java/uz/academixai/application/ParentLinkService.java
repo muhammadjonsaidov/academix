@@ -89,6 +89,38 @@ public class ParentLinkService {
     return userRepository.save(entity);
   }
 
+  /**
+   * academix_tz.md §5.6 — {@code PUT /parent/children/{studentId}/consent/biometric}. Consent does
+   * NOT gate handwriting collection (functional necessity for plagiarism defense per §5.6) — it
+   * only gates disclosure to the parent, i.e. this is a transparency flag, not a permission check
+   * anywhere in the handwriting pipeline.
+   */
+  public ParentStudentLink setBiometricConsent(
+      UUID parentUserId, UUID studentId, boolean consentGiven) {
+    ParentStudentLinkEntity entity =
+        linkRepository
+            .findByParentUserIdAndStudentUserId(parentUserId, studentId)
+            .filter(e -> e.toDomain().isActive())
+            .orElseThrow(
+                () ->
+                    new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "ERR_STUDENT_NOT_FOUND",
+                        "Bu farzandingiz emas.",
+                        "Bog'lanish topilmadi."));
+    ParentStudentLink domain = entity.toDomain();
+    ParentStudentLink updated =
+        new ParentStudentLink(
+            domain.id(),
+            domain.parentUserId(),
+            domain.studentUserId(),
+            domain.relation(),
+            domain.isActive(),
+            consentGiven,
+            consentGiven ? LocalDateTime.now() : null);
+    return linkRepository.save(ParentStudentLinkEntity.fromDomain(updated)).toDomain();
+  }
+
   private void requireStudentInSchool(UUID schoolId, UUID studentId) {
     studentProfileRepository
         .findByUserId(studentId)
