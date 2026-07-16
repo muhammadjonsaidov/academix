@@ -2,6 +2,9 @@ package uz.academixai.interfaces.web.parent;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,8 +19,11 @@ import uz.academixai.application.DataDeletionService;
 import uz.academixai.application.ParentDashboardService;
 import uz.academixai.application.ParentLinkService;
 import uz.academixai.application.ParentProgressService;
+import uz.academixai.application.ParentReportService;
+import uz.academixai.application.ReportService.ReportDownload;
 import uz.academixai.application.StudentSubmissionService.StudentHomeworkItem;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.interfaces.web.admin.ReportResponse;
 
 /** academix_tz.md §2.5 "Parent API" — exact paths, some response shapes deviate. */
 @RestController
@@ -29,16 +35,37 @@ public class ParentController {
   private final ParentLinkService parentLinkService;
   private final ParentDashboardService parentDashboardService;
   private final ParentProgressService parentProgressService;
+  private final ParentReportService parentReportService;
 
   public ParentController(
       DataDeletionService dataDeletionService,
       ParentLinkService parentLinkService,
       ParentDashboardService parentDashboardService,
-      ParentProgressService parentProgressService) {
+      ParentProgressService parentProgressService,
+      ParentReportService parentReportService) {
     this.dataDeletionService = dataDeletionService;
     this.parentLinkService = parentLinkService;
     this.parentDashboardService = parentDashboardService;
     this.parentProgressService = parentProgressService;
+    this.parentReportService = parentReportService;
+  }
+
+  @GetMapping("/children/{studentId}/semester-report")
+  public ReportResponse semesterReport(
+      @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID studentId) {
+    return ReportResponse.from(parentReportService.semesterReport(principal.userId(), studentId));
+  }
+
+  @GetMapping("/children/{studentId}/semester-report/download")
+  public ResponseEntity<byte[]> downloadSemesterReport(
+      @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID studentId) {
+    ReportDownload download = parentReportService.download(principal.userId(), studentId);
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_PDF)
+        .header(
+            HttpHeaders.CONTENT_DISPOSITION,
+            ContentDisposition.attachment().filename(download.fileName()).build().toString())
+        .body(download.content());
   }
 
   @GetMapping("/dashboard")
