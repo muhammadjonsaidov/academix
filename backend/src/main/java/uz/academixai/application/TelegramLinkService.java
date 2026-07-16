@@ -89,6 +89,21 @@ public class TelegramLinkService {
     connectionRepository.findByUserId(userId).ifPresent(connectionRepository::delete);
   }
 
+  public record ConnectionStatus(boolean connected, String telegramUsername) {}
+
+  /**
+   * No status endpoint is documented anywhere — added so the frontend can render connect vs unlink
+   * state; the deep-link flow is otherwise async (Telegram calls the webhook, not us).
+   */
+  public ConnectionStatus status(UUID userId) {
+    return connectionRepository
+        .findByUserId(userId)
+        .map(entity -> entity.toDomain())
+        .filter(TelegramConnection::isActive)
+        .map(connection -> new ConnectionStatus(true, connection.telegramUsername()))
+        .orElse(new ConnectionStatus(false, null));
+  }
+
   private void enforceRateLimit(UUID userId) {
     String key = "telegram_link_rate:" + userId;
     Long count = redis.opsForValue().increment(key);
