@@ -23,6 +23,9 @@ public class ExamAIFeedbackEntity {
 
   @Id private UUID id;
 
+  @Column(name = "school_id", nullable = false)
+  private UUID schoolId;
+
   @Column(name = "exam_submission_id", nullable = false, unique = true)
   private UUID examSubmissionId;
 
@@ -52,6 +55,7 @@ public class ExamAIFeedbackEntity {
 
   public ExamAIFeedbackEntity(
       UUID id,
+      UUID schoolId,
       UUID examSubmissionId,
       String extractedText,
       List<StepAnalysis> stepAnalyses,
@@ -61,6 +65,7 @@ public class ExamAIFeedbackEntity {
       float handwritingMatchScore,
       LocalDateTime processedAt) {
     this.id = id;
+    this.schoolId = schoolId;
     this.examSubmissionId = examSubmissionId;
     this.extractedText = extractedText;
     this.stepAnalyses = stepAnalyses;
@@ -74,6 +79,7 @@ public class ExamAIFeedbackEntity {
   public static ExamAIFeedbackEntity fromDomain(ExamAIFeedback domain) {
     return new ExamAIFeedbackEntity(
         domain.id(),
+        domain.schoolId(),
         domain.examSubmissionId(),
         domain.extractedText(),
         domain.stepAnalyses(),
@@ -87,6 +93,7 @@ public class ExamAIFeedbackEntity {
   public ExamAIFeedback toDomain() {
     return new ExamAIFeedback(
         id,
+        schoolId,
         examSubmissionId,
         extractedText,
         stepAnalyses,

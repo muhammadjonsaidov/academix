@@ -11,6 +11,7 @@ import java.util.UUID;
  */
 public record ExamAIFeedback(
     UUID id,
+    UUID schoolId,
     UUID examSubmissionId,
     String extractedText,
     List<StepAnalysis> stepAnalyses,
