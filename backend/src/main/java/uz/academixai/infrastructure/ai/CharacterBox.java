@@ -16,12 +16,17 @@ public record CharacterBox(String text, List<double[]> vertices, BreakType break
     LINE_BREAK
   }
 
-  private double minX() {
+  double minX() {
     return vertices.stream().mapToDouble(v -> v[0]).min().orElse(0);
   }
 
-  private double maxX() {
+  double maxX() {
     return vertices.stream().mapToDouble(v -> v[0]).max().orElse(0);
+  }
+
+  /** Horizontal gap from this box's right edge to {@code next}'s left edge. */
+  public double horizontalGapTo(CharacterBox next) {
+    return next.minX() - maxX();
   }
 
   private double minY() {
