@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport name="semester-report" pageWidth="595" pageHeight="842" columnWidth="535"
+              leftMargin="30" rightMargin="30" topMargin="30" bottomMargin="30">
+
+    <!-- JasperReports 7.x replaced Digester/XSD-based JRXML with Jackson XML binding — confirmed
+         via a real compile failure ("Unable to load report", no cause) against the classic
+         xmlns/xsi:schemaLocation + <reportElement>/<textElement> syntax this project's other
+         XML-based configs use. The real schema (verified against Jaspersoft's own demo/samples
+         on GitHub, e.g. demo/samples/datasource/reports/DataSourceReport.jrxml): no root
+         namespace, reportElement attributes flattened directly onto <element kind="...">, single
+         sections (title/pageHeader/pageFooter) take height directly with no <band> wrapper,
+         while repeating sections (detail/groupHeader/groupFooter) still wrap <band>. -->
+
+    <!-- One generic template covers all 3 report types (SCHOOL/CLASS/STUDENT) — see
+         ReportService's Javadoc for the exact row semantics per type. -->
+
+    <parameter name="REPORT_TITLE" class="java.lang.String"/>
+    <parameter name="REPORT_SUBTITLE" class="java.lang.String"/>
+    <parameter name="GENERATED_AT" class="java.lang.String"/>
+    <parameter name="COL1_HEADER" class="java.lang.String"/>
+    <parameter name="COL2_HEADER" class="java.lang.String"/>
+    <parameter name="COL3_HEADER" class="java.lang.String"/>
+
+    <field name="label" class="java.lang.String"/>
+    <field name="value1" class="java.lang.String"/>
+    <field name="value2" class="java.lang.String"/>
+    <field name="value3" class="java.lang.String"/>
+
+    <title height="70">
+        <element kind="staticText" x="0" y="0" width="535" height="10" forecolor="#666666" fontSize="8.0">
+            <text><![CDATA[AcademiX AI]]></text>
+        </element>
+        <element kind="textField" x="0" y="12" width="535" height="24" fontSize="16.0" bold="true">
+            <expression><![CDATA[$P{REPORT_TITLE}]]></expression>
+        </element>
+        <element kind="textField" x="0" y="38" width="535" height="16" forecolor="#666666" fontSize="10.0">
+            <expression><![CDATA[$P{REPORT_SUBTITLE}]]></expression>
+        </element>
+        <element kind="textField" x="0" y="54" width="535" height="14" forecolor="#999999" fontSize="8.0">
+            <expression><![CDATA["Yaratilgan sana: " + $P{GENERATED_AT}]]></expression>
+        </element>
+    </title>
+
+    <columnHeader height="20">
+        <element kind="staticText" x="0" y="0" width="215" height="20" mode="Opaque" backcolor="#EEEEEE" fontSize="9.0" bold="true">
+            <text><![CDATA[]]></text>
+            <box><bottomPen lineWidth="0.5" lineColor="#CCCCCC"/></box>
+        </element>
+        <element kind="textField" x="215" y="0" width="107" height="20" mode="Opaque" backcolor="#EEEEEE" fontSize="9.0" bold="true">
+            <expression><![CDATA[$P{COL1_HEADER}]]></expression>
+            <box><bottomPen lineWidth="0.5" lineColor="#CCCCCC"/></box>
+        </element>
+        <element kind="textField" x="322" y="0" width="107" height="20" mode="Opaque" backcolor="#EEEEEE" fontSize="9.0" bold="true">
+            <expression><![CDATA[$P{COL2_HEADER}]]></expression>
+            <box><bottomPen lineWidth="0.5" lineColor="#CCCCCC"/></box>
+        </element>
+        <element kind="textField" x="429" y="0" width="106" height="20" mode="Opaque" backcolor="#EEEEEE" fontSize="9.0" bold="true">
+            <expression><![CDATA[$P{COL3_HEADER}]]></expression>
+            <box><bottomPen lineWidth="0.5" lineColor="#CCCCCC"/></box>
+        </element>
+    </columnHeader>
+
+    <detail>
+        <band height="18">
+            <element kind="textField" x="0" y="0" width="215" height="18" fontSize="9.0">
+                <expression><![CDATA[$F{label}]]></expression>
+                <box><bottomPen lineWidth="0.25" lineColor="#DDDDDD"/></box>
+            </element>
+            <element kind="textField" x="215" y="0" width="107" height="18" fontSize="9.0">
+                <expression><![CDATA[$F{value1}]]></expression>
+                <box><bottomPen lineWidth="0.25" lineColor="#DDDDDD"/></box>
+            </element>
+            <element kind="textField" x="322" y="0" width="107" height="18" fontSize="9.0">
+                <expression><![CDATA[$F{value2}]]></expression>
+                <box><bottomPen lineWidth="0.25" lineColor="#DDDDDD"/></box>
+            </element>
+            <element kind="textField" x="429" y="0" width="106" height="18" fontSize="9.0">
+                <expression><![CDATA[$F{value3}]]></expression>
+                <box><bottomPen lineWidth="0.25" lineColor="#DDDDDD"/></box>
+            </element>
+        </band>
+    </detail>
+
+    <pageFooter height="15">
+        <element kind="textField" x="0" y="0" width="535" height="15" forecolor="#999999" fontSize="7.0" hTextAlign="Center">
+            <expression><![CDATA["Sahifa " + String.valueOf($V{PAGE_NUMBER})]]></expression>
+        </element>
+    </pageFooter>
+
+</jasperReport>
