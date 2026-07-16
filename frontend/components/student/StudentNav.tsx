@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/dashboard/student/exams", label: "Nazorat ishlarim" },
   { href: "/dashboard/student/badges", label: "Yutuqlar" },
   { href: "/dashboard/student/xp-history", label: "XP tarixi" },
+  { href: "/dashboard/student/ai-chat", label: "AI Tutor" },
 ];
 
 export function StudentNav() {
