@@ -22,6 +22,8 @@ import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
+import uz.academixai.infrastructure.persistence.XpHistoryEntity;
+import uz.academixai.infrastructure.persistence.XpHistoryRepository;
 import uz.academixai.interfaces.web.ApiException;
 
 /** academix_tz.md §2.4 "GET /student/dashboard" — profile/badges/pendingHomework/recentGrades. */
@@ -37,6 +39,7 @@ public class StudentDashboardService {
   private final HomeworkSubmissionRepository submissionRepository;
   private final GradeRepository gradeRepository;
   private final StudentSubmissionService studentSubmissionService;
+  private final XpHistoryRepository xpHistoryRepository;
 
   public StudentDashboardService(
       UserRepository userRepository,
@@ -45,7 +48,8 @@ public class StudentDashboardService {
       StudentBadgeRepository studentBadgeRepository,
       HomeworkSubmissionRepository submissionRepository,
       GradeRepository gradeRepository,
-      StudentSubmissionService studentSubmissionService) {
+      StudentSubmissionService studentSubmissionService,
+      XpHistoryRepository xpHistoryRepository) {
     this.userRepository = userRepository;
     this.studentProfileRepository = studentProfileRepository;
     this.badgeRepository = badgeRepository;
@@ -53,12 +57,15 @@ public class StudentDashboardService {
     this.submissionRepository = submissionRepository;
     this.gradeRepository = gradeRepository;
     this.studentSubmissionService = studentSubmissionService;
+    this.xpHistoryRepository = xpHistoryRepository;
   }
 
   public record DashboardBadge(Badge badge, LocalDateTime awardedAt) {}
 
   public record RecentGrade(
       UUID submissionId, int score, int fivePointGrade, LocalDateTime gradedAt) {}
+
+  public record XpHistoryItem(LocalDateTime date, int xp, String reason) {}
 
   public record Dashboard(
       String firstName,
@@ -133,6 +140,42 @@ public class StudentDashboardService {
         pendingHomework,
         recentGrades,
         xpToNextBadge);
+  }
+
+  /** academix_tz.md §2.4 "GET /student/badges" — all badges this student has earned. */
+  public List<DashboardBadge> listBadges(UUID schoolId, UUID studentId) {
+    requireStudentProfile(schoolId, studentId);
+    return studentBadgeRepository.findByStudentId(studentId).stream()
+        .map(StudentBadgeEntity::toDomain)
+        .map(
+            sb ->
+                badgeRepository
+                    .findById(sb.badgeId())
+                    .map(BadgeEntity::toDomain)
+                    .map(b -> new DashboardBadge(b, sb.awardedAt())))
+        .flatMap(Optional::stream)
+        .toList();
+  }
+
+  /** academix_tz.md §2.4 "GET /student/xp-history" — {date, xp, reason} log, newest first. */
+  public List<XpHistoryItem> listXpHistory(UUID schoolId, UUID studentId) {
+    requireStudentProfile(schoolId, studentId);
+    return xpHistoryRepository.findByStudentIdOrderByOccurredAtDesc(studentId).stream()
+        .map(XpHistoryEntity::toDomain)
+        .map(e -> new XpHistoryItem(e.occurredAt(), e.xp(), e.reason()))
+        .toList();
+  }
+
+  private void requireStudentProfile(UUID schoolId, UUID studentId) {
+    studentProfileRepository
+        .findByUserIdAndSchoolId(studentId, schoolId)
+        .orElseThrow(
+            () ->
+                new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    "ERR_ACCESS_DENIED",
+                    "Ushbu ma'lumotni ko'rishga ruxsatingiz yo'q.",
+                    "O'quvchi profili topilmadi."));
   }
 
   private int computeXpToNextBadge(int totalXp, List<Badge> earnedBadges) {

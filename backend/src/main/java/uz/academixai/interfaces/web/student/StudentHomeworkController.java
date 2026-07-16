@@ -32,6 +32,21 @@ public class StudentHomeworkController {
         dashboardService.getDashboard(principal.schoolId(), principal.userId()));
   }
 
+  @GetMapping("/api/v1/student/badges")
+  public List<BadgeResponse> listBadges(@AuthenticationPrincipal AcademixPrincipal principal) {
+    return dashboardService.listBadges(principal.schoolId(), principal.userId()).stream()
+        .map(BadgeResponse::from)
+        .toList();
+  }
+
+  @GetMapping("/api/v1/student/xp-history")
+  public List<XpHistoryResponse> listXpHistory(
+      @AuthenticationPrincipal AcademixPrincipal principal) {
+    return dashboardService.listXpHistory(principal.schoolId(), principal.userId()).stream()
+        .map(XpHistoryResponse::from)
+        .toList();
+  }
+
   @GetMapping("/api/v1/student/homework")
   public List<StudentHomeworkResponse> listHomework(
       @AuthenticationPrincipal AcademixPrincipal principal) {
