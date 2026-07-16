@@ -1,6 +1,7 @@
 package uz.academixai.application;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -119,6 +120,24 @@ public class ParentLinkService {
             consentGiven,
             consentGiven ? LocalDateTime.now() : null);
     return linkRepository.save(ParentStudentLinkEntity.fromDomain(updated)).toDomain();
+  }
+
+  /** Shared authorization check other parent-facing services call — "is this really your child". */
+  public void requireLinkedChild(UUID parentUserId, UUID studentId) {
+    if (!linkRepository.existsByParentUserIdAndStudentUserIdAndIsActiveTrue(
+        parentUserId, studentId)) {
+      throw new ApiException(
+          HttpStatus.FORBIDDEN,
+          "ERR_ACCESS_DENIED",
+          "Bu farzandingiz emas.",
+          "Faqat o'zingizga bog'langan farzandlar ma'lumotlarini ko'rishingiz mumkin.");
+    }
+  }
+
+  public List<ParentStudentLink> myChildren(UUID parentUserId) {
+    return linkRepository.findByParentUserIdAndIsActiveTrue(parentUserId).stream()
+        .map(ParentStudentLinkEntity::toDomain)
+        .toList();
   }
 
   private void requireStudentInSchool(UUID schoolId, UUID studentId) {
