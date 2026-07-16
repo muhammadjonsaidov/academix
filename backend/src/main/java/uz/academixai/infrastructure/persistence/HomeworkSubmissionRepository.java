@@ -39,4 +39,21 @@ public interface HomeworkSubmissionRepository
       nativeQuery = true)
   int countDistinctStudentsSubmittedSince(
       @Param("schoolId") UUID schoolId, @Param("since") LocalDateTime since);
+
+  /**
+   * {@code GET /teacher/dashboard}'s {@code pendingSubmissions} — AI-processed but not yet
+   * teacher-graded, scoped to this teacher's own assignments.
+   */
+  @Query(
+      value =
+          """
+          SELECT COUNT(*) FROM homework_submissions hs
+          JOIN homework_assignments ha ON ha.id = hs.assignment_id
+          LEFT JOIN grades g ON g.submission_id = hs.id
+          WHERE ha.school_id = :schoolId AND ha.teacher_id = :teacherId
+            AND hs.status IN ('AI_DONE', 'AI_SKIPPED') AND g.id IS NULL
+          """,
+      nativeQuery = true)
+  int countPendingGradeByTeacher(
+      @Param("schoolId") UUID schoolId, @Param("teacherId") UUID teacherId);
 }

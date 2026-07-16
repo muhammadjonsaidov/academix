@@ -8,7 +8,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import uz.academixai.application.TeacherAnalyticsService;
 import uz.academixai.application.TeacherContextService;
+import uz.academixai.application.TeacherDashboardService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 
 /** academix_tz.md §2.3 "Mening sinflarim va fanlarim" — exact contract, don't drift. */
@@ -18,9 +20,37 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 public class TeacherContextController {
 
   private final TeacherContextService teacherContextService;
+  private final TeacherDashboardService teacherDashboardService;
+  private final TeacherAnalyticsService teacherAnalyticsService;
 
-  public TeacherContextController(TeacherContextService teacherContextService) {
+  public TeacherContextController(
+      TeacherContextService teacherContextService,
+      TeacherDashboardService teacherDashboardService,
+      TeacherAnalyticsService teacherAnalyticsService) {
     this.teacherContextService = teacherContextService;
+    this.teacherDashboardService = teacherDashboardService;
+    this.teacherAnalyticsService = teacherAnalyticsService;
+  }
+
+  @GetMapping("/dashboard")
+  public TeacherDashboardResponse dashboard(@AuthenticationPrincipal AcademixPrincipal principal) {
+    return TeacherDashboardResponse.from(
+        teacherDashboardService.dashboard(principal.schoolId(), principal.userId()));
+  }
+
+  @GetMapping("/students/{studentId}/progress")
+  public TeacherStudentProgressResponse studentProgress(
+      @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID studentId) {
+    return TeacherStudentProgressResponse.from(
+        teacherAnalyticsService.studentProgress(
+            principal.schoolId(), principal.userId(), studentId));
+  }
+
+  @GetMapping("/classes/{classId}/analytics")
+  public TeacherClassAnalyticsResponse classAnalytics(
+      @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID classId) {
+    return TeacherClassAnalyticsResponse.from(
+        teacherAnalyticsService.classAnalytics(principal.schoolId(), principal.userId(), classId));
   }
 
   @GetMapping("/classes")

@@ -171,4 +171,93 @@ public interface GradeRepository extends JpaRepository<GradeEntity, UUID> {
       @Param("schoolId") UUID schoolId,
       @Param("classId") UUID classId,
       @Param("since") LocalDateTime since);
+
+  long countByTeacherIdAndGradedAtAfter(UUID teacherId, LocalDateTime after);
+
+  interface TeacherRatingRow {
+    double getAvgGrade();
+
+    long getGradedCount();
+  }
+
+  /**
+   * {@code GET /teacher/dashboard}'s {@code myRating} — this teacher's own average, over a
+   * caller-supplied window (used twice, this-month vs last-month, for the {@code trend} field).
+   */
+  @Query(
+      value =
+          "SELECT COALESCE(AVG(five_point_grade), 0) AS avgGrade, COUNT(*) AS gradedCount "
+              + "FROM grades WHERE teacher_id = :teacherId AND graded_at >= :since AND graded_at < :until",
+      nativeQuery = true)
+  TeacherRatingRow teacherRatingForWindow(
+      @Param("teacherId") UUID teacherId,
+      @Param("since") LocalDateTime since,
+      @Param("until") LocalDateTime until);
+
+  interface ClassSubjectStatsRow {
+    String getSubjectName();
+
+    double getAvgScore();
+
+    long getGradedCount();
+
+    long getAssignedCount();
+
+    long getSubmittedCount();
+  }
+
+  /**
+   * Shared by {@code GET /teacher/students/{id}/progress}'s {@code subjectStats} (pass {@code
+   * studentId}) and {@code GET /teacher/classes/{id}/analytics}'s {@code subjectWeakAreas}/{@code
+   * submissionRateBySubject} (pass {@code studentId=null} for the whole class). {@code
+   * assignedCount}/{@code submittedCount} let the caller derive a submission rate; no topic-level
+   * data exists anywhere in this codebase, so per-topic weak/strong areas aren't derivable —
+   * callers fall back to subject-level granularity instead (documented at the call site).
+   *
+   * <p>Windowed by {@code assigned_at} (when the assignment was given out), not {@code deadline_at}
+   * — confirmed by a real empty-result bug during live verification: deadlines are typically set
+   * weeks in the future, so filtering on {@code deadline_at < :until(=now)} silently excluded every
+   * still-open assignment, always returning zero rows for any active class.
+   */
+  @Query(
+      value =
+          """
+          SELECT s.name AS subjectName, COALESCE(AVG(g.score), 0) AS avgScore,
+                 COUNT(DISTINCT g.id) AS gradedCount, COUNT(DISTINCT ha.id) AS assignedCount,
+                 COUNT(DISTINCT hs.id) AS submittedCount
+          FROM homework_assignments ha
+          JOIN subjects s ON s.id = ha.subject_id
+          LEFT JOIN homework_submissions hs ON hs.assignment_id = ha.id
+            AND (:studentId IS NULL OR hs.student_id = :studentId)
+          LEFT JOIN grades g ON g.submission_id = hs.id
+            AND g.graded_at >= :since AND g.graded_at < :until
+          WHERE ha.class_id = :classId AND ha.school_id = :schoolId
+            AND ha.assigned_at >= :since AND ha.assigned_at < :until
+          GROUP BY s.name
+          ORDER BY avgScore ASC
+          """,
+      nativeQuery = true)
+  List<ClassSubjectStatsRow> classSubjectStats(
+      @Param("schoolId") UUID schoolId,
+      @Param("classId") UUID classId,
+      @Param("studentId") UUID studentId,
+      @Param("since") LocalDateTime since,
+      @Param("until") LocalDateTime until);
+
+  /**
+   * {@code GET /student/progress}'s {@code myGrowth} — this student's own overall average score,
+   * over a caller-supplied window (used twice, this-month vs last-month).
+   */
+  @Query(
+      value =
+          """
+          SELECT COALESCE(AVG(g.score), 0) FROM grades g
+          JOIN homework_submissions hs ON hs.id = g.submission_id
+          WHERE hs.student_id = :studentId AND g.graded_at >= :since AND g.graded_at < :until
+          """,
+      nativeQuery = true)
+  double studentAvgScoreForWindow(
+      @Param("studentId") UUID studentId,
+      @Param("since") LocalDateTime since,
+      @Param("until") LocalDateTime until);
 }
