@@ -68,7 +68,10 @@ public class SecurityConfig {
         .exceptionHandling(handling -> handling.authenticationEntryPoint(authenticationEntryPoint))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/api/v1/auth/**", "/actuator/health")
+                auth.requestMatchers(
+                        "/api/v1/auth/**",
+                        "/actuator/health",
+                        "/api/v1/notifications/telegram/webhook")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

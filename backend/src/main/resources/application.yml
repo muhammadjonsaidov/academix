@@ -60,6 +60,14 @@ academix:
       model-vision: ${QWEN_MODEL_VISION:qwen3.7-plus}
     google-vision:
       api-key: ${GOOGLE_VISION_API_KEY:}
+  telegram:
+    # Sprint 9 — no bot exists in dev, empty token means TelegramClient's sendMessage call fails
+    # and is caught (graceful degradation, same principle as an absent QWEN_API_KEY elsewhere).
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    bot-username: ${TELEGRAM_BOT_USERNAME:academix_notify_bot}
+    # Compared against the X-Telegram-Bot-Api-Secret-Token header on the webhook — real deploys
+    # must set this to whatever secret was registered with Telegram's setWebhook call.
+    webhook-secret: ${TELEGRAM_WEBHOOK_SECRET:local-dev-only-placeholder-not-for-production-use}
   storage:
     seaweedfs:
       # Must match the identity in infra/seaweedfs-config/s3-config.json — plain `seaweedfs -s3`
