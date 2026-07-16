@@ -109,6 +109,12 @@ export default function StudentHomeworkPage() {
                   {hw.subject} · Muddat: {new Date(hw.deadlineAt).toLocaleString()}
                   {hw.isLate ? " · Kechikkan" : ""}
                 </p>
+                {hw.myTask ? (
+                  <p className="mt-1 text-sm">
+                    <span className="font-medium">Sizning topshirig&apos;ingiz: </span>
+                    {hw.myTask.taskContent}
+                  </p>
+                ) : null}
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm">{STATUS_LABEL[hw.submissionStatus]}</span>

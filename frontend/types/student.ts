@@ -2,12 +2,17 @@
 
 export type StudentSubmissionStatusLabel = "PENDING" | "SUBMITTED" | "GRADED";
 
+export interface MyTask {
+  taskContent: string;
+}
+
 export interface StudentHomework {
   assignmentId: string;
   subject: string;
   title: string;
   deadlineAt: string;
   isLate: boolean;
+  myTask: MyTask | null;
   submissionStatus: StudentSubmissionStatusLabel;
 }
 
