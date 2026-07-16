@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import uz.academixai.domain.HandwritingCheckResult;
 import uz.academixai.domain.HandwritingProfile;
 import uz.academixai.domain.HandwritingResetLog;
@@ -69,6 +70,14 @@ public class HandwritingService {
     this.entityManager = entityManager;
   }
 
+  // Required: writeFeatureVector/clearFeatureVector run a raw EntityManager native UPDATE, which
+  // needs an active transaction — real, not just a test-harness artifact. This class's two real
+  // callers (AIAnalysisService via the queue consumer's TransactionTemplate, and the teacher/
+  // admin HTTP endpoints via RlsTransactionFilter) already run inside one, but relying on every
+  // future caller to remember that implicitly is fragile; @Transactional makes it explicit and
+  // self-sufficient (confirmed by a real TransactionRequiredException from a Testcontainers test
+  // that called this service directly, with no surrounding transaction).
+  @Transactional
   public HandwritingCheckResult checkAndUpdateProfile(UUID studentId, DocumentTextLayout layout) {
     float[] currentFeatures = featureExtractor.extract(layout);
     Optional<HandwritingProfileEntity> existing = profileRepository.findByStudentId(studentId);
@@ -120,6 +129,7 @@ public class HandwritingService {
   }
 
   /** backend_tdd.md §6.2 {@code resetHandwritingProfile} — teacher-direct, versioned, audited. */
+  @Transactional
   public ResetResult resetProfile(
       UUID schoolId, UUID studentId, UUID teacherId, ResetReason reason, String notes) {
     Optional<HandwritingProfileEntity> existing = profileRepository.findByStudentId(studentId);
@@ -169,6 +179,7 @@ public class HandwritingService {
   }
 
   /** academix_tz.md §2.2 admin unlock — resets the semester counter after the 3-reset limit hit. */
+  @Transactional
   public void unlockReset(UUID studentId) {
     HandwritingProfileEntity entity =
         profileRepository

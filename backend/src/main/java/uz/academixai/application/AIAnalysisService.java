@@ -6,12 +6,14 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.AIFeedback;
 import uz.academixai.domain.CriteriaScore;
+import uz.academixai.domain.HandwritingCheckResult;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.PlagiarismType;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.domain.SubmissionType;
 import uz.academixai.infrastructure.ai.AiBudgetService;
 import uz.academixai.infrastructure.ai.AiCallCategory;
+import uz.academixai.infrastructure.ai.DocumentTextLayout;
 import uz.academixai.infrastructure.ai.GoogleVisionClient;
 import uz.academixai.infrastructure.ai.GradingCriterion;
 import uz.academixai.infrastructure.ai.OcrUnavailableException;
@@ -69,6 +71,7 @@ public class AIAnalysisService {
   private final AiBudgetService aiBudgetService;
   private final GradingCriteriaService gradingCriteriaService;
   private final XPService xpService;
+  private final HandwritingService handwritingService;
 
   public AIAnalysisService(
       HomeworkSubmissionRepository submissionRepository,
@@ -81,7 +84,8 @@ public class AIAnalysisService {
       QwenAIClient qwenAIClient,
       AiBudgetService aiBudgetService,
       GradingCriteriaService gradingCriteriaService,
-      XPService xpService) {
+      XPService xpService,
+      HandwritingService handwritingService) {
     this.submissionRepository = submissionRepository;
     this.assignmentRepository = assignmentRepository;
     this.subjectRepository = subjectRepository;
@@ -93,6 +97,7 @@ public class AIAnalysisService {
     this.aiBudgetService = aiBudgetService;
     this.gradingCriteriaService = gradingCriteriaService;
     this.xpService = xpService;
+    this.handwritingService = handwritingService;
   }
 
   public void analyzeSubmission(UUID submissionId) {
@@ -106,20 +111,29 @@ public class AIAnalysisService {
     HomeworkSubmission submission = subEntity.toDomain();
     updateStatus(submission, SubmissionStatus.AI_PROCESSING);
 
-    String extractedText;
+    ExtractedContent content;
     try {
-      extractedText = extractText(submission);
+      content = extractText(submission);
     } catch (OcrUnavailableException e) {
       // OCR is a hard dependency for IMAGE/MIXED — no text, nothing to grade. Same
       // graceful-degradation outcome as a budget-exhausted submission (§8): accepted, not graded.
-      saveOcrOnlyFeedback(submission, "");
+      saveOcrOnlyFeedback(submission, "", null);
       updateStatus(submission, SubmissionStatus.AI_SKIPPED);
       return;
     }
+    String extractedText = content.text();
+
+    // Handwriting check doesn't touch the Qwen/AI budget (no external call, no cost — TZ §8's 3
+    // sub-budgets are EXAM/HOMEWORK/CHAT only) and only applies when Vision actually ran (IMAGE/
+    // MIXED submissions), so it runs unconditionally here, before any of the branches below.
+    HandwritingCheckResult handwritingResult =
+        content.layout() == null
+            ? null
+            : handwritingService.checkAndUpdateProfile(submission.studentId(), content.layout());
 
     if (extractedText == null || extractedText.trim().length() < MIN_MEANINGFUL_TEXT_LENGTH) {
       // Empty/meaningless submission — no AI call, but still breaks the streak (§4 XP table).
-      saveEmptyFeedback(submission);
+      saveEmptyFeedback(submission, handwritingResult);
       updateStatus(submission, SubmissionStatus.AI_DONE);
       xpService.calculateAndAwardXP(submission.id(), 0f, submission.isLate());
       xpService.updateStreak(submission.studentId(), 0f);
@@ -128,7 +142,7 @@ public class AIAnalysisService {
     }
 
     if (!aiBudgetService.isWithinAiBudget(submission.schoolId(), AiCallCategory.HOMEWORK)) {
-      saveOcrOnlyFeedback(submission, extractedText);
+      saveOcrOnlyFeedback(submission, extractedText, handwritingResult);
       updateStatus(submission, SubmissionStatus.AI_SKIPPED);
       return;
     }
@@ -144,33 +158,37 @@ public class AIAnalysisService {
     try {
       result = qwenAIClient.gradeSubmission(subjectAndGrade, criteria, extractedText);
     } catch (QwenUnavailableException e) {
-      saveOcrOnlyFeedback(submission, extractedText);
+      saveOcrOnlyFeedback(submission, extractedText, handwritingResult);
       updateStatus(submission, SubmissionStatus.AI_SKIPPED);
       return;
     }
     aiBudgetService.recordAiUsage(submission.schoolId(), AiCallCategory.HOMEWORK);
 
     float aiScorePercent = weightedSum(result.criteriaScores());
-    saveGradedFeedback(submission, extractedText, result, aiScorePercent);
+    saveGradedFeedback(submission, extractedText, result, aiScorePercent, handwritingResult);
     updateStatus(submission, SubmissionStatus.AI_DONE);
     xpService.calculateAndAwardXP(submission.id(), aiScorePercent, submission.isLate());
     xpService.updateStreak(submission.studentId(), aiScorePercent);
     xpService.checkAndAwardBadges(submission.studentId());
   }
 
-  private String extractText(HomeworkSubmission submission) {
+  /** {@code layout} is null when no Vision call happened (TEXT submissions have no image). */
+  private record ExtractedContent(String text, DocumentTextLayout layout) {}
+
+  private ExtractedContent extractText(HomeworkSubmission submission) {
     boolean hasImage = submission.imageUrl() != null && !submission.imageUrl().isBlank();
     if (submission.type() == SubmissionType.TEXT || !hasImage) {
-      return submission.textContent();
+      return new ExtractedContent(submission.textContent(), null);
     }
     byte[] imageBytes = fileStorageService.download(submission.imageUrl());
-    String ocrText = googleVisionClient.extractText(imageBytes).extractedText();
+    var ocrResult = googleVisionClient.extractText(imageBytes);
+    String ocrText = ocrResult.extractedText();
     if (submission.type() == SubmissionType.MIXED
         && submission.textContent() != null
         && !submission.textContent().isBlank()) {
-      return submission.textContent() + "\n" + ocrText;
+      return new ExtractedContent(submission.textContent() + "\n" + ocrText, ocrResult.layout());
     }
-    return ocrText;
+    return new ExtractedContent(ocrText, ocrResult.layout());
   }
 
   private List<GradingCriterion> resolveCriteria(HomeworkAssignmentEntity assignment) {
@@ -201,7 +219,8 @@ public class AIAnalysisService {
     return (float) (sum / 100.0);
   }
 
-  private void saveEmptyFeedback(HomeworkSubmission submission) {
+  private void saveEmptyFeedback(
+      HomeworkSubmission submission, HandwritingCheckResult handwriting) {
     AIFeedback feedback =
         new AIFeedback(
             UUID.randomUUID(),
@@ -214,13 +233,14 @@ public class AIAnalysisService {
             "Topshiriq bo'sh yoki juda qisqa — baholab bo'lmadi.",
             null,
             0f,
-            PlagiarismType.CLEAN,
-            0f,
+            resolvePlagiarismType(PlagiarismType.CLEAN, handwriting),
+            handwritingScore(handwriting),
             LocalDateTime.now());
     aiFeedbackRepository.save(AIFeedbackEntity.fromDomain(feedback));
   }
 
-  private void saveOcrOnlyFeedback(HomeworkSubmission submission, String extractedText) {
+  private void saveOcrOnlyFeedback(
+      HomeworkSubmission submission, String extractedText, HandwritingCheckResult handwriting) {
     AIFeedback feedback =
         new AIFeedback(
             UUID.randomUUID(),
@@ -233,8 +253,8 @@ public class AIAnalysisService {
             "AI tahlil vaqtincha ishlamadi — o'qituvchi qo'lda baholaydi.",
             null,
             0f,
-            PlagiarismType.CLEAN,
-            0f,
+            resolvePlagiarismType(PlagiarismType.CLEAN, handwriting),
+            handwritingScore(handwriting),
             LocalDateTime.now());
     aiFeedbackRepository.save(AIFeedbackEntity.fromDomain(feedback));
   }
@@ -243,7 +263,8 @@ public class AIAnalysisService {
       HomeworkSubmission submission,
       String extractedText,
       QwenGradingResult result,
-      float aiScorePercent) {
+      float aiScorePercent,
+      HandwritingCheckResult handwriting) {
     AIFeedback feedback =
         new AIFeedback(
             UUID.randomUUID(),
@@ -256,10 +277,28 @@ public class AIAnalysisService {
             result.feedback(),
             null,
             (float) result.plagiarismScore(),
-            parsePlagiarismType(result.plagiarismType()),
-            0f,
+            resolvePlagiarismType(parsePlagiarismType(result.plagiarismType()), handwriting),
+            handwritingScore(handwriting),
             LocalDateTime.now());
     aiFeedbackRepository.save(AIFeedbackEntity.fromDomain(feedback));
+  }
+
+  private static float handwritingScore(HandwritingCheckResult handwriting) {
+    return handwriting == null ? 0f : handwriting.matchScore();
+  }
+
+  /**
+   * A handwriting mismatch is a stronger, more specific signal than Qwen's own text-based
+   * plagiarism read ("this isn't even the same person's handwriting" vs. "this text looks
+   * AI-written") — judgment call (see ROADMAP.md Sprint 5): it overrides Qwen's plagiarismType
+   * rather than the two being combined some other way, since {@code ai_feedbacks} has only one
+   * plagiarism_type column to store either signal in.
+   */
+  private static PlagiarismType resolvePlagiarismType(
+      PlagiarismType qwenType, HandwritingCheckResult handwriting) {
+    return handwriting != null && handwriting.type() == PlagiarismType.HANDWRITING_MISMATCH
+        ? PlagiarismType.HANDWRITING_MISMATCH
+        : qwenType;
   }
 
   private static PlagiarismType parsePlagiarismType(String raw) {
