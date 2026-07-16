@@ -22,6 +22,8 @@ import uz.academixai.infrastructure.ai.QwenGradingResult;
 import uz.academixai.infrastructure.ai.QwenUnavailableException;
 import uz.academixai.infrastructure.persistence.AIFeedbackEntity;
 import uz.academixai.infrastructure.persistence.AIFeedbackRepository;
+import uz.academixai.infrastructure.persistence.AiUsageLogEntity;
+import uz.academixai.infrastructure.persistence.AiUsageLogRepository;
 import uz.academixai.infrastructure.persistence.HomeworkAssignmentEntity;
 import uz.academixai.infrastructure.persistence.HomeworkAssignmentRepository;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionEntity;
@@ -65,6 +67,7 @@ public class AIAnalysisService {
   private final SubjectRepository subjectRepository;
   private final SchoolClassRepository classRepository;
   private final AIFeedbackRepository aiFeedbackRepository;
+  private final AiUsageLogRepository aiUsageLogRepository;
   private final FileStorageService fileStorageService;
   private final GoogleVisionClient googleVisionClient;
   private final QwenAIClient qwenAIClient;
@@ -79,6 +82,7 @@ public class AIAnalysisService {
       SubjectRepository subjectRepository,
       SchoolClassRepository classRepository,
       AIFeedbackRepository aiFeedbackRepository,
+      AiUsageLogRepository aiUsageLogRepository,
       FileStorageService fileStorageService,
       GoogleVisionClient googleVisionClient,
       QwenAIClient qwenAIClient,
@@ -91,6 +95,7 @@ public class AIAnalysisService {
     this.subjectRepository = subjectRepository;
     this.classRepository = classRepository;
     this.aiFeedbackRepository = aiFeedbackRepository;
+    this.aiUsageLogRepository = aiUsageLogRepository;
     this.fileStorageService = fileStorageService;
     this.googleVisionClient = googleVisionClient;
     this.qwenAIClient = qwenAIClient;
@@ -163,6 +168,15 @@ public class AIAnalysisService {
       return;
     }
     aiBudgetService.recordAiUsage(submission.schoolId(), AiCallCategory.HOMEWORK);
+    aiUsageLogRepository.save(
+        new AiUsageLogEntity(
+            UUID.randomUUID(),
+            submission.schoolId(),
+            assignment.getClassId(),
+            assignment.getSubjectId(),
+            assignment.getTeacherId(),
+            "HOMEWORK",
+            LocalDateTime.now()));
 
     float aiScorePercent = weightedSum(result.criteriaScores());
     saveGradedFeedback(submission, extractedText, result, aiScorePercent, handwritingResult);

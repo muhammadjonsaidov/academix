@@ -17,6 +17,8 @@ import uz.academixai.infrastructure.ai.OcrUnavailableException;
 import uz.academixai.infrastructure.ai.QwenAIClient;
 import uz.academixai.infrastructure.ai.QwenGradingResult;
 import uz.academixai.infrastructure.ai.QwenUnavailableException;
+import uz.academixai.infrastructure.persistence.AiUsageLogEntity;
+import uz.academixai.infrastructure.persistence.AiUsageLogRepository;
 import uz.academixai.infrastructure.persistence.ExamAIFeedbackEntity;
 import uz.academixai.infrastructure.persistence.ExamAIFeedbackRepository;
 import uz.academixai.infrastructure.persistence.ExamEntity;
@@ -61,6 +63,7 @@ public class ExamAIAnalysisService {
   private final SubjectRepository subjectRepository;
   private final SchoolClassRepository classRepository;
   private final ExamAIFeedbackRepository feedbackRepository;
+  private final AiUsageLogRepository aiUsageLogRepository;
   private final FileStorageService fileStorageService;
   private final GoogleVisionClient googleVisionClient;
   private final QwenAIClient qwenAIClient;
@@ -74,6 +77,7 @@ public class ExamAIAnalysisService {
       SubjectRepository subjectRepository,
       SchoolClassRepository classRepository,
       ExamAIFeedbackRepository feedbackRepository,
+      AiUsageLogRepository aiUsageLogRepository,
       FileStorageService fileStorageService,
       GoogleVisionClient googleVisionClient,
       QwenAIClient qwenAIClient,
@@ -85,6 +89,7 @@ public class ExamAIAnalysisService {
     this.subjectRepository = subjectRepository;
     this.classRepository = classRepository;
     this.feedbackRepository = feedbackRepository;
+    this.aiUsageLogRepository = aiUsageLogRepository;
     this.fileStorageService = fileStorageService;
     this.googleVisionClient = googleVisionClient;
     this.qwenAIClient = qwenAIClient;
@@ -151,6 +156,15 @@ public class ExamAIAnalysisService {
       return;
     }
     aiBudgetService.recordAiUsage(submission.schoolId(), AiCallCategory.EXAM);
+    aiUsageLogRepository.save(
+        new AiUsageLogEntity(
+            UUID.randomUUID(),
+            submission.schoolId(),
+            exam.toDomain().classId(),
+            exam.toDomain().subjectId(),
+            exam.toDomain().teacherId(),
+            "EXAM",
+            LocalDateTime.now()));
 
     float aiScorePercent = weightedSum(result.criteriaScores());
     saveGradedFeedback(submission, extractedText, result, aiScorePercent, handwritingResult);
