@@ -1,9 +1,12 @@
 package uz.academixai.application;
 
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import uz.academixai.domain.User;
+import uz.academixai.infrastructure.persistence.ParentStudentLinkEntity;
+import uz.academixai.infrastructure.persistence.ParentStudentLinkRepository;
 import uz.academixai.infrastructure.persistence.SchoolRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserRepository;
@@ -13,16 +16,14 @@ import uz.academixai.infrastructure.persistence.UserRepository;
  * claim to set {@code app.current_school_id} per request — see CLAUDE.md "Backend architecture").
  *
  * <p>ADMIN via {@code schools.admin_id}, TEACHER/PSYCHOLOGIST via {@code users.school_id} (the
- * Sprint-1 deviation column, see V6 migration — PSYCHOLOGIST reuses it the same way TEACHER does,
- * populated at invite time by {@code PsychologistManagementService}, since neither role has any
- * other class/student-link table to derive a school from), STUDENT via {@code
- * student_profiles.school_id}. PARENT (via {@code parent_student_links} -> {@code
- * student_profiles.school_id}) is still unresolved — that table doesn't exist yet and no
- * PARENT-facing endpoint touches an RLS table yet. TEACHER/STUDENT resolution was the real
- * prerequisite this comment used to flag ("must be implemented before the Homework epic ships") —
- * that sprint was that epic; PSYCHOLOGIST is the same prerequisite for Sprint 7's psychologist
- * endpoints (none of which touch an RLS table either, but the app-level school scoping for
- * psychological_signals/psychology_watchlist still needs a real schoolId from somewhere).
+ * Sprint-1 deviation column, see V6 migration), STUDENT via {@code student_profiles.school_id}.
+ *
+ * <p>PARENT resolves via {@code parent_student_links} -> the linked student's {@code
+ * student_profiles.school_id} (Sprint 8). Judgment call: a parent could in principle have children
+ * at different schools, but the JWT carries exactly one {@code schoolId} claim — this takes the
+ * first active link found (arbitrary but deterministic per-query-order), same shape as every other
+ * "collapse a list to one value" judgment call already made in this codebase. A parent with zero
+ * linked children (not yet linked by any admin) still resolves to empty, same as before.
  */
 @Component
 public class SchoolContextResolver {
@@ -30,14 +31,17 @@ public class SchoolContextResolver {
   private final SchoolRepository schoolRepository;
   private final UserRepository userRepository;
   private final StudentProfileRepository studentProfileRepository;
+  private final ParentStudentLinkRepository parentStudentLinkRepository;
 
   public SchoolContextResolver(
       SchoolRepository schoolRepository,
       UserRepository userRepository,
-      StudentProfileRepository studentProfileRepository) {
+      StudentProfileRepository studentProfileRepository,
+      ParentStudentLinkRepository parentStudentLinkRepository) {
     this.schoolRepository = schoolRepository;
     this.userRepository = userRepository;
     this.studentProfileRepository = studentProfileRepository;
+    this.parentStudentLinkRepository = parentStudentLinkRepository;
   }
 
   public Optional<UUID> resolve(User user) {
@@ -47,7 +51,15 @@ public class SchoolContextResolver {
           userRepository.findById(user.id()).map(entity -> entity.getSchoolId());
       case STUDENT ->
           studentProfileRepository.findByUserId(user.id()).map(profile -> profile.getSchoolId());
-      case PARENT -> Optional.empty();
+      case PARENT -> resolveParent(user.id());
     };
+  }
+
+  private Optional<UUID> resolveParent(UUID parentUserId) {
+    return parentStudentLinkRepository.findByParentUserIdAndIsActiveTrue(parentUserId).stream()
+        .sorted(Comparator.comparing(ParentStudentLinkEntity::getId))
+        .findFirst()
+        .flatMap(link -> studentProfileRepository.findByUserId(link.getStudentUserId()))
+        .map(profile -> profile.getSchoolId());
   }
 }
