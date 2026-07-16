@@ -52,6 +52,13 @@ public class AiBudgetService {
     return used < allocated;
   }
 
+  /** Used by {@code POST /teacher/exams}'s pre-flight cost estimate (academix_tz.md §2.3). */
+  public int remainingBudget(UUID schoolId, AiCallCategory category) {
+    int allocated = allocatedCalls(schoolId, category);
+    long used = currentUsage(schoolId, category);
+    return (int) Math.max(0, allocated - used);
+  }
+
   public void recordAiUsage(UUID schoolId, AiCallCategory category) {
     String key = budgetKey(schoolId, category);
     Long newCount = redis.opsForValue().increment(key);
