@@ -84,6 +84,18 @@ public class QwenAIClient {
       Javobni FAQAT quyidagi JSON formatida qaytar, boshqa matn qo'shma:
       {"solvable": true, "reason": "..."}""";
 
+  // academix_tz.md §3.3 — exact system prompt, text-only qwen3.7-max.
+  private static final String PSYCHOLOGY_SYSTEM_PROMPT =
+      """
+      Quyidagi o'quvchi faollik ko'rsatkichlari (kirish vaqtlari, AI chat bilan yozishmalari) \
+      asosida uning psixologik holatini tahlil qil va signal severitiesini aniqlab ber.
+
+      Javobni FAQAT quyidagi JSON formatida qaytar, boshqa matn qo'shma:
+      {
+        "signals": [{"type": "LATE_NIGHT_ACTIVITY|MOTIVATION_DROP|NEGATIVE_LANGUAGE|SUDDEN_PERFORMANCE_DROP|SUBMISSION_STOP|AGGRESSIVE_LANGUAGE|MANIPULATION_ATTEMPT", "severity": "LOW|MEDIUM|HIGH|CRITICAL", "confidence": 0.0, "evidence": "..."}],
+        "isManipulationSuspected": false
+      }""";
+
   private final RestClient restClient;
   private final QwenProperties properties;
   private final ObjectMapper objectMapper;
@@ -262,6 +274,56 @@ public class QwenAIClient {
   @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
   private boolean verifyTaskSolvableFallback(String taskContent, Throwable cause) {
     throw new QwenUnavailableException("Qwen task verification unavailable", cause);
+  }
+
+  @CircuitBreaker(name = "qwen", fallbackMethod = "analyzePsychologyFallback")
+  public PsychologyAnalysisResult analyzePsychology(String activitySummary) {
+    Map<String, Object> requestBody =
+        Map.of(
+            "model", properties.modelText(),
+            "messages",
+                List.of(
+                    Map.of("role", "system", "content", PSYCHOLOGY_SYSTEM_PROMPT),
+                    Map.of("role", "user", "content", activitySummary)));
+
+    JsonNode response =
+        restClient
+            .post()
+            .uri(properties.baseUrl() + "/chat/completions")
+            .header("Authorization", "Bearer " + properties.apiKey())
+            .body(requestBody)
+            .retrieve()
+            .body(JsonNode.class);
+
+    return parsePsychologyResult(response, objectMapper);
+  }
+
+  @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
+  private PsychologyAnalysisResult analyzePsychologyFallback(
+      String activitySummary, Throwable cause) {
+    throw new QwenUnavailableException("Qwen psychology analysis unavailable", cause);
+  }
+
+  static PsychologyAnalysisResult parsePsychologyResult(
+      JsonNode response, ObjectMapper objectMapper) {
+    String content = response.path("choices").path(0).path("message").path("content").asText("");
+    String json = stripMarkdownFence(content);
+    try {
+      JsonNode root = objectMapper.readTree(json);
+      List<PsychologySignalCandidate> signals = new ArrayList<>();
+      for (JsonNode node : root.path("signals")) {
+        signals.add(
+            new PsychologySignalCandidate(
+                node.path("type").asText(),
+                node.path("severity").asText(),
+                node.path("confidence").asDouble(0),
+                node.path("evidence").asText("")));
+      }
+      return new PsychologyAnalysisResult(
+          signals, root.path("isManipulationSuspected").asBoolean(false));
+    } catch (Exception e) {
+      throw new QwenUnavailableException("Qwen response was not valid JSON: " + content, e);
+    }
   }
 
   static String buildUserContent(
