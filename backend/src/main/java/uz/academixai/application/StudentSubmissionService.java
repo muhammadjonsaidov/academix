@@ -8,7 +8,9 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import uz.academixai.domain.AssignmentType;
 import uz.academixai.domain.HomeworkSubmission;
+import uz.academixai.domain.StudentUniqueTask;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.domain.SubmissionType;
 import uz.academixai.infrastructure.persistence.AIFeedbackEntity;
@@ -21,6 +23,8 @@ import uz.academixai.infrastructure.persistence.HomeworkSubmissionEntity;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
+import uz.academixai.infrastructure.persistence.StudentUniqueTaskEntity;
+import uz.academixai.infrastructure.persistence.StudentUniqueTaskRepository;
 import uz.academixai.infrastructure.persistence.SubjectEntity;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.infrastructure.queue.HomeworkSubmissionQueueProducer;
@@ -48,6 +52,7 @@ public class StudentSubmissionService {
   private final GradeRepository gradeRepository;
   private final FileStorageService fileStorageService;
   private final HomeworkSubmissionQueueProducer queueProducer;
+  private final StudentUniqueTaskRepository uniqueTaskRepository;
 
   public StudentSubmissionService(
       HomeworkAssignmentRepository assignmentRepository,
@@ -57,7 +62,8 @@ public class StudentSubmissionService {
       AIFeedbackRepository aiFeedbackRepository,
       GradeRepository gradeRepository,
       FileStorageService fileStorageService,
-      HomeworkSubmissionQueueProducer queueProducer) {
+      HomeworkSubmissionQueueProducer queueProducer,
+      StudentUniqueTaskRepository uniqueTaskRepository) {
     this.assignmentRepository = assignmentRepository;
     this.submissionRepository = submissionRepository;
     this.studentProfileRepository = studentProfileRepository;
@@ -66,6 +72,7 @@ public class StudentSubmissionService {
     this.gradeRepository = gradeRepository;
     this.fileStorageService = fileStorageService;
     this.queueProducer = queueProducer;
+    this.uniqueTaskRepository = uniqueTaskRepository;
   }
 
   public record StudentHomeworkItem(
@@ -74,7 +81,8 @@ public class StudentSubmissionService {
       String title,
       LocalDateTime deadlineAt,
       boolean isLate,
-      String submissionStatus) {}
+      String submissionStatus,
+      String myTaskContent) {}
 
   public record StudentSubmissionDetail(
       HomeworkSubmission submission, AIFeedbackEntity feedback, GradeEntity grade) {}
@@ -84,6 +92,9 @@ public class StudentSubmissionService {
     return assignmentRepository
         .findBySchoolIdAndClassIdOrderByDeadlineAtDesc(schoolId, classId)
         .stream()
+        // UNIQUE_GENERATED assignments stay hidden until the teacher publishes via
+        // POST /teacher/homework/{id}/submit (see HomeworkAssignment.tasksPublished).
+        .filter(HomeworkAssignmentEntity::isTasksPublished)
         .map(a -> buildHomeworkItem(a, studentId))
         .toList();
   }
@@ -91,6 +102,7 @@ public class StudentSubmissionService {
   public StudentHomeworkItem getHomeworkDetail(UUID schoolId, UUID studentId, UUID assignmentId) {
     HomeworkAssignmentEntity assignment = requireAssignment(schoolId, assignmentId);
     requireStudentInClass(schoolId, studentId, assignment.getClassId());
+    requirePublished(assignment);
     return buildHomeworkItem(assignment, studentId);
   }
 
@@ -146,13 +158,32 @@ public class StudentSubmissionService {
         existingSubmission
             .map(HomeworkSubmission::isLate)
             .orElseGet(() -> LocalDateTime.now().isAfter(assignment.deadlineAt()));
+    String myTaskContent =
+        assignment.type() == AssignmentType.UNIQUE_GENERATED
+            ? uniqueTaskRepository
+                .findByAssignmentIdAndStudentId(assignment.id(), studentId)
+                .map(StudentUniqueTaskEntity::toDomain)
+                .map(StudentUniqueTask::taskContent)
+                .orElse(null)
+            : null;
     return new StudentHomeworkItem(
         assignment.id(),
         subjectName,
         assignment.title(),
         assignment.deadlineAt(),
         isLate,
-        submissionStatus);
+        submissionStatus,
+        myTaskContent);
+  }
+
+  private void requirePublished(HomeworkAssignmentEntity assignment) {
+    if (!assignment.isTasksPublished()) {
+      throw new ApiException(
+          HttpStatus.NOT_FOUND,
+          "ERR_HW_NOT_FOUND",
+          "Uy vazifasi topilmadi.",
+          "ID ni tekshiring yoki sahifani yangilang.");
+    }
   }
 
   private UUID requireStudentClassId(UUID schoolId, UUID studentId) {
@@ -179,8 +210,17 @@ public class StudentSubmissionService {
       MultipartFile image) {
     HomeworkAssignmentEntity assignment = requireAssignment(schoolId, assignmentId);
     requireStudentInClass(schoolId, studentId, assignment.getClassId());
+    requirePublished(assignment);
     requireNotAlreadySubmitted(assignmentId, studentId);
     requireValidPayload(type, textContent, image);
+
+    UUID studentTaskId =
+        assignment.toDomain().type() == AssignmentType.UNIQUE_GENERATED
+            ? uniqueTaskRepository
+                .findByAssignmentIdAndStudentId(assignmentId, studentId)
+                .map(StudentUniqueTaskEntity::getId)
+                .orElse(null)
+            : null;
 
     String imageUrl =
         image == null || image.isEmpty()
@@ -192,7 +232,7 @@ public class StudentSubmissionService {
             UUID.randomUUID(),
             schoolId,
             assignmentId,
-            null,
+            studentTaskId,
             studentId,
             type,
             textContent,

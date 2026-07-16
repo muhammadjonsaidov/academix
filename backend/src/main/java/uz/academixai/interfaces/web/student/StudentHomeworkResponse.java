@@ -4,18 +4,17 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import uz.academixai.application.StudentSubmissionService.StudentHomeworkItem;
 
-/**
- * academix_tz.md §2.4 — GET /student/homework(/{assignmentId}). {@code myTask} (per-student
- * unique-generated content) is omitted — unique-task generation is Sprint 3+ scope (every
- * assignment is STANDARD this sprint, see ROADMAP.md).
- */
+/** academix_tz.md §2.4 — GET /student/homework(/{assignmentId}). */
 public record StudentHomeworkResponse(
     UUID assignmentId,
     String subject,
     String title,
     LocalDateTime deadlineAt,
     boolean isLate,
+    MyTaskResponse myTask,
     String submissionStatus) {
+
+  public record MyTaskResponse(String taskContent) {}
 
   public static StudentHomeworkResponse from(StudentHomeworkItem item) {
     return new StudentHomeworkResponse(
@@ -24,6 +23,7 @@ public record StudentHomeworkResponse(
         item.title(),
         item.deadlineAt(),
         item.isLate(),
+        item.myTaskContent() == null ? null : new MyTaskResponse(item.myTaskContent()),
         item.submissionStatus());
   }
 }
