@@ -1,0 +1,55 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/shared/spec-guard.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/shared/secrets-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/backend/destructive-migration-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/frontend/i18n-scope-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/backend/new-tenant-table-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/backend/role-leak-guard.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/backend/build-gate.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/frontend/lint-gate.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
