@@ -1,4 +1,10 @@
 spring:
+  # No profile was ever actually activated anywhere in this project (no spring.profiles.active,
+  # no bootRun override) despite CLAUDE.md's "Supporting tooling" section deciding seed data
+  # should be `local`/`dev`-profile-gated — this default is what actually wires that decision up.
+  # A real deploy sets SPRING_PROFILES_ACTIVE to something else (e.g. `prod`) to skip seeding.
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
   application:
     name: backend
 
