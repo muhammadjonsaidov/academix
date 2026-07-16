@@ -5,6 +5,7 @@ const LINKS = [
   { href: "/dashboard/admin/classes", label: "Sinflar" },
   { href: "/dashboard/admin/teachers", label: "O'qituvchilar" },
   { href: "/dashboard/admin/students", label: "O'quvchilar" },
+  { href: "/dashboard/admin/analytics", label: "Tahlil" },
 ];
 
 export function AdminNav() {
