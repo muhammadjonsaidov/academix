@@ -29,6 +29,7 @@ export default function ParentChildDetailPage() {
   const fetchProgress = useParentStore((state) => state.fetchProgress);
   const fetchGrades = useParentStore((state) => state.fetchGrades);
   const fetchHomework = useParentStore((state) => state.fetchHomework);
+  const downloadSemesterReport = useParentStore((state) => state.downloadSemesterReport);
   const requestDataDeletion = useConsentStore((state) => state.requestDataDeletion);
 
   const [error, setError] = useState<string | null>(null);
@@ -72,10 +73,20 @@ export default function ParentChildDetailPage() {
       <h2 className="mb-1 text-lg font-semibold">
         {overview.summary.name} — {overview.summary.className}
       </h2>
-      <p className="mb-6 text-sm text-muted-foreground">
+      <p className="mb-4 text-sm text-muted-foreground">
         Bugungi faollik: {overview.summary.todayActivity ? "Ha" : "Yo'q"} · Bajarilmagan
         vazifalar: {overview.summary.pendingHomeworkCount}
       </p>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="mb-6"
+        onClick={() => downloadSemesterReport(studentId)}
+      >
+        Semestr hisobotini yuklab olish
+      </Button>
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 
