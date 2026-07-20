@@ -2,69 +2,71 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ChevronRight, FileCheck2 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { StudentNav } from "@/components/student/StudentNav";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/student/EmptyState";
+import { FULL_STATUS_META } from "@/components/student/submission-status";
 import { useStudentStore } from "@/stores/useStudentStore";
-
-const STATUS_LABEL: Record<string, string> = {
-  SUBMITTED: "Topshirilgan",
-  AI_PROCESSING: "AI tahlil qilmoqda",
-  AI_DONE: "AI baholadi",
-  AI_SKIPPED: "AI o'tkazib yubordi",
-  GRADED: "Baholangan",
-};
+import { cn } from "@/lib/utils";
 
 export default function StudentSubmissionsPage() {
   const submissions = useStudentStore((state) => state.submissions);
   const fetchSubmissions = useStudentStore((state) => state.fetchSubmissions);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchSubmissions().catch(() => setError("Topshiriqlarni yuklab bo'lmadi."));
+    fetchSubmissions()
+      .catch(() => setError("Topshiriqlarni yuklab bo'lmadi."))
+      .finally(() => setIsLoading(false));
   }, [fetchSubmissions]);
 
   return (
     <DashboardShell role="STUDENT">
-      <StudentNav />
-      <h2 className="mb-4 text-lg font-semibold">Topshirilgan ishlarim</h2>
+      <h2 className="mb-4 font-heading text-lg font-semibold">Topshirilgan ishlarim</h2>
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 
-      <table className="w-full text-left text-sm">
-        <thead className="text-muted-foreground">
-          <tr className="border-b border-border">
-            <th className="py-2">Topshirilgan vaqt</th>
-            <th className="py-2">Holati</th>
-            <th className="py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {submissions.map((s) => (
-            <tr key={s.submissionId} className="border-b border-border">
-              <td className="py-2">{new Date(s.submittedAt).toLocaleString()}</td>
-              <td className="py-2">
-                {STATUS_LABEL[s.status] ?? s.status}
-                {s.isLate ? " (kech)" : ""}
-              </td>
-              <td className="py-2 text-right">
-                <Link
-                  href={`/dashboard/student/submissions/${s.submissionId}`}
-                  className="text-sm underline"
-                >
-                  Ko&apos;rish
-                </Link>
-              </td>
-            </tr>
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16" />
           ))}
-          {submissions.length === 0 ? (
-            <tr>
-              <td colSpan={3} className="py-4 text-center text-muted-foreground">
-                Hozircha topshiriqlar yo&apos;q.
-              </td>
-            </tr>
-          ) : null}
-        </tbody>
-      </table>
+        </div>
+      ) : submissions.length === 0 ? (
+        <EmptyState
+          icon={FileCheck2}
+          title="Hozircha topshiriqlar yo'q"
+          description="Vazifa topshirganingizda natijasi shu yerda ko'rinadi."
+        />
+      ) : (
+        <div className="space-y-3">
+          {submissions.map((s) => {
+            const meta = FULL_STATUS_META[s.status];
+            return (
+              <Link key={s.submissionId} href={`/dashboard/student/submissions/${s.submissionId}`}>
+                <Card className={cn("transition-colors hover:bg-muted/40", meta.rail || undefined)}>
+                  <CardContent className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="font-data text-sm text-muted-foreground">
+                        {new Date(s.submittedAt).toLocaleString()}
+                      </span>
+                      {s.isLate ? <Badge variant="severity-medium">Kechikkan</Badge> : null}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={meta.badgeVariant}>{meta.label}</Badge>
+                      <ChevronRight className="size-4 text-muted-foreground" strokeWidth={1.75} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </DashboardShell>
   );
 }

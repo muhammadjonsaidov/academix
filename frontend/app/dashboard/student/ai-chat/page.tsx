@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MessageSquareText, Send, ShieldAlert } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { StudentNav } from "@/components/student/StudentNav";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/student/EmptyState";
 import { useAiChatStore } from "@/stores/useAiChatStore";
 import type { SubjectType } from "@/types/aiChat";
+import { cn } from "@/lib/utils";
 
 const SUBJECTS: { value: SubjectType | "GENERAL"; label: string }[] = [
   { value: "GENERAL", label: "Umumiy" },
@@ -50,13 +53,12 @@ export default function AiChatPage() {
 
   return (
     <DashboardShell role="STUDENT">
-      <StudentNav />
-      <h2 className="mb-4 text-lg font-semibold">AI Tutor</h2>
+      <h2 className="mb-4 font-heading text-lg font-semibold">AI Tutor</h2>
 
       <div className="mb-4">
-        <label className="mb-1 block text-xs text-muted-foreground">Fan</label>
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">Fan</label>
         <select
-          className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+          className="rounded-md border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           value={subject}
           onChange={(e) => setSubject(e.target.value as SubjectType | "GENERAL")}
         >
@@ -70,30 +72,42 @@ export default function AiChatPage() {
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 
-      <div className="mb-4 flex max-h-[50vh] flex-col gap-3 overflow-y-auto rounded-md border border-border p-4">
-        {chronological.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Suhbat hali yo&apos;q. Savolingizni yozing.</p>
-        ) : (
-          chronological.map((item) => (
-            <div key={item.id} className="space-y-1">
-              <div className="ml-auto max-w-[80%] rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground">
-                {item.message}
+      <Card className="mb-4">
+        <CardContent className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto">
+          {chronological.length === 0 ? (
+            <EmptyState
+              icon={MessageSquareText}
+              title="Suhbat hali yo'q"
+              description="AI Tutor'dan fan bo'yicha savolingizni so'rang."
+            />
+          ) : (
+            chronological.map((item) => (
+              <div key={item.id} className="space-y-1">
+                <div className="ml-auto max-w-[80%] rounded-lg rounded-br-sm bg-role-student px-3 py-2 text-sm text-role-student-foreground">
+                  {item.message}
+                </div>
+                <div
+                  className={cn(
+                    "mr-auto flex max-w-[80%] items-start gap-1.5 rounded-lg rounded-bl-sm px-3 py-2 text-sm",
+                    item.isBlocked
+                      ? "bg-severity-medium-bg text-severity-medium"
+                      : "bg-secondary text-secondary-foreground",
+                  )}
+                >
+                  {item.isBlocked ? (
+                    <ShieldAlert className="mt-0.5 size-3.5 shrink-0" strokeWidth={1.75} />
+                  ) : null}
+                  <span>{item.response}</span>
+                </div>
               </div>
-              <div
-                className={`mr-auto max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                  item.isBlocked ? "bg-muted text-muted-foreground" : "bg-secondary"
-                }`}
-              >
-                {item.response}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
 
       <div className="flex gap-2">
         <input
-          className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
+          className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           placeholder="Savolingizni yozing..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -102,6 +116,7 @@ export default function AiChatPage() {
           }}
         />
         <Button onClick={handleSend} disabled={isSending}>
+          <Send className="size-4" strokeWidth={1.75} />
           {isSending ? "Yuborilmoqda..." : "Yuborish"}
         </Button>
       </div>

@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BookOpen, Flame, GraduationCap, Sparkles, Star, Trophy } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { StudentNav } from "@/components/student/StudentNav";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/student/EmptyState";
+import { StatCard } from "@/components/student/StatCard";
 import { useStudentStore } from "@/stores/useStudentStore";
 
 export default function StudentDashboardPage() {
@@ -18,7 +22,6 @@ export default function StudentDashboardPage() {
   if (error) {
     return (
       <DashboardShell role="STUDENT">
-        <StudentNav />
         <p className="text-sm text-destructive">{error}</p>
       </DashboardShell>
     );
@@ -27,104 +30,123 @@ export default function StudentDashboardPage() {
   if (!dashboard) {
     return (
       <DashboardShell role="STUDENT">
-        <StudentNav />
-        <p>Yuklanmoqda...</p>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20" />
+          ))}
+        </div>
       </DashboardShell>
     );
   }
 
   return (
     <DashboardShell role="STUDENT">
-      <StudentNav />
-      <h2 className="mb-4 text-lg font-semibold">Salom, {dashboard.profile.firstName}!</h2>
+      <h2 className="mb-4 font-heading text-lg font-semibold">
+        Salom, {dashboard.profile.firstName}! 👋
+      </h2>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-md border border-border p-4">
-          <p className="text-2xl font-semibold">{dashboard.profile.totalXp}</p>
-          <p className="text-sm text-muted-foreground">Jami XP</p>
-        </div>
-        <div className="rounded-md border border-border p-4">
-          <p className="text-2xl font-semibold">{dashboard.profile.currentStreak}</p>
-          <p className="text-sm text-muted-foreground">Joriy seriya (kun)</p>
-        </div>
-        <div className="rounded-md border border-border p-4">
-          <p className="text-2xl font-semibold">{dashboard.profile.maxStreak}</p>
-          <p className="text-sm text-muted-foreground">Eng uzun seriya</p>
-        </div>
-        <div className="rounded-md border border-border p-4">
-          <p className="text-2xl font-semibold">{dashboard.xpToNextBadge}</p>
-          <p className="text-sm text-muted-foreground">Keyingi yutuqqacha XP</p>
-        </div>
+        <StatCard icon={Star} value={dashboard.profile.totalXp} label="Jami XP" />
+        <StatCard icon={Flame} value={dashboard.profile.currentStreak} label="Joriy seriya (kun)" />
+        <StatCard icon={Trophy} value={dashboard.profile.maxStreak} label="Eng uzun seriya" />
+        <StatCard icon={Sparkles} value={dashboard.xpToNextBadge} label="Keyingi yutuqqacha XP" />
       </div>
 
-      <div className="mb-6">
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="font-medium">Yutuqlar</h3>
-          <Link href="/dashboard/student/badges" className="text-sm underline">
+      <Card className="mb-6">
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle>Yutuqlar</CardTitle>
+          <Link
+            href="/dashboard/student/badges"
+            className="text-sm font-medium text-role-student hover:underline"
+          >
             Barchasi
           </Link>
-        </div>
-        {dashboard.badges.length > 0 ? (
-          <div className="flex flex-wrap gap-3">
-            {dashboard.badges.map((badge) => (
-              <div
-                key={badge.id}
-                title={badge.description}
-                className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm"
-              >
-                <span>{badge.icon}</span>
-                <span>{badge.name}</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Hozircha yutuqlar yo&apos;q.</p>
-        )}
-      </div>
+        </CardHeader>
+        <CardContent>
+          {dashboard.badges.length > 0 ? (
+            <div className="flex flex-wrap gap-3">
+              {dashboard.badges.map((badge) => (
+                <div
+                  key={badge.id}
+                  title={badge.description}
+                  className="flex items-center gap-2 rounded-full border border-role-student/30 bg-role-student-muted px-3 py-1.5 text-sm text-role-student"
+                >
+                  <span className="text-base leading-none">{badge.icon}</span>
+                  <span className="font-medium">{badge.name}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={Trophy}
+              title="Hozircha yutuqlar yo'q"
+              description="Vazifalarni bajarib, birinchi yutug'ingizni qo'lga kiriting."
+            />
+          )}
+        </CardContent>
+      </Card>
 
-      <div className="mb-6">
-        <h3 className="mb-2 font-medium">Topshirilishi kerak</h3>
-        <ul className="space-y-2">
-          {dashboard.pendingHomework.map((hw) => (
-            <li
-              key={hw.assignmentId}
-              className="flex items-center justify-between rounded-md border border-border p-3 text-sm"
-            >
-              <span>
-                {hw.title} ({hw.subject})
-              </span>
-              <span className="text-muted-foreground">
-                {new Date(hw.deadlineAt).toLocaleString()}
-              </span>
-            </li>
-          ))}
-          {dashboard.pendingHomework.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Hozircha vazifalar yo&apos;q.</p>
-          ) : null}
-        </ul>
-      </div>
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Topshirilishi kerak</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dashboard.pendingHomework.length > 0 ? (
+            <ul className="space-y-2">
+              {dashboard.pendingHomework.map((hw) => (
+                <li
+                  key={hw.assignmentId}
+                  className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm"
+                >
+                  <span className="min-w-0 truncate">
+                    {hw.title} <span className="text-muted-foreground">({hw.subject})</span>
+                  </span>
+                  <span className="font-data shrink-0 text-muted-foreground">
+                    {new Date(hw.deadlineAt).toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState
+              icon={BookOpen}
+              title="Hozircha vazifalar yo'q"
+              description="Yangi uy vazifalari shu yerda ko'rinadi."
+            />
+          )}
+        </CardContent>
+      </Card>
 
-      <div>
-        <h3 className="mb-2 font-medium">So&apos;nggi baholar</h3>
-        <ul className="space-y-2">
-          {dashboard.recentGrades.map((grade) => (
-            <li
-              key={grade.submissionId}
-              className="flex items-center justify-between rounded-md border border-border p-3 text-sm"
-            >
-              <span>
-                {grade.score} ball ({grade.fivePointGrade})
-              </span>
-              <span className="text-muted-foreground">
-                {new Date(grade.gradedAt).toLocaleString()}
-              </span>
-            </li>
-          ))}
-          {dashboard.recentGrades.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Hozircha baholar yo&apos;q.</p>
-          ) : null}
-        </ul>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>So&apos;nggi baholar</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dashboard.recentGrades.length > 0 ? (
+            <ul className="space-y-2">
+              {dashboard.recentGrades.map((grade) => (
+                <li
+                  key={grade.submissionId}
+                  className="rail-verified flex items-center justify-between gap-3 rounded-md bg-muted/40 p-3 pl-4 text-sm"
+                >
+                  <span className="font-data font-medium">
+                    {grade.score} ball ({grade.fivePointGrade})
+                  </span>
+                  <span className="text-muted-foreground">
+                    {new Date(grade.gradedAt).toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState
+              icon={GraduationCap}
+              title="Hozircha baholar yo'q"
+              description="Baholangan ishlaringiz shu yerda ko'rinadi."
+            />
+          )}
+        </CardContent>
+      </Card>
     </DashboardShell>
   );
 }
