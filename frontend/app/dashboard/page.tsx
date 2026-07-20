@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { Role } from "@/types/auth";
 
@@ -23,5 +24,9 @@ export default function DashboardIndexPage() {
     router.replace(user ? ROLE_DASHBOARD_PATH[user.role] : "/login");
   }, [user, router]);
 
-  return null;
+  return (
+    <div className="flex min-h-screen flex-1 items-center justify-center bg-background">
+      <Spinner />
+    </div>
+  );
 }
