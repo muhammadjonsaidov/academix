@@ -4,12 +4,28 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * AcademiX visual system
+ * -----------------------------------------------------------------------
+ * Base neutrals carry a faint cool-slate tint (hue 258, matching the brand
+ * indigo's hue family) instead of pure achromatic gray — a deliberate,
+ * restrained "temperature" choice appropriate for a trust-oriented school
+ * platform, distinct from generic Tailwind neutral gray.
+ *
+ * Five role accents (admin/teacher/student/parent/psychologist) are spaced
+ * around the hue wheel, all outside the 20deg-85deg band reserved for the
+ * severity scale (destructive/high/medium), so a role's own brand color is
+ * never mistaken for an alert. Recharts categorical colors (--chart-1..5)
+ * reuse these same five hues directly — one palette, two jobs.
+ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  /* Falls back to body sans until a display face is wired in layout.tsx —
+     see the design-tokens reference for the exact follow-up snippet. */
+  --font-heading: var(--font-heading-override, var(--font-geist-sans));
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -18,11 +34,11 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+  --color-chart-1: var(--role-admin);
+  --color-chart-2: var(--role-teacher);
+  --color-chart-3: var(--role-student);
+  --color-chart-4: var(--role-parent);
+  --color-chart-5: var(--role-psychologist);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -46,75 +62,203 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Severity scale (psychologist signals): LOW/MEDIUM/HIGH read as tinted
+     text-on-tint badges of increasing warmth; CRITICAL is the one solid,
+     filled badge in the whole system — a distinct shape, not just another
+     step on the color ramp, per the notify-matrix's own escalation (only
+     CRITICAL reaches parents). */
+  --color-severity-low: var(--severity-low);
+  --color-severity-low-bg: var(--severity-low-bg);
+  --color-severity-medium: var(--severity-medium);
+  --color-severity-medium-bg: var(--severity-medium-bg);
+  --color-severity-high: var(--severity-high);
+  --color-severity-high-bg: var(--severity-high-bg);
+  --color-severity-critical: var(--severity-critical);
+  --color-severity-critical-foreground: var(--severity-critical-foreground);
+
+  /* AI-pipeline state colors — distinct from severity on purpose, these
+     describe process/trust state, not risk. */
+  --color-status-processing: var(--status-processing);
+  --color-status-processing-bg: var(--status-processing-bg);
+  --color-status-skipped: var(--status-skipped);
+  --color-status-skipped-bg: var(--status-skipped-bg);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-success-foreground: var(--success-foreground);
+
+  /* Per-role accent family — used for sidebar active state, role badges,
+     avatar rings. NOT used for primary buttons/links, which stay the one
+     shared brand indigo (--primary) everywhere so the five dashboards read
+     as one product wearing five name-tags, not five different products. */
+  --color-role-admin: var(--role-admin);
+  --color-role-admin-muted: var(--role-admin-muted);
+  --color-role-admin-foreground: var(--role-admin-foreground);
+  --color-role-teacher: var(--role-teacher);
+  --color-role-teacher-muted: var(--role-teacher-muted);
+  --color-role-teacher-foreground: var(--role-teacher-foreground);
+  --color-role-student: var(--role-student);
+  --color-role-student-muted: var(--role-student-muted);
+  --color-role-student-foreground: var(--role-student-foreground);
+  --color-role-parent: var(--role-parent);
+  --color-role-parent-muted: var(--role-parent-muted);
+  --color-role-parent-foreground: var(--role-parent-foreground);
+  --color-role-psychologist: var(--role-psychologist);
+  --color-role-psychologist-muted: var(--role-psychologist-muted);
+  --color-role-psychologist-foreground: var(--role-psychologist-foreground);
+
+  /* Sidebar sizing — enables w-sidebar / w-sidebar-icon utilities directly. */
+  --width-sidebar: 16rem;
+  --width-sidebar-icon: 4.5rem;
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.984 0.004 258);
+  --foreground: oklch(0.208 0.02 258);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.208 0.02 258);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.208 0.02 258);
+  --primary: oklch(0.36 0.11 264);
+  --primary-foreground: oklch(0.98 0.006 264);
+  --secondary: oklch(0.955 0.006 258);
+  --secondary-foreground: oklch(0.28 0.02 258);
+  --muted: oklch(0.955 0.006 258);
+  --muted-foreground: oklch(0.5 0.014 258);
+  --accent: oklch(0.94 0.02 264);
+  --accent-foreground: oklch(0.32 0.09 264);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --border: oklch(0.9 0.007 258);
+  --input: oklch(0.9 0.007 258);
+  --ring: oklch(0.6 0.09 264);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.985 0.004 258);
+  --sidebar-foreground: oklch(0.208 0.02 258);
+  --sidebar-primary: oklch(0.36 0.11 264);
+  --sidebar-primary-foreground: oklch(0.98 0.006 264);
+  --sidebar-accent: oklch(0.94 0.02 264);
+  --sidebar-accent-foreground: oklch(0.32 0.09 264);
+  --sidebar-border: oklch(0.9 0.007 258);
+  --sidebar-ring: oklch(0.6 0.09 264);
+
+  /* Role accents (light) */
+  --role-admin: oklch(0.48 0.11 264);
+  --role-admin-muted: oklch(0.94 0.025 264);
+  --role-admin-foreground: oklch(0.99 0.006 264);
+
+  --role-teacher: oklch(0.5 0.09 199);
+  --role-teacher-muted: oklch(0.94 0.025 199);
+  --role-teacher-foreground: oklch(0.99 0.006 199);
+
+  --role-psychologist: oklch(0.48 0.09 152);
+  --role-psychologist-muted: oklch(0.94 0.025 152);
+  --role-psychologist-foreground: oklch(0.99 0.006 152);
+
+  --role-parent: oklch(0.5 0.12 340);
+  --role-parent-muted: oklch(0.94 0.03 340);
+  --role-parent-foreground: oklch(0.99 0.006 340);
+
+  --role-student: oklch(0.56 0.16 300);
+  --role-student-muted: oklch(0.94 0.04 300);
+  --role-student-foreground: oklch(0.99 0.006 300);
+
+  /* Severity scale (light) */
+  --severity-low: oklch(0.5 0.012 258);
+  --severity-low-bg: oklch(0.955 0.007 258);
+
+  --severity-medium: oklch(0.5 0.11 80);
+  --severity-medium-bg: oklch(0.95 0.05 80);
+
+  --severity-high: oklch(0.48 0.15 45);
+  --severity-high-bg: oklch(0.94 0.07 42);
+
+  --severity-critical: oklch(0.5 0.2 25);
+  --severity-critical-foreground: oklch(0.99 0.01 25);
+
+  /* AI-pipeline status (light) */
+  --status-processing: oklch(0.5 0.11 264);
+  --status-processing-bg: oklch(0.95 0.02 264);
+
+  --status-skipped: oklch(0.45 0.02 70);
+  --status-skipped-bg: oklch(0.95 0.015 70);
+
+  --success: oklch(0.48 0.11 152);
+  --success-bg: oklch(0.95 0.03 152);
+  --success-foreground: oklch(0.99 0.01 152);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.17 0.014 258);
+  --foreground: oklch(0.96 0.006 258);
+  --card: oklch(0.21 0.016 258);
+  --card-foreground: oklch(0.96 0.006 258);
+  --popover: oklch(0.21 0.016 258);
+  --popover-foreground: oklch(0.96 0.006 258);
+  --primary: oklch(0.72 0.11 264);
+  --primary-foreground: oklch(0.16 0.02 264);
+  --secondary: oklch(0.27 0.016 258);
+  --secondary-foreground: oklch(0.96 0.006 258);
+  --muted: oklch(0.27 0.016 258);
+  --muted-foreground: oklch(0.68 0.014 258);
+  --accent: oklch(0.29 0.03 264);
+  --accent-foreground: oklch(0.9 0.03 264);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.6 0.1 264);
+  --sidebar: oklch(0.21 0.016 258);
+  --sidebar-foreground: oklch(0.96 0.006 258);
+  --sidebar-primary: oklch(0.72 0.11 264);
+  --sidebar-primary-foreground: oklch(0.16 0.02 264);
+  --sidebar-accent: oklch(0.29 0.03 264);
+  --sidebar-accent-foreground: oklch(0.9 0.03 264);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.6 0.1 264);
+
+  /* Role accents (dark) */
+  --role-admin: oklch(0.72 0.11 264);
+  --role-admin-muted: oklch(0.3 0.06 264);
+  --role-admin-foreground: oklch(0.15 0.02 264);
+
+  --role-teacher: oklch(0.74 0.09 199);
+  --role-teacher-muted: oklch(0.3 0.06 199);
+  --role-teacher-foreground: oklch(0.15 0.02 199);
+
+  --role-psychologist: oklch(0.72 0.09 152);
+  --role-psychologist-muted: oklch(0.3 0.06 152);
+  --role-psychologist-foreground: oklch(0.15 0.02 152);
+
+  --role-parent: oklch(0.72 0.12 340);
+  --role-parent-muted: oklch(0.3 0.06 340);
+  --role-parent-foreground: oklch(0.15 0.02 340);
+
+  --role-student: oklch(0.76 0.15 300);
+  --role-student-muted: oklch(0.32 0.07 300);
+  --role-student-foreground: oklch(0.15 0.02 300);
+
+  /* Severity scale (dark) */
+  --severity-low: oklch(0.72 0.012 258);
+  --severity-low-bg: oklch(0.28 0.008 258);
+
+  --severity-medium: oklch(0.78 0.12 85);
+  --severity-medium-bg: oklch(0.32 0.06 82);
+
+  --severity-high: oklch(0.72 0.16 48);
+  --severity-high-bg: oklch(0.32 0.08 46);
+
+  --severity-critical: oklch(0.56 0.19 25);
+  --severity-critical-foreground: oklch(0.99 0.01 25);
+
+  /* AI-pipeline status (dark) */
+  --status-processing: oklch(0.75 0.1 264);
+  --status-processing-bg: oklch(0.3 0.05 264);
+
+  --status-skipped: oklch(0.68 0.02 70);
+  --status-skipped-bg: oklch(0.28 0.014 70);
+
+  --success: oklch(0.7 0.13 152);
+  --success-bg: oklch(0.3 0.05 152);
+  --success-foreground: oklch(0.15 0.02 152);
 }
 
 @layer base {
@@ -127,4 +271,65 @@
   html {
     @apply font-sans;
   }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
+  }
+
+  /* Quality-floor requirement: reduced motion is respected everywhere,
+     including the skeleton shimmer / spinner / critical-severity pulse
+     introduced by this system. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/*
+ * Signature element: the "grading rail"
+ * -----------------------------------------------------------------------
+ * AcademiX's whole product thesis is "AI marks handwritten work the way a
+ * teacher would." Every card/row that represents a piece of graded work
+ * carries a 3px left rail whose color/style encodes its AI-pipeline state
+ * — a systemized, restrained echo of a teacher's margin mark, used as the
+ * one recurring signature device instead of decorative flourishes.
+ */
+@utility rail-verified {
+  border-left: 3px solid var(--success);
+}
+@utility rail-processing {
+  border-left: 3px dashed var(--status-processing);
+}
+@utility rail-skipped {
+  border-left: 3px solid var(--status-skipped);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--status-skipped-bg) 0px,
+    var(--status-skipped-bg) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+@utility rail-flagged {
+  border-left: 3px solid var(--severity-medium);
+}
+@utility rail-critical {
+  border-left: 3px solid var(--severity-critical);
+}
+
+/* Utility face for verified/precise numeric data (scores, XP, percentages,
+   IDs, timestamps) — a deliberate typographic signal that this number came
+   from the AI/grading pipeline, not free text. */
+@utility font-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
