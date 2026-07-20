@@ -2,9 +2,14 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { FileSpreadsheet, GraduationCap, Search, UserPlus } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { fieldClass, FormField } from "@/components/admin/FormField";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminStore } from "@/stores/useAdminStore";
 import type { ApiErrorResponse } from "@/types/auth";
 
@@ -23,6 +28,7 @@ export default function AdminStudentsPage() {
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [unlockingId, setUnlockingId] = useState<string | null>(null);
   const [unlockMessage, setUnlockMessage] = useState<{
     studentId: string;
@@ -32,7 +38,9 @@ export default function AdminStudentsPage() {
 
   useEffect(() => {
     fetchClasses().catch(() => {});
-    fetchStudents().catch(() => setError("O'quvchilar ro'yxatini yuklab bo'lmadi."));
+    fetchStudents()
+      .catch(() => setError("O'quvchilar ro'yxatini yuklab bo'lmadi."))
+      .finally(() => setIsLoading(false));
   }, [fetchClasses, fetchStudents]);
 
   async function handleSubmit(event: FormEvent) {
@@ -55,7 +63,8 @@ export default function AdminStudentsPage() {
 
   async function handleSearch(event: FormEvent) {
     event.preventDefault();
-    await fetchStudents({ search: search || undefined });
+    setIsLoading(true);
+    await fetchStudents({ search: search || undefined }).finally(() => setIsLoading(false));
   }
 
   function classFullName(id: string | null) {
@@ -82,149 +91,170 @@ export default function AdminStudentsPage() {
 
   return (
     <DashboardShell role="ADMIN">
-      <AdminNav />
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">O&apos;quvchilar</h2>
-        <Link href="/dashboard/admin/students/import" className="text-sm underline">
-          Excel orqali ommaviy import
-        </Link>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-heading text-xl font-semibold">O&apos;quvchilar</h2>
+            <p className="text-sm text-muted-foreground">
+              O&apos;quvchilarni qo&apos;shing yoki Excel orqali ommaviy import qiling.
+            </p>
+          </div>
+          <Button variant="outline" render={<Link href="/dashboard/admin/students/import" />}>
+            <FileSpreadsheet className="size-4" strokeWidth={1.75} />
+            Excel orqali ommaviy import
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="size-4" strokeWidth={1.75} />
+              Yangi o&apos;quvchi qo&apos;shish
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
+              <FormField label="Ism" htmlFor="firstName">
+                <input
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className={fieldClass}
+                />
+              </FormField>
+              <FormField label="Familiya" htmlFor="lastName">
+                <input
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  className={fieldClass}
+                />
+              </FormField>
+              <FormField label="Telefon raqam" htmlFor="phone">
+                <input
+                  id="phone"
+                  type="tel"
+                  placeholder="+998901234567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  className={fieldClass}
+                />
+              </FormField>
+              <FormField label="Sinf" htmlFor="classId">
+                <select
+                  id="classId"
+                  value={classId}
+                  onChange={(e) => setClassId(e.target.value)}
+                  required
+                  className={fieldClass}
+                >
+                  <option value="" disabled>
+                    Tanlang
+                  </option>
+                  {classes.map((schoolClass) => (
+                    <option key={schoolClass.id} value={schoolClass.id}>
+                      {schoolClass.fullName}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Qo'shilmoqda..." : "O'quvchi qo'shish"}
+              </Button>
+            </form>
+            {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Ro&apos;yxat</CardTitle>
+            <CardDescription>
+              <form onSubmit={handleSearch} className="mt-2 flex items-end gap-2">
+                <FormField label="Qidirish" htmlFor="search" className="w-64">
+                  <input
+                    id="search"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Ism yoki familiya"
+                    className={fieldClass}
+                  />
+                </FormField>
+                <Button type="submit" variant="outline" size="sm">
+                  <Search className="size-3.5" strokeWidth={1.75} />
+                  Qidirish
+                </Button>
+              </form>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : students.length === 0 ? (
+              <EmptyState
+                icon={GraduationCap}
+                title="Hozircha o'quvchilar yo'q"
+                description="Yuqoridagi shakl orqali qo'shing yoki Excel orqali ommaviy import qiling."
+              />
+            ) : (
+              <table className="w-full text-left text-sm">
+                <thead className="text-muted-foreground">
+                  <tr className="border-b border-border">
+                    <th className="py-2 font-medium">Ism familiya</th>
+                    <th className="py-2 font-medium">Telefon</th>
+                    <th className="py-2 font-medium">Sinf</th>
+                    <th className="py-2 font-medium">Holati</th>
+                    <th className="py-2 font-medium">Yozuv profili</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((student) => (
+                    <tr key={student.id} className="border-b border-border last:border-0">
+                      <td className="py-2.5 font-medium">
+                        {student.firstName} {student.lastName}
+                      </td>
+                      <td className="py-2.5 font-data text-muted-foreground">{student.phone}</td>
+                      <td className="py-2.5">{classFullName(student.classId)}</td>
+                      <td className="py-2.5">
+                        <Badge variant={student.isActive ? "success" : "secondary"}>
+                          {student.isActive ? "Faol" : "Faol emas"}
+                        </Badge>
+                      </td>
+                      <td className="py-2.5">
+                        <div className="flex flex-col items-start gap-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={unlockingId === student.id}
+                            onClick={() => handleUnlockReset(student.id)}
+                          >
+                            {unlockingId === student.id ? "Tiklanmoqda..." : "Reset limitini tiklash"}
+                          </Button>
+                          {unlockMessage?.studentId === student.id ? (
+                            <span
+                              className={`text-xs ${unlockMessage.isError ? "text-destructive" : "text-success"}`}
+                            >
+                              {unlockMessage.text}
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </CardContent>
+        </Card>
       </div>
-
-      <form onSubmit={handleSubmit} className="mb-6 flex flex-wrap items-end gap-3">
-        <div className="space-y-1">
-          <label htmlFor="firstName" className="text-sm font-medium">
-            Ism
-          </label>
-          <input
-            id="firstName"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            required
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="lastName" className="text-sm font-medium">
-            Familiya
-          </label>
-          <input
-            id="lastName"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            required
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="phone" className="text-sm font-medium">
-            Telefon raqam
-          </label>
-          <input
-            id="phone"
-            type="tel"
-            placeholder="+998901234567"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="classId" className="text-sm font-medium">
-            Sinf
-          </label>
-          <select
-            id="classId"
-            value={classId}
-            onChange={(e) => setClassId(e.target.value)}
-            required
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          >
-            <option value="" disabled>
-              Tanlang
-            </option>
-            {classes.map((schoolClass) => (
-              <option key={schoolClass.id} value={schoolClass.id}>
-                {schoolClass.fullName}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Qo'shilmoqda..." : "O'quvchi qo'shish"}
-        </Button>
-      </form>
-
-      <form onSubmit={handleSearch} className="mb-4 flex items-end gap-3">
-        <div className="space-y-1">
-          <label htmlFor="search" className="text-sm font-medium">
-            Qidirish
-          </label>
-          <input
-            id="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Ism yoki familiya"
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </div>
-        <Button type="submit" variant="outline">
-          Qidirish
-        </Button>
-      </form>
-
-      {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
-
-      <table className="w-full text-left text-sm">
-        <thead className="text-muted-foreground">
-          <tr className="border-b border-border">
-            <th className="py-2">Ism familiya</th>
-            <th className="py-2">Telefon</th>
-            <th className="py-2">Sinf</th>
-            <th className="py-2">Holati</th>
-            <th className="py-2">Yozuv profili</th>
-          </tr>
-        </thead>
-        <tbody>
-          {students.map((student) => (
-            <tr key={student.id} className="border-b border-border">
-              <td className="py-2 font-medium">
-                {student.firstName} {student.lastName}
-              </td>
-              <td className="py-2">{student.phone}</td>
-              <td className="py-2">{classFullName(student.classId)}</td>
-              <td className="py-2">{student.isActive ? "Faol" : "Faol emas"}</td>
-              <td className="py-2">
-                <div className="flex flex-col items-start gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={unlockingId === student.id}
-                    onClick={() => handleUnlockReset(student.id)}
-                  >
-                    {unlockingId === student.id ? "Tiklanmoqda..." : "Reset limitini tiklash"}
-                  </Button>
-                  {unlockMessage?.studentId === student.id ? (
-                    <span
-                      className={`text-xs ${unlockMessage.isError ? "text-destructive" : "text-green-600"}`}
-                    >
-                      {unlockMessage.text}
-                    </span>
-                  ) : null}
-                </div>
-              </td>
-            </tr>
-          ))}
-          {students.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="py-4 text-center text-muted-foreground">
-                Hozircha o&apos;quvchilar yo&apos;q.
-              </td>
-            </tr>
-          ) : null}
-        </tbody>
-      </table>
     </DashboardShell>
   );
 }

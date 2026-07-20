@@ -1,106 +1,166 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  AlertTriangle,
+  ClipboardList,
+  GraduationCap,
+  Inbox,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { StatTile, StatTileSkeleton } from "@/components/admin/StatTile";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAdminAnalyticsStore } from "@/stores/useAdminAnalyticsStore";
 
 export default function AdminDashboardPage() {
   const dashboard = useAdminAnalyticsStore((state) => state.dashboard);
   const fetchDashboard = useAdminAnalyticsStore((state) => state.fetchDashboard);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboard().catch(() => setError("Bosh sahifani yuklab bo'lmadi."));
+    fetchDashboard()
+      .catch(() => setError("Bosh sahifani yuklab bo'lmadi."))
+      .finally(() => setIsLoading(false));
   }, [fetchDashboard]);
 
   return (
     <DashboardShell role="ADMIN">
-      <AdminNav />
+      <div className="space-y-6">
+        <div>
+          <h2 className="font-heading text-xl font-semibold">Bosh sahifa</h2>
+          <p className="text-sm text-muted-foreground">Maktab bo&apos;yicha umumiy holat.</p>
+        </div>
 
-      {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
+        {error ? (
+          <p className="text-sm text-destructive">{error}</p>
+        ) : null}
 
-      {dashboard ? (
-        <>
-          <div className="mb-6 grid grid-cols-4 gap-4">
-            <div className="rounded-md border border-border p-4">
-              <p className="text-2xl font-semibold">{dashboard.totalStudents}</p>
-              <p className="text-sm text-muted-foreground">O&apos;quvchilar</p>
-            </div>
-            <div className="rounded-md border border-border p-4">
-              <p className="text-2xl font-semibold">{dashboard.totalTeachers}</p>
-              <p className="text-sm text-muted-foreground">O&apos;qituvchilar</p>
-            </div>
-            <div className="rounded-md border border-border p-4">
-              <p className="text-2xl font-semibold">{dashboard.activeToday}</p>
-              <p className="text-sm text-muted-foreground">Bugun faol</p>
-            </div>
-            <div className="rounded-md border border-border p-4">
-              <p className="text-2xl font-semibold">{dashboard.homeworkSubmissionRate}%</p>
-              <p className="text-sm text-muted-foreground">Topshirish darajasi (30 kun)</p>
-            </div>
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatTileSkeleton />
+            <StatTileSkeleton />
+            <StatTileSkeleton />
+            <StatTileSkeleton />
           </div>
-
-          <div className="mb-6 grid grid-cols-2 gap-4">
-            <div className="rounded-md border border-border p-4">
-              <p className="text-lg font-semibold text-destructive">
-                {dashboard.psychologicalAlerts.high}
-              </p>
-              <p className="text-sm text-muted-foreground">Yuqori psixologik signallar</p>
-            </div>
-            <div className="rounded-md border border-border p-4">
-              <p className="text-lg font-semibold text-amber-600">
-                {dashboard.psychologicalAlerts.medium}
-              </p>
-              <p className="text-sm text-muted-foreground">O&apos;rta psixologik signallar</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <h3 className="mb-2 text-sm font-semibold">Sinflar bo&apos;yicha o&apos;zlashtirish</h3>
-              <ul className="space-y-2">
-                {dashboard.classProgressList.map((c) => (
-                  <li
-                    key={c.classId}
-                    className="flex justify-between rounded-md border border-border p-3 text-sm"
-                  >
-                    <span>{c.className}</span>
-                    <span className="text-muted-foreground">
-                      {c.avgScore}% ({c.gradedCount} baholangan, {c.studentCount} o&apos;quvchi)
-                    </span>
-                  </li>
-                ))}
-                {dashboard.classProgressList.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
-                ) : null}
-              </ul>
+        ) : dashboard ? (
+          <>
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <StatTile
+                label="O'quvchilar"
+                value={dashboard.totalStudents}
+                icon={GraduationCap}
+              />
+              <StatTile label="O'qituvchilar" value={dashboard.totalTeachers} icon={Users} />
+              <StatTile label="Bugun faol" value={dashboard.activeToday} icon={TrendingUp} />
+              <StatTile
+                label="Topshirish darajasi (30 kun)"
+                value={`${dashboard.homeworkSubmissionRate}%`}
+                icon={ClipboardList}
+              />
             </div>
 
-            <div>
-              <h3 className="mb-2 text-sm font-semibold">O&apos;qituvchilar reytingi</h3>
-              <ul className="space-y-2">
-                {dashboard.teacherRankings.map((t) => (
-                  <li
-                    key={t.teacherId}
-                    className="flex justify-between rounded-md border border-border p-3 text-sm"
-                  >
-                    <span>
-                      {t.firstName} {t.lastName}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {t.avgGrade}/5 ({t.gradedCount})
-                    </span>
-                  </li>
-                ))}
-                {dashboard.teacherRankings.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
-                ) : null}
-              </ul>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Card>
+                <CardContent className="flex items-center gap-3 py-5">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-severity-high-bg text-severity-high">
+                    <AlertTriangle className="size-5" strokeWidth={1.75} />
+                  </span>
+                  <div>
+                    <p className="font-data text-2xl leading-none font-semibold">
+                      {dashboard.psychologicalAlerts.high}
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Yuqori psixologik signallar
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center gap-3 py-5">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-severity-medium-bg text-severity-medium">
+                    <AlertTriangle className="size-5" strokeWidth={1.75} />
+                  </span>
+                  <div>
+                    <p className="font-data text-2xl leading-none font-semibold">
+                      {dashboard.psychologicalAlerts.medium}
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      O&apos;rta psixologik signallar
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </div>
-        </>
-      ) : null}
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sinflar bo&apos;yicha o&apos;zlashtirish</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dashboard.classProgressList.length === 0 ? (
+                    <EmptyState
+                      icon={Inbox}
+                      title="Ma'lumot yo'q"
+                      description="Sinflar bo'yicha o'zlashtirish ma'lumotlari hali mavjud emas."
+                    />
+                  ) : (
+                    <ul className="space-y-2">
+                      {dashboard.classProgressList.map((c) => (
+                        <li
+                          key={c.classId}
+                          className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm"
+                        >
+                          <span className="font-medium">{c.className}</span>
+                          <span className="font-data text-muted-foreground">
+                            {c.avgScore}% ({c.gradedCount} baholangan, {c.studentCount}{" "}
+                            o&apos;quvchi)
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>O&apos;qituvchilar reytingi</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dashboard.teacherRankings.length === 0 ? (
+                    <EmptyState
+                      icon={Inbox}
+                      title="Ma'lumot yo'q"
+                      description="O'qituvchilar reytingi hali hisoblanmagan."
+                    />
+                  ) : (
+                    <ul className="space-y-2">
+                      {dashboard.teacherRankings.map((t) => (
+                        <li
+                          key={t.teacherId}
+                          className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm"
+                        >
+                          <span className="font-medium">
+                            {t.firstName} {t.lastName}
+                          </span>
+                          <span className="font-data text-muted-foreground">
+                            {t.avgGrade}/5 ({t.gradedCount})
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        ) : null}
+      </div>
     </DashboardShell>
   );
 }
