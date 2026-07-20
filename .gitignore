@@ -45,3 +45,10 @@ infra/backups/
 
 # CI/CD workflow — kept locally, skipped on GitHub for now
 .github/workflows/
+
+# Internal/spec docs — kept locally, not on GitHub (private→public repo prep)
+/CLAUDE.md
+/ROADMAP.md
+/academix_tz.md
+/academix_backend_tdd.md
+/academix_frontend_tdd.md
