@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { AlertTriangle, ArrowDown, ArrowUp, BarChart3 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { TeacherNav } from "@/components/teacher/TeacherNav";
+import { EmptyState } from "@/components/teacher/EmptyState";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTeacherAnalyticsStore } from "@/stores/useTeacherAnalyticsStore";
 
 export default function TeacherClassAnalyticsPage() {
@@ -19,97 +22,128 @@ export default function TeacherClassAnalyticsPage() {
 
   return (
     <DashboardShell role="TEACHER">
-      <TeacherNav />
-      <h2 className="mb-4 text-lg font-semibold">Sinf tahlili</h2>
+      <h2 className="mb-4 font-heading text-lg font-semibold">Sinf tahlili</h2>
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 
+      {!analytics && !error ? (
+        <div className="space-y-4">
+          <Skeleton className="h-24 w-48" />
+          <div className="grid grid-cols-2 gap-6">
+            <Skeleton className="h-40" />
+            <Skeleton className="h-40" />
+          </div>
+        </div>
+      ) : null}
+
       {analytics ? (
         <>
-          <div className="mb-6 rounded-md border border-border p-4">
-            <p className="text-2xl font-semibold">{analytics.classAverage}%</p>
-            <p className="text-sm text-muted-foreground">Sinf o&apos;rtacha bahosi</p>
-          </div>
+          <Card className="mb-6 w-fit">
+            <CardContent className="flex items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-role-teacher-muted text-role-teacher">
+                <BarChart3 className="size-4.5" strokeWidth={1.75} />
+              </span>
+              <div>
+                <p className="font-data text-2xl font-semibold leading-tight">{analytics.classAverage}%</p>
+                <p className="text-xs text-muted-foreground">Sinf o&apos;rtacha bahosi</p>
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="mb-6 grid grid-cols-2 gap-6">
-            <div>
-              <h3 className="mb-2 text-sm font-semibold">Eng yaxshi o&apos;quvchilar</h3>
-              <ul className="space-y-2">
+          <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ArrowUp className="size-4 text-success" strokeWidth={1.75} />
+                  Eng yaxshi o&apos;quvchilar
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
                 {analytics.topStudents.map((s) => (
-                  <li
+                  <Link
                     key={s.studentId}
-                    className="rounded-md border border-border p-3 text-sm"
+                    href={`/dashboard/teacher/students/${s.studentId}/progress`}
+                    className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/60"
                   >
-                    <Link
-                      href={`/dashboard/teacher/students/${s.studentId}/progress`}
-                      className="flex justify-between hover:underline"
-                    >
-                      <span>
-                        {s.firstName} {s.lastName}
-                      </span>
-                      <span className="text-muted-foreground">{s.avgScore}%</span>
-                    </Link>
-                  </li>
+                    <span>
+                      {s.firstName} {s.lastName}
+                    </span>
+                    <span className="font-data text-muted-foreground">{s.avgScore}%</span>
+                  </Link>
                 ))}
                 {analytics.topStudents.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
                 ) : null}
-              </ul>
-            </div>
-            <div>
-              <h3 className="mb-2 text-sm font-semibold">Yordam kerak bo&apos;lgan o&apos;quvchilar</h3>
-              <ul className="space-y-2">
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ArrowDown className="size-4 text-severity-medium" strokeWidth={1.75} />
+                  Yordam kerak bo&apos;lgan o&apos;quvchilar
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
                 {analytics.bottomStudents.map((s) => (
-                  <li
+                  <Link
                     key={s.studentId}
-                    className="rounded-md border border-border p-3 text-sm"
+                    href={`/dashboard/teacher/students/${s.studentId}/progress`}
+                    className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/60"
                   >
-                    <Link
-                      href={`/dashboard/teacher/students/${s.studentId}/progress`}
-                      className="flex justify-between hover:underline"
-                    >
-                      <span>
-                        {s.firstName} {s.lastName}
-                      </span>
-                      <span className="text-muted-foreground">{s.avgScore}%</span>
-                    </Link>
-                  </li>
+                    <span>
+                      {s.firstName} {s.lastName}
+                    </span>
+                    <span className="font-data text-muted-foreground">{s.avgScore}%</span>
+                  </Link>
                 ))}
                 {analytics.bottomStudents.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
                 ) : null}
-              </ul>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="mb-6">
-            <h3 className="mb-2 text-sm font-semibold">Zaif fanlar</h3>
-            <p className="text-sm text-muted-foreground">
-              {analytics.subjectWeakAreas.length > 0
-                ? analytics.subjectWeakAreas.join(", ")
-                : "Ma'lumot yo'q."}
-            </p>
-          </div>
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="size-4 text-severity-medium" strokeWidth={1.75} />
+                Zaif fanlar
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {analytics.subjectWeakAreas.length > 0 ? (
+                <p className="text-sm text-muted-foreground">{analytics.subjectWeakAreas.join(", ")}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
+              )}
+            </CardContent>
+          </Card>
 
-          <div>
-            <h3 className="mb-2 text-sm font-semibold">Fanlar bo&apos;yicha topshirish darajasi</h3>
-            <ul className="space-y-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Fanlar bo&apos;yicha topshirish darajasi</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
               {analytics.submissionRateBySubject.map((s) => (
-                <li
+                <div
                   key={s.subject}
-                  className="flex justify-between rounded-md border border-border p-3 text-sm"
+                  className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm"
                 >
                   <span>{s.subject}</span>
-                  <span className="text-muted-foreground">
-                    {s.averageScore}% o&apos;rtacha, {s.submissionRate}% topshirilgan
+                  <span className="font-data text-muted-foreground">
+                    {s.averageScore}% o&apos;rtacha &middot; {s.submissionRate}% topshirilgan
                   </span>
-                </li>
+                </div>
               ))}
               {analytics.submissionRateBySubject.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
+                <EmptyState
+                  icon={BarChart3}
+                  title="Ma'lumot yo'q"
+                  description="Bu sinf uchun fanlar bo'yicha topshirish ma'lumotlari hali mavjud emas."
+                />
               ) : null}
-            </ul>
-          </div>
+            </CardContent>
+          </Card>
         </>
       ) : null}
     </DashboardShell>

@@ -3,9 +3,12 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BookOpen, Sparkles } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { TeacherNav } from "@/components/teacher/TeacherNav";
+import { EmptyState } from "@/components/teacher/EmptyState";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTeacherStore } from "@/stores/useTeacherStore";
 import type { ApiErrorResponse } from "@/types/auth";
 import type { AssignmentType } from "@/types/teacher";
@@ -74,181 +77,203 @@ export default function TeacherHomeworkPage() {
 
   return (
     <DashboardShell role="TEACHER">
-      <TeacherNav />
-      <h2 className="mb-4 text-lg font-semibold">Uy vazifalari</h2>
+      <h2 className="mb-4 font-heading text-lg font-semibold">Uy vazifalari</h2>
 
-      <form onSubmit={handleSubmit} className="mb-6 flex flex-wrap items-end gap-3">
-        <div className="space-y-1">
-          <label htmlFor="classId" className="text-sm font-medium">
-            Sinf
-          </label>
-          <select
-            id="classId"
-            value={classId}
-            onChange={(e) => setClassId(e.target.value)}
-            required
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          >
-            <option value="" disabled>
-              Tanlang
-            </option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.fullName}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="subjectId" className="text-sm font-medium">
-            Fan
-          </label>
-          <select
-            id="subjectId"
-            value={subjectId}
-            onChange={(e) => setSubjectId(e.target.value)}
-            required
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          >
-            <option value="" disabled>
-              Tanlang
-            </option>
-            {subjects.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="title" className="text-sm font-medium">
-            Sarlavha
-          </label>
-          <input
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="description" className="text-sm font-medium">
-            Tavsif
-          </label>
-          <input
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="deadlineAt" className="text-sm font-medium">
-            Muddat
-          </label>
-          <input
-            id="deadlineAt"
-            type="datetime-local"
-            value={deadlineAt}
-            onChange={(e) => setDeadlineAt(e.target.value)}
-            required
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="maxScore" className="text-sm font-medium">
-            Maksimal ball
-          </label>
-          <input
-            id="maxScore"
-            type="number"
-            min={1}
-            value={maxScore}
-            onChange={(e) => setMaxScore(e.target.value)}
-            required
-            className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <span className="block text-sm font-medium">Turi</span>
-          <div className="flex gap-3 py-2">
-            <label className="flex items-center gap-1 text-sm">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Yangi vazifa yaratish</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1">
+              <label htmlFor="classId" className="text-sm font-medium">
+                Sinf
+              </label>
+              <select
+                id="classId"
+                value={classId}
+                onChange={(e) => setClassId(e.target.value)}
+                required
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="" disabled>
+                  Tanlang
+                </option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.fullName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="subjectId" className="text-sm font-medium">
+                Fan
+              </label>
+              <select
+                id="subjectId"
+                value={subjectId}
+                onChange={(e) => setSubjectId(e.target.value)}
+                required
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="" disabled>
+                  Tanlang
+                </option>
+                {subjects.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="title" className="text-sm font-medium">
+                Sarlavha
+              </label>
               <input
-                type="radio"
-                name="type"
-                checked={type === "STANDARD"}
-                onChange={() => setType("STANDARD")}
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
-              Standart
-            </label>
-            <label className="flex items-center gap-1 text-sm">
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="description" className="text-sm font-medium">
+                Tavsif
+              </label>
               <input
-                type="radio"
-                name="type"
-                checked={type === "UNIQUE_GENERATED"}
-                onChange={() => setType("UNIQUE_GENERATED")}
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
-              Har biriga unique
-            </label>
-          </div>
-        </div>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Yaratilmoqda..." : "Vazifa yaratish"}
-        </Button>
-      </form>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="deadlineAt" className="text-sm font-medium">
+                Muddat
+              </label>
+              <input
+                id="deadlineAt"
+                type="datetime-local"
+                value={deadlineAt}
+                onChange={(e) => setDeadlineAt(e.target.value)}
+                required
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="maxScore" className="text-sm font-medium">
+                Maksimal ball
+              </label>
+              <input
+                id="maxScore"
+                type="number"
+                min={1}
+                value={maxScore}
+                onChange={(e) => setMaxScore(e.target.value)}
+                required
+                className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <span className="block text-sm font-medium">Turi</span>
+              <div className="flex gap-3 py-2">
+                <label className="flex items-center gap-1 text-sm">
+                  <input
+                    type="radio"
+                    name="type"
+                    checked={type === "STANDARD"}
+                    onChange={() => setType("STANDARD")}
+                  />
+                  Standart
+                </label>
+                <label className="flex items-center gap-1 text-sm">
+                  <input
+                    type="radio"
+                    name="type"
+                    checked={type === "UNIQUE_GENERATED"}
+                    onChange={() => setType("UNIQUE_GENERATED")}
+                  />
+                  Har biriga unique
+                </label>
+              </div>
+            </div>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Yaratilmoqda..." : "Vazifa yaratish"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 
-      <table className="w-full text-left text-sm">
-        <thead className="text-muted-foreground">
-          <tr className="border-b border-border">
-            <th className="py-2">Sarlavha</th>
-            <th className="py-2">Sinf</th>
-            <th className="py-2">Fan</th>
-            <th className="py-2">Muddat</th>
-            <th className="py-2">Turi</th>
-            <th className="py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {homework.map((hw) => (
-            <tr key={hw.id} className="border-b border-border">
-              <td className="py-2 font-medium">{hw.title}</td>
-              <td className="py-2">{classFullName(hw.classId)}</td>
-              <td className="py-2">{subjectName(hw.subjectId)}</td>
-              <td className="py-2">{new Date(hw.deadlineAt).toLocaleString()}</td>
-              <td className="py-2">
-                {hw.type === "UNIQUE_GENERATED" ? "Unique" : "Standart"}
-                {hw.type === "UNIQUE_GENERATED" && !hw.tasksPublished ? " (kutilmoqda)" : ""}
-              </td>
-              <td className="py-2 text-right space-x-3">
-                {hw.type === "UNIQUE_GENERATED" && !hw.tasksPublished ? (
-                  <Link
-                    href={`/dashboard/teacher/homework/${hw.id}/review`}
-                    className="text-sm underline"
-                  >
-                    Ko&apos;rib chiqish
-                  </Link>
-                ) : null}
-                <Link
-                  href={`/dashboard/teacher/submissions?assignmentId=${hw.id}`}
-                  className="text-sm underline"
-                >
-                  Topshiriqlar
-                </Link>
-              </td>
-            </tr>
-          ))}
-          {homework.length === 0 ? (
-            <tr>
-              <td colSpan={6} className="py-4 text-center text-muted-foreground">
-                Hozircha uy vazifalari yo&apos;q.
-              </td>
-            </tr>
-          ) : null}
-        </tbody>
-      </table>
+      {homework.length === 0 ? (
+        <EmptyState
+          icon={BookOpen}
+          title="Hozircha uy vazifalari yo'q"
+          description="Yuqoridagi forma orqali birinchi vazifangizni yarating."
+        />
+      ) : (
+        <Card>
+          <CardContent className="px-0">
+            <table className="w-full text-left text-sm">
+              <thead className="text-muted-foreground">
+                <tr className="border-b border-border">
+                  <th className="px-6 py-2">Sarlavha</th>
+                  <th className="py-2">Sinf</th>
+                  <th className="py-2">Fan</th>
+                  <th className="py-2">Muddat</th>
+                  <th className="py-2">Turi</th>
+                  <th className="px-6 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {homework.map((hw) => (
+                  <tr key={hw.id} className="border-b border-border last:border-0">
+                    <td className="px-6 py-3 font-medium">{hw.title}</td>
+                    <td className="py-3">{classFullName(hw.classId)}</td>
+                    <td className="py-3">{subjectName(hw.subjectId)}</td>
+                    <td className="py-3 font-data">{new Date(hw.deadlineAt).toLocaleString()}</td>
+                    <td className="py-3">
+                      {hw.type === "UNIQUE_GENERATED" ? (
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="outline">Unique</Badge>
+                          {!hw.tasksPublished ? (
+                            <Badge variant="status-processing" className="gap-1">
+                              <Sparkles className="size-3" strokeWidth={1.75} />
+                              Generatsiya
+                            </Badge>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <Badge variant="outline">Standart</Badge>
+                      )}
+                    </td>
+                    <td className="space-x-3 px-6 py-3 text-right">
+                      {hw.type === "UNIQUE_GENERATED" && !hw.tasksPublished ? (
+                        <Link
+                          href={`/dashboard/teacher/homework/${hw.id}/review`}
+                          className="text-sm underline"
+                        >
+                          Ko&apos;rib chiqish
+                        </Link>
+                      ) : null}
+                      <Link
+                        href={`/dashboard/teacher/submissions?assignmentId=${hw.id}`}
+                        className="text-sm underline"
+                      >
+                        Topshiriqlar
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
     </DashboardShell>
   );
 }

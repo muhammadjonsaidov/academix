@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { HeartPulse, MessageCircleWarning } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { TeacherNav } from "@/components/teacher/TeacherNav";
+import { EmptyState } from "@/components/teacher/EmptyState";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { useTeacherStore } from "@/stores/useTeacherStore";
 import type { ApiErrorResponse } from "@/types/auth";
 import type { SignalSeverity } from "@/types/teacher";
@@ -25,10 +28,15 @@ const TYPE_LABEL: Record<string, string> = {
   MANIPULATION_ATTEMPT: "Manipulyatsiya urinishi",
 };
 
-function severityClass(severity: SignalSeverity) {
-  if (severity === "CRITICAL") return "text-destructive font-semibold";
-  if (severity === "HIGH") return "text-amber-600 font-medium";
-  return "text-muted-foreground";
+// Notify matrix (academix_tz.md §1.14): LOW = log only, MEDIUM/HIGH = teacher + psychologist,
+// CRITICAL = + parent. Parents are never notified below CRITICAL, so this "Ota-onaga xabar
+// berildi" line — and any future parent-notify action — must never render below CRITICAL.
+function severityBadgeVariant(severity: SignalSeverity) {
+  return `severity-${severity.toLowerCase()}` as
+    | "severity-low"
+    | "severity-medium"
+    | "severity-high"
+    | "severity-critical";
 }
 
 export default function TeacherPsychologicalSignalsPage() {
@@ -61,8 +69,7 @@ export default function TeacherPsychologicalSignalsPage() {
 
   return (
     <DashboardShell role="TEACHER">
-      <TeacherNav />
-      <h2 className="mb-1 text-lg font-semibold">Psixologik signallar</h2>
+      <h2 className="mb-1 font-heading text-lg font-semibold">Psixologik signallar</h2>
       <p className="mb-4 text-sm text-muted-foreground">
         Faqat sinf rahbari sifatida biriktirilgan sinfingiz o&apos;quvchilari ko&apos;rinadi.
       </p>
@@ -75,7 +82,7 @@ export default function TeacherPsychologicalSignalsPage() {
           id="severity"
           value={severityFilter}
           onChange={(e) => setSeverityFilter(e.target.value as SignalSeverity | "")}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+          className="block rounded-md border border-input bg-background px-3 py-2 text-sm"
         >
           <option value="">Barchasi</option>
           {(Object.keys(SEVERITY_LABEL) as SignalSeverity[]).map((s) => (
@@ -88,30 +95,45 @@ export default function TeacherPsychologicalSignalsPage() {
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 
-      <table className="w-full text-left text-sm">
-        <thead className="text-muted-foreground">
-          <tr className="border-b border-border">
-            <th className="py-2">O&apos;quvchi</th>
-            <th className="py-2">Turi</th>
-            <th className="py-2">Daraja</th>
-            <th className="py-2">Tavsif</th>
-            <th className="py-2">Holati</th>
-            <th className="py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
+      {signals.length === 0 ? (
+        <EmptyState
+          icon={HeartPulse}
+          title="Hozircha signallar yo'q"
+          description="Sinfingiz o'quvchilari uchun psixologik signal aniqlanmagan."
+        />
+      ) : (
+        <div className="space-y-3">
           {signals.map((signal) => (
-            <tr key={signal.signalId} className="border-b border-border">
-              <td className="py-2 font-medium">{signal.studentName}</td>
-              <td className="py-2">{TYPE_LABEL[signal.type] ?? signal.type}</td>
-              <td className={`py-2 ${severityClass(signal.severity)}`}>
-                {SEVERITY_LABEL[signal.severity]}
-              </td>
-              <td className="py-2">{signal.description ?? "—"}</td>
-              <td className="py-2">
-                {signal.resolved ? "Hal qilingan" : "Ochiq"}
-              </td>
-              <td className="py-2 text-right">
+            <Card
+              key={signal.signalId}
+              className={signal.severity === "CRITICAL" ? "rail-critical" : undefined}
+            >
+              <CardContent className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium">{signal.studentName}</p>
+                    <Badge variant={severityBadgeVariant(signal.severity)}>
+                      {SEVERITY_LABEL[signal.severity]}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {TYPE_LABEL[signal.type] ?? signal.type}
+                    </span>
+                  </div>
+                  {signal.description ? (
+                    <p className="text-sm text-muted-foreground">{signal.description}</p>
+                  ) : null}
+                  {signal.severity === "CRITICAL" ? (
+                    <p className="flex items-center gap-1.5 text-sm font-medium text-severity-critical">
+                      <MessageCircleWarning className="size-3.5" strokeWidth={1.75} />
+                      Ota-onaga xabar berildi
+                    </p>
+                  ) : null}
+                  <p className="text-xs text-muted-foreground">
+                    {signal.resolved
+                      ? `Hal qilingan${signal.resolvedAt ? ` — ${new Date(signal.resolvedAt).toLocaleString()}` : ""}`
+                      : `Aniqlangan — ${new Date(signal.detectedAt).toLocaleString()}`}
+                  </p>
+                </div>
                 {!signal.resolved ? (
                   <Button
                     type="button"
@@ -122,19 +144,14 @@ export default function TeacherPsychologicalSignalsPage() {
                   >
                     {resolvingId === signal.signalId ? "..." : "Hal qilish"}
                   </Button>
-                ) : null}
-              </td>
-            </tr>
+                ) : (
+                  <Badge variant="ready">Hal qilingan</Badge>
+                )}
+              </CardContent>
+            </Card>
           ))}
-          {signals.length === 0 ? (
-            <tr>
-              <td colSpan={6} className="py-4 text-center text-muted-foreground">
-                Hozircha signallar yo&apos;q.
-              </td>
-            </tr>
-          ) : null}
-        </tbody>
-      </table>
+        </div>
+      )}
     </DashboardShell>
   );
 }

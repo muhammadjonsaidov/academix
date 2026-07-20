@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { FileCheck2, History, TrendingUp } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { TeacherNav } from "@/components/teacher/TeacherNav";
+import { EmptyState } from "@/components/teacher/EmptyState";
+import { submissionRailClass } from "@/components/teacher/SubmissionStatusBadge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTeacherAnalyticsStore } from "@/stores/useTeacherAnalyticsStore";
+import type { SubmissionStatus } from "@/types/teacher";
 
 export default function TeacherStudentProgressPage() {
   const params = useParams<{ studentId: string }>();
@@ -18,78 +23,102 @@ export default function TeacherStudentProgressPage() {
 
   return (
     <DashboardShell role="TEACHER">
-      <TeacherNav />
-
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
+
+      {!progress && !error ? (
+        <div className="space-y-4">
+          <Skeleton className="h-7 w-56" />
+          <Skeleton className="h-40" />
+        </div>
+      ) : null}
 
       {progress ? (
         <>
-          <h2 className="mb-4 text-lg font-semibold">
+          <h2 className="mb-4 font-heading text-lg font-semibold">
             {progress.student.firstName} {progress.student.lastName}
           </h2>
 
-          <div className="mb-6">
-            <h3 className="mb-2 text-sm font-semibold">Fanlar bo&apos;yicha</h3>
-            <ul className="space-y-2">
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="size-4 text-muted-foreground" strokeWidth={1.75} />
+                Fanlar bo&apos;yicha
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
               {progress.subjectStats.map((s) => (
-                <li key={s.subject} className="rounded-md border border-border p-3 text-sm">
-                  <div className="flex justify-between">
-                    <span>{s.subject}</span>
-                    <span className="text-muted-foreground">
+                <div key={s.subject} className="rounded-md border border-border px-3 py-2.5 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{s.subject}</span>
+                    <span className="font-data text-muted-foreground">
                       {s.averageScore}% ({s.trend})
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Topshirish darajasi: {s.submissionRate}%
                   </p>
-                </li>
+                </div>
               ))}
               {progress.subjectStats.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
               ) : null}
-            </ul>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="mb-6">
-            <h3 className="mb-2 text-sm font-semibold">XP tarixi</h3>
-            <ul className="space-y-2">
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="size-4 text-muted-foreground" strokeWidth={1.75} />
+                XP tarixi
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
               {progress.xpHistory.slice(0, 10).map((x, i) => (
-                <li
+                <div
                   key={i}
-                  className="flex justify-between rounded-md border border-border p-3 text-sm"
+                  className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm"
                 >
                   <span>{x.reason}</span>
-                  <span className="text-muted-foreground">
+                  <span className="font-data text-muted-foreground">
                     +{x.xp} XP — {new Date(x.date).toLocaleDateString()}
                   </span>
-                </li>
+                </div>
               ))}
               {progress.xpHistory.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
               ) : null}
-            </ul>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div>
-            <h3 className="mb-2 text-sm font-semibold">So&apos;nggi topshirilgan ishlar</h3>
-            <ul className="space-y-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileCheck2 className="size-4 text-muted-foreground" strokeWidth={1.75} />
+                So&apos;nggi topshirilgan ishlar
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
               {progress.recentSubmissions.map((s) => (
-                <li
+                <div
                   key={s.submissionId}
-                  className="flex justify-between rounded-md border border-border p-3 text-sm"
+                  className={`flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm ${submissionRailClass(s.status as SubmissionStatus)}`}
                 >
                   <span>{s.status}</span>
-                  <span className="text-muted-foreground">
+                  <span className="font-data text-muted-foreground">
                     {new Date(s.submittedAt).toLocaleDateString()}
                     {s.isLate ? " (kech)" : ""}
                   </span>
-                </li>
+                </div>
               ))}
               {progress.recentSubmissions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Ma&apos;lumot yo&apos;q.</p>
+                <EmptyState
+                  icon={FileCheck2}
+                  title="Ma'lumot yo'q"
+                  description="Bu o'quvchining so'nggi topshirilgan ishlari hali mavjud emas."
+                />
               ) : null}
-            </ul>
-          </div>
+            </CardContent>
+          </Card>
         </>
       ) : null}
     </DashboardShell>
