@@ -5,27 +5,41 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * AcademiX visual system
+ * AcademiX visual system — "teacher's red pen on an exercise book"
  * -----------------------------------------------------------------------
- * Base neutrals carry a faint cool-slate tint (hue 258, matching the brand
- * indigo's hue family) instead of pure achromatic gray — a deliberate,
- * restrained "temperature" choice appropriate for a trust-oriented school
- * platform, distinct from generic Tailwind neutral gray.
+ * Five named anchor colors ground the whole system in the product's actual
+ * subject matter (AI grading handwritten schoolwork the way a teacher
+ * would), replacing the previous cool-slate/indigo system:
+ *   --paper        warm exercise-book paper (page background)
+ *   --ink          fountain-pen blue-black (text, primary actions)
+ *   --pen-red      literal red-pen ink — AI corrections/errors/destructive
+ *                  actions ONLY, never decorative
+ *   --chalk-green  chalkboard green — success/verified/graded-correct
+ *   --graphite     pencil graphite — secondary text/borders/muted
+ * Every other token below is either one of these five directly, or a
+ * `color-mix()` of them — so retuning the palette later means editing five
+ * values, not thirty independently-picked ones.
  *
  * Five role accents (admin/teacher/student/parent/psychologist) are spaced
- * around the hue wheel, all outside the 20deg-85deg band reserved for the
- * severity scale (destructive/high/medium), so a role's own brand color is
- * never mistaken for an alert. Recharts categorical colors (--chart-1..5)
- * reuse these same five hues directly — one palette, two jobs.
+ * around the *cool* half of the hue wheel (~195deg-340deg), deliberately
+ * kept out of both the warm 20deg-85deg severity/pen-red band and away from
+ * chalk-green's own hue (~155deg) — a role chip must never read as an alert
+ * or a "verified" mark. Recharts categorical colors (--chart-1..5) reuse
+ * these same five hues directly — one palette, two jobs.
  */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-pen-red: var(--pen-red);
+  --color-chalk-green: var(--chalk-green);
+  --color-graphite: var(--graphite);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
   /* Falls back to body sans until a display face is wired in layout.tsx —
      see the design-tokens reference for the exact follow-up snippet. */
-  --font-heading: var(--font-heading-override, var(--font-geist-sans));
+  --font-heading: var(--font-heading-override, var(--font-inter));
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -113,58 +127,73 @@
 }
 
 :root {
-  --background: oklch(0.984 0.004 258);
-  --foreground: oklch(0.208 0.02 258);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.208 0.02 258);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.208 0.02 258);
-  --primary: oklch(0.36 0.11 264);
-  --primary-foreground: oklch(0.98 0.006 264);
-  --secondary: oklch(0.955 0.006 258);
-  --secondary-foreground: oklch(0.28 0.02 258);
-  --muted: oklch(0.955 0.006 258);
-  --muted-foreground: oklch(0.5 0.014 258);
-  --accent: oklch(0.94 0.02 264);
-  --accent-foreground: oklch(0.32 0.09 264);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.9 0.007 258);
-  --input: oklch(0.9 0.007 258);
-  --ring: oklch(0.6 0.09 264);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.985 0.004 258);
-  --sidebar-foreground: oklch(0.208 0.02 258);
-  --sidebar-primary: oklch(0.36 0.11 264);
-  --sidebar-primary-foreground: oklch(0.98 0.006 264);
-  --sidebar-accent: oklch(0.94 0.02 264);
-  --sidebar-accent-foreground: oklch(0.32 0.09 264);
-  --sidebar-border: oklch(0.9 0.007 258);
-  --sidebar-ring: oklch(0.6 0.09 264);
+  /* The five named anchors — see the block comment above. Literal hex, not
+     oklch, so the exact approved values are never lost to rounding. */
+  --paper: #faf7f0;
+  --ink: #1c2b3a;
+  --pen-red: #b23a2e;
+  --chalk-green: #3d6b4f;
+  --graphite: #6b6459;
 
-  /* Role accents (light) */
-  --role-admin: oklch(0.48 0.11 264);
-  --role-admin-muted: oklch(0.94 0.025 264);
+  --background: var(--paper);
+  --foreground: var(--ink);
+  /* Card reads as a crisper, slightly lighter sheet resting on the warmer
+     paper-colored desk behind it — same "card a hair lighter than page"
+     relationship the previous system used. */
+  --card: color-mix(in oklch, white 35%, var(--paper));
+  --card-foreground: var(--ink);
+  --popover: var(--card);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: color-mix(in oklch, white 25%, var(--paper));
+  --secondary: color-mix(in oklch, var(--graphite) 12%, var(--paper));
+  --secondary-foreground: var(--ink);
+  --muted: color-mix(in oklch, var(--graphite) 9%, var(--paper));
+  --muted-foreground: color-mix(in oklch, var(--graphite) 88%, var(--ink));
+  --accent: color-mix(in oklch, var(--ink) 8%, var(--paper));
+  --accent-foreground: var(--ink);
+  --destructive: var(--pen-red);
+  --border: color-mix(in oklch, var(--graphite) 28%, var(--paper));
+  --input: color-mix(in oklch, var(--graphite) 32%, var(--paper));
+  --ring: color-mix(in oklch, var(--ink) 45%, var(--paper));
+  --radius: 0.5rem;
+  --sidebar: color-mix(in oklch, var(--graphite) 5%, var(--paper));
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: color-mix(in oklch, white 25%, var(--paper));
+  --sidebar-accent: color-mix(in oklch, var(--ink) 10%, var(--paper));
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: color-mix(in oklch, var(--graphite) 22%, var(--paper));
+  --sidebar-ring: var(--ring);
+
+  /* Role accents (light) — cool-arc hues only, see block comment. Teacher
+     nudged 199→195 and psychologist moved 152→235 (was sitting almost
+     exactly on chalk-green's own ~155deg hue, i.e. a psychologist chip and
+     a "graded correct" mark used to read as the same color family). */
+  --role-admin: oklch(0.46 0.09 264);
+  --role-admin-muted: oklch(0.94 0.02 264);
   --role-admin-foreground: oklch(0.99 0.006 264);
 
-  --role-teacher: oklch(0.5 0.09 199);
-  --role-teacher-muted: oklch(0.94 0.025 199);
-  --role-teacher-foreground: oklch(0.99 0.006 199);
+  --role-teacher: oklch(0.48 0.075 195);
+  --role-teacher-muted: oklch(0.94 0.02 195);
+  --role-teacher-foreground: oklch(0.99 0.006 195);
 
-  --role-psychologist: oklch(0.48 0.09 152);
-  --role-psychologist-muted: oklch(0.94 0.025 152);
-  --role-psychologist-foreground: oklch(0.99 0.006 152);
+  --role-psychologist: oklch(0.47 0.07 235);
+  --role-psychologist-muted: oklch(0.94 0.02 235);
+  --role-psychologist-foreground: oklch(0.99 0.006 235);
 
-  --role-parent: oklch(0.5 0.12 340);
-  --role-parent-muted: oklch(0.94 0.03 340);
+  --role-parent: oklch(0.5 0.1 340);
+  --role-parent-muted: oklch(0.94 0.025 340);
   --role-parent-foreground: oklch(0.99 0.006 340);
 
-  --role-student: oklch(0.56 0.16 300);
-  --role-student-muted: oklch(0.94 0.04 300);
+  --role-student: oklch(0.52 0.12 300);
+  --role-student-muted: oklch(0.94 0.03 300);
   --role-student-foreground: oklch(0.99 0.006 300);
 
-  /* Severity scale (light) */
-  --severity-low: oklch(0.5 0.012 258);
-  --severity-low-bg: oklch(0.955 0.007 258);
+  /* Severity scale (light) — the warm ramp climbs toward --pen-red itself,
+     so CRITICAL is literally "the red pen," not a fourth unrelated hue. */
+  --severity-low: color-mix(in oklch, var(--graphite) 90%, var(--ink));
+  --severity-low-bg: color-mix(in oklch, var(--graphite) 8%, var(--paper));
 
   --severity-medium: oklch(0.5 0.11 80);
   --severity-medium-bg: oklch(0.95 0.05 80);
@@ -172,93 +201,98 @@
   --severity-high: oklch(0.48 0.15 45);
   --severity-high-bg: oklch(0.94 0.07 42);
 
-  --severity-critical: oklch(0.5 0.2 25);
-  --severity-critical-foreground: oklch(0.99 0.01 25);
+  --severity-critical: var(--pen-red);
+  --severity-critical-foreground: color-mix(in oklch, white 20%, var(--paper));
 
-  /* AI-pipeline status (light) */
-  --status-processing: oklch(0.5 0.11 264);
-  --status-processing-bg: oklch(0.95 0.02 264);
+  /* AI-pipeline status (light) — processing stays in the ink/brand family
+     (a process/trust state, not an alert or a verdict). */
+  --status-processing: oklch(0.42 0.045 249);
+  --status-processing-bg: color-mix(in oklch, var(--ink) 8%, var(--paper));
 
-  --status-skipped: oklch(0.45 0.02 70);
-  --status-skipped-bg: oklch(0.95 0.015 70);
+  --status-skipped: var(--graphite);
+  --status-skipped-bg: color-mix(in oklch, var(--graphite) 10%, var(--paper));
 
-  --success: oklch(0.48 0.11 152);
-  --success-bg: oklch(0.95 0.03 152);
-  --success-foreground: oklch(0.99 0.01 152);
+  --success: var(--chalk-green);
+  --success-bg: color-mix(in oklch, var(--chalk-green) 12%, var(--paper));
+  --success-foreground: color-mix(in oklch, white 20%, var(--paper));
 }
 
 .dark {
-  --background: oklch(0.17 0.014 258);
-  --foreground: oklch(0.96 0.006 258);
-  --card: oklch(0.21 0.016 258);
-  --card-foreground: oklch(0.96 0.006 258);
-  --popover: oklch(0.21 0.016 258);
-  --popover-foreground: oklch(0.96 0.006 258);
-  --primary: oklch(0.72 0.11 264);
-  --primary-foreground: oklch(0.16 0.02 264);
-  --secondary: oklch(0.27 0.016 258);
-  --secondary-foreground: oklch(0.96 0.006 258);
-  --muted: oklch(0.27 0.016 258);
-  --muted-foreground: oklch(0.68 0.014 258);
-  --accent: oklch(0.29 0.03 264);
-  --accent-foreground: oklch(0.9 0.03 264);
-  --destructive: oklch(0.704 0.191 22.216);
+  /* "Night notebook" — ink becomes the page, paper becomes the ink. Not
+     currently wired to a theme toggle anywhere in the app, kept in step
+     with the light palette on the same color-mix() principle regardless,
+     so it doesn't silently rot out of sync with the five named anchors. */
+  --background: color-mix(in oklch, var(--ink) 92%, black);
+  --foreground: color-mix(in oklch, var(--paper) 92%, white);
+  --card: color-mix(in oklch, var(--ink) 80%, black);
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --primary: color-mix(in oklch, var(--paper) 85%, white);
+  --primary-foreground: color-mix(in oklch, var(--ink) 85%, black);
+  --secondary: color-mix(in oklch, var(--graphite) 35%, black);
+  --secondary-foreground: var(--foreground);
+  --muted: color-mix(in oklch, var(--graphite) 30%, black);
+  --muted-foreground: color-mix(in oklch, var(--graphite) 70%, white);
+  --accent: color-mix(in oklch, var(--paper) 15%, var(--background));
+  --accent-foreground: var(--foreground);
+  --destructive: color-mix(in oklch, var(--pen-red) 85%, white);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.6 0.1 264);
-  --sidebar: oklch(0.21 0.016 258);
-  --sidebar-foreground: oklch(0.96 0.006 258);
-  --sidebar-primary: oklch(0.72 0.11 264);
-  --sidebar-primary-foreground: oklch(0.16 0.02 264);
-  --sidebar-accent: oklch(0.29 0.03 264);
-  --sidebar-accent-foreground: oklch(0.9 0.03 264);
+  --ring: color-mix(in oklch, var(--paper) 55%, var(--background));
+  --sidebar: color-mix(in oklch, var(--ink) 78%, black);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: color-mix(in oklch, var(--paper) 85%, white);
+  --sidebar-primary-foreground: color-mix(in oklch, var(--ink) 85%, black);
+  --sidebar-accent: color-mix(in oklch, var(--paper) 12%, var(--background));
+  --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.6 0.1 264);
+  --sidebar-ring: var(--ring);
 
-  /* Role accents (dark) */
-  --role-admin: oklch(0.72 0.11 264);
-  --role-admin-muted: oklch(0.3 0.06 264);
+  /* Role accents (dark) — same hue plan as light mode (see :root comment). */
+  --role-admin: oklch(0.72 0.08 264);
+  --role-admin-muted: oklch(0.3 0.05 264);
   --role-admin-foreground: oklch(0.15 0.02 264);
 
-  --role-teacher: oklch(0.74 0.09 199);
-  --role-teacher-muted: oklch(0.3 0.06 199);
-  --role-teacher-foreground: oklch(0.15 0.02 199);
+  --role-teacher: oklch(0.74 0.07 195);
+  --role-teacher-muted: oklch(0.3 0.05 195);
+  --role-teacher-foreground: oklch(0.15 0.02 195);
 
-  --role-psychologist: oklch(0.72 0.09 152);
-  --role-psychologist-muted: oklch(0.3 0.06 152);
-  --role-psychologist-foreground: oklch(0.15 0.02 152);
+  --role-psychologist: oklch(0.72 0.065 235);
+  --role-psychologist-muted: oklch(0.3 0.05 235);
+  --role-psychologist-foreground: oklch(0.15 0.02 235);
 
-  --role-parent: oklch(0.72 0.12 340);
-  --role-parent-muted: oklch(0.3 0.06 340);
+  --role-parent: oklch(0.74 0.09 340);
+  --role-parent-muted: oklch(0.3 0.05 340);
   --role-parent-foreground: oklch(0.15 0.02 340);
 
-  --role-student: oklch(0.76 0.15 300);
-  --role-student-muted: oklch(0.32 0.07 300);
+  --role-student: oklch(0.76 0.11 300);
+  --role-student-muted: oklch(0.32 0.06 300);
   --role-student-foreground: oklch(0.15 0.02 300);
 
   /* Severity scale (dark) */
-  --severity-low: oklch(0.72 0.012 258);
-  --severity-low-bg: oklch(0.28 0.008 258);
+  --severity-low: oklch(0.72 0.012 78);
+  --severity-low-bg: oklch(0.28 0.01 78);
 
-  --severity-medium: oklch(0.78 0.12 85);
-  --severity-medium-bg: oklch(0.32 0.06 82);
+  --severity-medium: oklch(0.78 0.12 82);
+  --severity-medium-bg: oklch(0.32 0.06 80);
 
-  --severity-high: oklch(0.72 0.16 48);
-  --severity-high-bg: oklch(0.32 0.08 46);
+  --severity-high: oklch(0.72 0.15 46);
+  --severity-high-bg: oklch(0.32 0.08 45);
 
-  --severity-critical: oklch(0.56 0.19 25);
-  --severity-critical-foreground: oklch(0.99 0.01 25);
+  --severity-critical: color-mix(in oklch, var(--pen-red) 80%, white);
+  --severity-critical-foreground: oklch(0.15 0.02 29);
 
   /* AI-pipeline status (dark) */
-  --status-processing: oklch(0.75 0.1 264);
-  --status-processing-bg: oklch(0.3 0.05 264);
+  --status-processing: oklch(0.75 0.05 249);
+  --status-processing-bg: oklch(0.3 0.04 249);
 
-  --status-skipped: oklch(0.68 0.02 70);
-  --status-skipped-bg: oklch(0.28 0.014 70);
+  --status-skipped: oklch(0.68 0.015 78);
+  --status-skipped-bg: oklch(0.28 0.012 78);
 
-  --success: oklch(0.7 0.13 152);
-  --success-bg: oklch(0.3 0.05 152);
-  --success-foreground: oklch(0.15 0.02 152);
+  --success: color-mix(in oklch, var(--chalk-green) 78%, white);
+  --success-bg: oklch(0.3 0.05 155);
+  --success-foreground: oklch(0.15 0.02 155);
 }
 
 @layer base {
