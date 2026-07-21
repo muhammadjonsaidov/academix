@@ -11,36 +11,33 @@ import uz.academixai.domain.Notification;
 import uz.academixai.domain.NotificationType;
 import uz.academixai.infrastructure.persistence.NotificationEntity;
 import uz.academixai.infrastructure.persistence.NotificationRepository;
-import uz.academixai.infrastructure.persistence.TelegramConnectionRepository;
-import uz.academixai.infrastructure.telegram.TelegramClient;
+import uz.academixai.infrastructure.queue.NotificationTelegramQueueProducer;
 import uz.academixai.interfaces.web.ApiException;
 
 /**
  * academix_tz.md §1.15 / §4 {@code sendNotification(userId, type, params)}. Always persists a
- * {@link Notification} row (inbox is the source of truth); Telegram delivery (Sprint 9) is
- * best-effort on top — looked up via {@link TelegramConnectionRepository}, sent via {@link
- * TelegramClient}, and {@code sentToTelegram} reflects whether the send actually succeeded, not
- * just whether a connection existed. No connection, or a failed send (e.g. no bot token configured
- * in dev — see {@code TelegramClient}), both leave {@code sentToTelegram=false} and the row still
- * lands correctly in the inbox — this is the same graceful-degradation principle used for AI vendor
- * calls elsewhere in this codebase, never a hard failure of the notification itself.
+ * {@link Notification} row (inbox is the source of truth); Telegram delivery is async on top —
+ * enqueued via {@link NotificationTelegramQueueProducer} (only after this transaction commits, so
+ * the standalone {@code telegram-bot/} consumer never sees a row that doesn't durably exist yet),
+ * consumed and actually sent by that separate service, which flips {@code sent_to_telegram} to true
+ * directly once the send genuinely succeeds. This method itself always sets it false at save time —
+ * delivery outcome isn't known synchronously anymore, same graceful-degradation principle as AI
+ * vendor calls elsewhere in this codebase: a missing connection or a failed send never blocks the
+ * notification landing in the inbox.
  */
 @Service
 public class NotificationService {
 
   private final NotificationRepository notificationRepository;
-  private final TelegramConnectionRepository telegramConnectionRepository;
-  private final TelegramClient telegramClient;
+  private final NotificationTelegramQueueProducer telegramQueueProducer;
   private final ObjectMapper objectMapper;
 
   public NotificationService(
       NotificationRepository notificationRepository,
-      TelegramConnectionRepository telegramConnectionRepository,
-      TelegramClient telegramClient,
+      NotificationTelegramQueueProducer telegramQueueProducer,
       ObjectMapper objectMapper) {
     this.notificationRepository = notificationRepository;
-    this.telegramConnectionRepository = telegramConnectionRepository;
-    this.telegramClient = telegramClient;
+    this.telegramQueueProducer = telegramQueueProducer;
     this.objectMapper = objectMapper;
   }
 
@@ -49,31 +46,21 @@ public class NotificationService {
     // data column is jsonb — must always be a real JSON document, never a raw string (see
     // NotificationEntity's Javadoc / the lesson_plans.teacher_edited_plan incident in CLAUDE.md).
     String dataJson = toJson(data);
-    boolean sentToTelegram = attemptTelegramDelivery(userId, title, body);
+    UUID notificationId = UUID.randomUUID();
     Notification notification =
         new Notification(
-            UUID.randomUUID(),
+            notificationId,
             userId,
             type,
             title,
             body,
             dataJson,
             false,
-            sentToTelegram,
+            false,
             LocalDateTime.now(),
             null);
     notificationRepository.save(NotificationEntity.fromDomain(notification));
-  }
-
-  private boolean attemptTelegramDelivery(UUID userId, String title, String body) {
-    return telegramConnectionRepository
-        .findByUserId(userId)
-        .filter(connection -> connection.toDomain().isActive())
-        .map(
-            connection ->
-                telegramClient.sendMessage(
-                    connection.toDomain().telegramChatId(), title + "\n\n" + body))
-        .orElse(false);
+    telegramQueueProducer.publish(notificationId, userId, title, body);
   }
 
   /** Deviation: no inbox endpoint is documented anywhere in academix_tz.md — flagged, not spec. */

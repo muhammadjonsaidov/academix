@@ -16,6 +16,12 @@ backend/build/
 backend/out/
 !backend/gradle/wrapper/gradle-wrapper.jar
 
+# Telegram bot (Gradle)
+telegram-bot/.gradle/
+telegram-bot/build/
+telegram-bot/out/
+!telegram-bot/gradle/wrapper/gradle-wrapper.jar
+
 # Frontend (Next.js)
 frontend/node_modules/
 frontend/.next/

@@ -1,14 +1,11 @@
 package uz.academixai.application;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.TelegramConnection;
-import uz.academixai.infrastructure.persistence.TelegramConnectionEntity;
 import uz.academixai.infrastructure.persistence.TelegramConnectionRepository;
 import uz.academixai.infrastructure.telegram.TelegramProperties;
 import uz.academixai.interfaces.web.ApiException;
@@ -61,29 +58,10 @@ public class TelegramLinkService {
     return new LinkTokenResult(linkUrl, TOKEN_TTL.toSeconds());
   }
 
-  /** Called by the webhook handler once, per Telegram's {@code /start <token>} message. */
-  public Optional<UUID> consumeLinkToken(String token) {
-    String key = tokenKey(token);
-    String userId = redis.opsForValue().get(key);
-    if (userId == null) {
-      return Optional.empty();
-    }
-    redis.delete(key); // single-use — deleted immediately on consumption, per CLAUDE.md
-    return Optional.of(UUID.fromString(userId));
-  }
-
-  public TelegramConnection upsertConnection(UUID userId, long chatId, String username) {
-    TelegramConnectionEntity existing = connectionRepository.findByUserId(userId).orElse(null);
-    TelegramConnection connection =
-        new TelegramConnection(
-            existing != null ? existing.toDomain().id() : UUID.randomUUID(),
-            userId,
-            chatId,
-            username,
-            true,
-            existing != null ? existing.toDomain().connectedAt() : LocalDateTime.now());
-    return connectionRepository.save(TelegramConnectionEntity.fromDomain(connection)).toDomain();
-  }
+  // consumeLinkToken/upsertConnection moved to telegram-bot/ — that service now owns consuming
+  // the deep-link token (reads the same Redis key this class writes) and writing
+  // telegram_connections, since it's the one actually receiving Telegram's /start message via
+  // long-polling. This class keeps only what genuinely needs an authenticated JWT context.
 
   public void unlink(UUID userId) {
     connectionRepository.findByUserId(userId).ifPresent(connectionRepository::delete);
@@ -93,7 +71,8 @@ public class TelegramLinkService {
 
   /**
    * No status endpoint is documented anywhere — added so the frontend can render connect vs unlink
-   * state; the deep-link flow is otherwise async (Telegram calls the webhook, not us).
+   * state; the deep-link flow is otherwise entirely async (the telegram-bot/ service consumes the
+   * token and writes the connection row, this backend never hears about it directly).
    */
   public ConnectionStatus status(UUID userId) {
     return connectionRepository
