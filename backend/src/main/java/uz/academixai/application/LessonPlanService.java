@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.LessonPlan;
@@ -33,6 +35,8 @@ import uz.academixai.interfaces.web.ApiException;
  */
 @Service
 public class LessonPlanService {
+
+  private static final Logger log = LoggerFactory.getLogger(LessonPlanService.class);
 
   private final LessonPlanRepository lessonPlanRepository;
   private final TeacherSyllabusRepository syllabusRepository;
@@ -137,6 +141,11 @@ public class LessonPlanService {
     try {
       return qwenAIClient.generateLessonPlan(subjectAndGrade, topic, syllabusExtractedContent);
     } catch (QwenUnavailableException e) {
+      // ApiException bypasses GlobalExceptionHandler's logging (only its catch-all
+      // Exception.class handler logs) — without this, the real cause (auth failure,
+      // timeout, malformed JSON, genuine circuit-open) was silently swallowed, confirmed
+      // by a real 503 with zero corresponding log line.
+      log.warn("Qwen lesson-plan generation unavailable", e);
       throw new ApiException(
           HttpStatus.SERVICE_UNAVAILABLE,
           "ERR_AI_UNAVAILABLE",

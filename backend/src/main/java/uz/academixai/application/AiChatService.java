@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Limit;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -33,6 +35,8 @@ import uz.academixai.interfaces.web.ApiException;
  */
 @Service
 public class AiChatService {
+
+  private static final Logger log = LoggerFactory.getLogger(AiChatService.class);
 
   private static final int HISTORY_WINDOW = 50;
 
@@ -88,6 +92,7 @@ public class AiChatService {
     try {
       rawResponse = qwenClient.tutorChat(subjectAndContext, message);
     } catch (QwenUnavailableException e) {
+      log.warn("Qwen tutor chat unavailable for student {}", studentId, e);
       return persistAndReturn(
           schoolId,
           studentId,

@@ -3,6 +3,8 @@ package uz.academixai.application;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.CriteriaScore;
 import uz.academixai.domain.ExamAIFeedback;
@@ -47,6 +49,8 @@ import uz.academixai.infrastructure.storage.FileStorageService;
  */
 @Service
 public class ExamAIAnalysisService {
+
+  private static final Logger log = LoggerFactory.getLogger(ExamAIAnalysisService.class);
 
   // backend_tdd.md §6.7's exact rule.
   private static final float MISMATCH_THRESHOLD = 60.0f;
@@ -151,6 +155,10 @@ public class ExamAIAnalysisService {
     try {
       result = qwenAIClient.gradeSubmission(subjectAndGrade, criteria, extractedText);
     } catch (QwenUnavailableException e) {
+      log.warn(
+          "Qwen grading unavailable for exam submission {}, falling to AI_SKIPPED",
+          submission.id(),
+          e);
       saveOcrOnlyFeedback(submission, extractedText, handwritingResult);
       updateStatus(submission, SubmissionStatus.AI_SKIPPED, true);
       return;

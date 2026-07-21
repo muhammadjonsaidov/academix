@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.AssignmentType;
@@ -38,6 +40,8 @@ import uz.academixai.interfaces.web.ApiException;
  */
 @Service
 public class UniqueTaskGenerationService {
+
+  private static final Logger log = LoggerFactory.getLogger(UniqueTaskGenerationService.class);
 
   private static final int MAX_ATTEMPTS = 2;
 
@@ -162,6 +166,10 @@ public class UniqueTaskGenerationService {
     try {
       generated = qwenAIClient.generateUniqueTask(subjectAndGrade, standardDescription);
     } catch (QwenUnavailableException e) {
+      // Graceful per-student fallback (correct — don't fail the whole batch), but silently
+      // returning null makes "why did this student fall back to standard" undiagnosable
+      // without a log line, same class of gap fixed elsewhere in the AI catch sites.
+      log.warn("Qwen unique-task generation unavailable, falling back to standard", e);
       return null;
     }
     if (generated == null || generated.isBlank()) {
@@ -173,6 +181,7 @@ public class UniqueTaskGenerationService {
     try {
       return qwenAIClient.verifyTaskSolvable(generated) ? generated : null;
     } catch (QwenUnavailableException e) {
+      log.warn("Qwen task-verification unavailable, falling back to standard", e);
       return null;
     }
   }

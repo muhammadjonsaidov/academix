@@ -3,6 +3,8 @@ package uz.academixai.application;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.AIFeedback;
 import uz.academixai.domain.CriteriaScore;
@@ -51,6 +53,8 @@ import uz.academixai.infrastructure.storage.FileStorageService;
  */
 @Service
 public class AIAnalysisService {
+
+  private static final Logger log = LoggerFactory.getLogger(AIAnalysisService.class);
 
   private static final int MIN_MEANINGFUL_TEXT_LENGTH = 5;
 
@@ -163,6 +167,10 @@ public class AIAnalysisService {
     try {
       result = qwenAIClient.gradeSubmission(subjectAndGrade, criteria, extractedText);
     } catch (QwenUnavailableException e) {
+      // Correct degradation (AI_SKIPPED, per TZ §8), but silent — undiagnosable without a log
+      // line why grading actually failed (auth, timeout, malformed JSON, circuit open).
+      log.warn(
+          "Qwen grading unavailable for submission {}, falling to AI_SKIPPED", submission.id(), e);
       saveOcrOnlyFeedback(submission, extractedText, handwritingResult);
       updateStatus(submission, SubmissionStatus.AI_SKIPPED);
       return;
