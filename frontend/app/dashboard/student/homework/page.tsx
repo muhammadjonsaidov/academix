@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { HOMEWORK_STATUS_META } from "@/components/shared/submission-status";
+import { HOMEWORK_STATUS_META, StatusLabel } from "@/components/shared/submission-status";
 import { useStudentStore } from "@/stores/useStudentStore";
 import type { StudentHomework, SubmissionType, SubmitHomeworkResponse } from "@/types/student";
 import type { ApiErrorResponse } from "@/types/auth";
@@ -138,7 +138,9 @@ function HomeworkCard({ hw }: { hw: StudentHomework }) {
             ) : null}
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
-            <Badge variant={meta.badgeVariant}>{meta.label}</Badge>
+            <Badge variant={meta.badgeVariant}>
+              <StatusLabel status={hw.submissionStatus}>{meta.label}</StatusLabel>
+            </Badge>
             {hw.submissionStatus === "PENDING" ? (
               <Button variant="outline" size="sm" onClick={() => setIsOpen((v) => !v)}>
                 Topshirish

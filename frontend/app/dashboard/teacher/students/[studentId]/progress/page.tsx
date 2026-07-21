@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { FileCheck2, History, TrendingUp } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { submissionRailClass } from "@/components/shared/submission-status";
+import { StatusLabel, submissionRailClass } from "@/components/shared/submission-status";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTeacherAnalyticsStore } from "@/stores/useTeacherAnalyticsStore";
@@ -103,7 +103,7 @@ export default function TeacherStudentProgressPage() {
                   key={s.submissionId}
                   className={`flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm ${submissionRailClass(s.status as SubmissionStatus)}`}
                 >
-                  <span>{s.status}</span>
+                  <StatusLabel status={s.status}>{s.status}</StatusLabel>
                   <span className="font-data text-muted-foreground">
                     {new Date(s.submittedAt).toLocaleDateString()}
                     {s.isLate ? " (kech)" : ""}

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { FULL_STATUS_META } from "@/components/shared/submission-status";
+import { FULL_STATUS_META, StatusLabel } from "@/components/shared/submission-status";
 import { useStudentStore } from "@/stores/useStudentStore";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +57,9 @@ export default function StudentSubmissionsPage() {
                       {s.isLate ? <Badge variant="severity-medium">Kechikkan</Badge> : null}
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={meta.badgeVariant}>{meta.label}</Badge>
+                      <Badge variant={meta.badgeVariant}>
+                        <StatusLabel status={s.status}>{meta.label}</StatusLabel>
+                      </Badge>
                       <ChevronRight className="size-4 text-muted-foreground" strokeWidth={1.75} />
                     </div>
                   </CardContent>

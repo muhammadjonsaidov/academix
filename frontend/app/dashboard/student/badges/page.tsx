@@ -5,6 +5,7 @@ import { Trophy } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StampBadge } from "@/components/ui/stamp-badge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { useStudentStore } from "@/stores/useStudentStore";
 
@@ -43,9 +44,9 @@ export default function StudentBadgesPage() {
           {badges.map((badge) => (
             <Card key={badge.id} className="text-center">
               <CardContent className="flex flex-col items-center gap-1.5">
-                <span className="flex size-14 items-center justify-center rounded-full bg-role-student-muted text-3xl">
+                <StampBadge variant="ink" size="lg" className="text-2xl">
                   {badge.icon}
-                </span>
+                </StampBadge>
                 <p className="font-medium">{badge.name}</p>
                 <p className="text-sm text-muted-foreground">{badge.description}</p>
                 <p className="font-data text-xs text-muted-foreground">

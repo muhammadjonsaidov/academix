@@ -1,4 +1,5 @@
 import { Badge, type badgeVariants } from "@/components/ui/badge";
+import { InkMark } from "@/components/ui/ink-mark";
 import { Spinner } from "@/components/ui/spinner";
 import type { VariantProps } from "class-variance-authority";
 
@@ -52,6 +53,23 @@ export function submissionRailClass(status: FullSubmissionStatus): string {
   return FULL_STATUS_META[status].rail;
 }
 
+/** Statuses that represent an actual AI/teacher verdict ("verified"), as opposed to
+ * a pending/in-flight/no-verdict state — the set that earns the InkMark check. */
+const VERIFIED_STATUSES: ReadonlySet<string> = new Set(["AI_DONE", "GRADED"]);
+
+/** Wraps a status label with the signature InkMark check for AI_DONE/GRADED
+ * ("verified") states — this is the actual mark now, replacing the old
+ * rail-border-only treatment (the rail utility stays for the card-level accent).
+ * Decorative/aria-hidden: the label text itself already conveys the state. */
+export function StatusLabel({ status, children }: { status: string; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      {VERIFIED_STATUSES.has(status) ? <InkMark variant="check" /> : null}
+      {children}
+    </span>
+  );
+}
+
 /** Status badge with a spinner while AI work is in flight — built on the same
  * FULL_STATUS_META every other role/screen reads for label/variant, so there's one
  * source of truth for what each status means. */
@@ -65,5 +83,9 @@ export function SubmissionStatusBadge({ status }: { status: FullSubmissionStatus
       </Badge>
     );
   }
-  return <Badge variant={meta.badgeVariant}>{meta.label}</Badge>;
+  return (
+    <Badge variant={meta.badgeVariant}>
+      <StatusLabel status={status}>{meta.label}</StatusLabel>
+    </Badge>
+  );
 }

@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { CheckCircle2, RefreshCw, UserCheck, XCircle } from "lucide-react";
+import { RefreshCw, UserCheck } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { InkMark } from "@/components/ui/ink-mark";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { FULL_STATUS_META } from "@/components/shared/submission-status";
+import { FULL_STATUS_META, StatusLabel } from "@/components/shared/submission-status";
 import { useExamStore } from "@/stores/useExamStore";
 import { cn } from "@/lib/utils";
 
@@ -65,7 +66,9 @@ export default function StudentExamDetailPage() {
           <h2 className="font-heading text-lg font-semibold">{exam.title}</h2>
           <p className="text-sm text-muted-foreground">{exam.examDate}</p>
         </div>
-        <Badge variant={meta.badgeVariant}>{meta.label}</Badge>
+        <Badge variant={meta.badgeVariant}>
+          <StatusLabel status={exam.status}>{meta.label}</StatusLabel>
+        </Badge>
       </div>
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
@@ -123,15 +126,9 @@ export default function StudentExamDetailPage() {
                 {exam.aiFeedback.stepAnalyses.map((step) => (
                   <li key={step.stepNumber} className="flex items-start gap-2 text-sm">
                     {step.isCorrect ? (
-                      <CheckCircle2
-                        className="mt-0.5 size-4 shrink-0 text-success"
-                        strokeWidth={1.75}
-                      />
+                      <InkMark variant="check" className="mt-0.5 size-4" />
                     ) : (
-                      <XCircle
-                        className="mt-0.5 size-4 shrink-0 text-destructive"
-                        strokeWidth={1.75}
-                      />
+                      <InkMark variant="cross" label="Xato" className="mt-0.5 size-4" />
                     )}
                     <span>
                       <span className="font-medium">{step.stepNumber}.</span> {step.stepContent}
