@@ -11,7 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTeacherStore } from "@/stores/useTeacherStore";
 import type { ApiErrorResponse } from "@/types/auth";
-import type { AssignmentType } from "@/types/teacher";
+import type { AssignmentType, Homework } from "@/types/teacher";
+
+// LocalDateTime from the backend ("2026-08-01T10:00:00") -> value a <input type="datetime-local">
+// accepts ("2026-08-01T10:00").
+function toDatetimeLocalValue(isoLike: string) {
+  return isoLike.slice(0, 16);
+}
 
 export default function TeacherHomeworkPage() {
   const router = useRouter();
@@ -22,7 +28,10 @@ export default function TeacherHomeworkPage() {
   const fetchSubjects = useTeacherStore((state) => state.fetchSubjects);
   const fetchHomework = useTeacherStore((state) => state.fetchHomework);
   const createHomework = useTeacherStore((state) => state.createHomework);
+  const updateHomework = useTeacherStore((state) => state.updateHomework);
+  const deleteHomework = useTeacherStore((state) => state.deleteHomework);
 
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [classId, setClassId] = useState("");
   const [subjectId, setSubjectId] = useState("");
   const [title, setTitle] = useState("");
@@ -32,6 +41,7 @@ export default function TeacherHomeworkPage() {
   const [type, setType] = useState<AssignmentType>("STANDARD");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchClasses().catch(() => {});
@@ -47,29 +57,85 @@ export default function TeacherHomeworkPage() {
     return subjects.find((s) => s.id === id)?.name ?? "—";
   }
 
+  function resetForm() {
+    setEditingId(null);
+    setClassId("");
+    setSubjectId("");
+    setTitle("");
+    setDescription("");
+    setDeadlineAt("");
+    setMaxScore("100");
+    setType("STANDARD");
+  }
+
+  function startEdit(hw: Homework) {
+    setError(null);
+    setEditingId(hw.id);
+    setClassId(hw.classId);
+    setSubjectId(hw.subjectId);
+    setTitle(hw.title);
+    setDescription(hw.description ?? "");
+    setDeadlineAt(toDatetimeLocalValue(hw.deadlineAt));
+    setMaxScore(String(hw.maxScore));
+    setType(hw.type);
+  }
+
+  async function handleDelete(hw: Homework) {
+    const confirmed = window.confirm(
+      `"${hw.title}" vazifasini o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi va unga tegishli barcha o'quvchi topshiriqlari ham butunlay o'chib ketadi.`,
+    );
+    if (!confirmed) return;
+    setError(null);
+    setDeletingId(hw.id);
+    try {
+      await deleteHomework(hw.id);
+      if (editingId === hw.id) {
+        resetForm();
+      }
+    } catch (err) {
+      const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
+      setError(apiError?.message ?? "Uy vazifasini o'chirib bo'lmadi.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
     setIsSubmitting(true);
     try {
-      const created = await createHomework({
-        classId,
-        subjectId,
-        title,
-        description,
-        deadlineAt,
-        type,
-        maxScore: Number(maxScore),
-      });
-      setTitle("");
-      setDescription("");
-      setDeadlineAt("");
-      if (type === "UNIQUE_GENERATED") {
-        router.push(`/dashboard/teacher/homework/${created.id}/review`);
+      if (editingId) {
+        await updateHomework(editingId, {
+          title,
+          description,
+          deadlineAt,
+          maxScore: Number(maxScore),
+        });
+        resetForm();
+      } else {
+        const created = await createHomework({
+          classId,
+          subjectId,
+          title,
+          description,
+          deadlineAt,
+          type,
+          maxScore: Number(maxScore),
+        });
+        setTitle("");
+        setDescription("");
+        setDeadlineAt("");
+        if (type === "UNIQUE_GENERATED") {
+          router.push(`/dashboard/teacher/homework/${created.id}/review`);
+        }
       }
     } catch (err) {
       const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
-      setError(apiError?.message ?? "Uy vazifasi yaratib bo'lmadi.");
+      setError(
+        apiError?.message ??
+          (editingId ? "Uy vazifasini yangilab bo'lmadi." : "Uy vazifasi yaratib bo'lmadi."),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -81,7 +147,7 @@ export default function TeacherHomeworkPage() {
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Yangi vazifa yaratish</CardTitle>
+          <CardTitle>{editingId ? "Vazifani tahrirlash" : "Yangi vazifa yaratish"}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
@@ -94,7 +160,8 @@ export default function TeacherHomeworkPage() {
                 value={classId}
                 onChange={(e) => setClassId(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                disabled={!!editingId}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
               >
                 <option value="" disabled>
                   Tanlang
@@ -115,7 +182,8 @@ export default function TeacherHomeworkPage() {
                 value={subjectId}
                 onChange={(e) => setSubjectId(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                disabled={!!editingId}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
               >
                 <option value="" disabled>
                   Tanlang
@@ -185,6 +253,7 @@ export default function TeacherHomeworkPage() {
                     type="radio"
                     name="type"
                     checked={type === "STANDARD"}
+                    disabled={!!editingId}
                     onChange={() => setType("STANDARD")}
                   />
                   Standart
@@ -194,6 +263,7 @@ export default function TeacherHomeworkPage() {
                     type="radio"
                     name="type"
                     checked={type === "UNIQUE_GENERATED"}
+                    disabled={!!editingId}
                     onChange={() => setType("UNIQUE_GENERATED")}
                   />
                   Har biriga unique
@@ -201,8 +271,19 @@ export default function TeacherHomeworkPage() {
               </div>
             </div>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Yaratilmoqda..." : "Vazifa yaratish"}
+              {isSubmitting
+                ? editingId
+                  ? "Saqlanmoqda..."
+                  : "Yaratilmoqda..."
+                : editingId
+                  ? "Saqlash"
+                  : "Vazifa yaratish"}
             </Button>
+            {editingId ? (
+              <Button type="button" variant="ghost" onClick={resetForm} disabled={isSubmitting}>
+                Bekor qilish
+              </Button>
+            ) : null}
           </form>
         </CardContent>
       </Card>
@@ -266,6 +347,21 @@ export default function TeacherHomeworkPage() {
                       >
                         Topshiriqlar
                       </Link>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(hw)}
+                        className="text-sm underline"
+                      >
+                        Tahrirlash
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(hw)}
+                        disabled={deletingId === hw.id}
+                        className="text-sm text-destructive underline disabled:opacity-60"
+                      >
+                        {deletingId === hw.id ? "O'chirilmoqda..." : "O'chirish"}
+                      </button>
                     </td>
                   </tr>
                 ))}

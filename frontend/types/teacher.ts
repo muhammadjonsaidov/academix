@@ -46,6 +46,16 @@ export interface CreateHomeworkRequest {
   maxScore: number;
 }
 
+// academix_tz.md §2.3 — PUT /teacher/homework/{assignmentId} body. classId/subjectId/type
+// aren't editable (backend's UpdateHomeworkRequest doesn't accept them).
+export interface UpdateHomeworkRequest {
+  title: string;
+  description: string;
+  deadlineAt: string;
+  syllabusReference?: string | null;
+  maxScore: number;
+}
+
 export interface CriteriaScore {
   name: string;
   weightPercent: number;

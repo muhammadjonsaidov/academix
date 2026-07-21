@@ -18,6 +18,7 @@ import type {
   TeacherSubmissionDetail,
   TeacherSubmissionListItem,
   UniqueTask,
+  UpdateHomeworkRequest,
   UpdateLessonPlanRequest,
 } from "@/types/teacher";
 
@@ -41,6 +42,8 @@ interface TeacherState {
   resolvePsychologicalSignal: (signalId: string) => Promise<void>;
   fetchHomework: (filters?: { classId?: string; subjectId?: string }) => Promise<void>;
   createHomework: (request: CreateHomeworkRequest) => Promise<Homework>;
+  updateHomework: (assignmentId: string, request: UpdateHomeworkRequest) => Promise<Homework>;
+  deleteHomework: (assignmentId: string) => Promise<void>;
   fetchSubmissions: (filters?: { assignmentId?: string; classId?: string }) => Promise<void>;
   fetchSubmission: (submissionId: string) => Promise<void>;
   gradeSubmission: (submissionId: string, request: GradeSubmissionRequest) => Promise<void>;
@@ -127,6 +130,20 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
     const { data } = await apiClient.post<Homework>("/teacher/homework", request);
     await get().fetchHomework();
     return data;
+  },
+
+  updateHomework: async (assignmentId, request) => {
+    const { data } = await apiClient.put<Homework>(
+      `/teacher/homework/${assignmentId}`,
+      request,
+    );
+    await get().fetchHomework();
+    return data;
+  },
+
+  deleteHomework: async (assignmentId) => {
+    await apiClient.delete(`/teacher/homework/${assignmentId}`);
+    await get().fetchHomework();
   },
 
   fetchSubmissions: async (filters) => {
