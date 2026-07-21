@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { fieldClass, FormField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminStore } from "@/stores/useAdminStore";
 import type { ApiErrorResponse } from "@/types/auth";
@@ -172,23 +172,21 @@ export default function AdminStudentsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Ro&apos;yxat</CardTitle>
-            <CardDescription>
-              <form onSubmit={handleSearch} className="mt-2 flex items-end gap-2">
-                <FormField label="Qidirish" htmlFor="search" className="w-64">
-                  <input
-                    id="search"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Ism yoki familiya"
-                    className={fieldClass}
-                  />
-                </FormField>
-                <Button type="submit" variant="outline" size="sm">
-                  <Search className="size-3.5" strokeWidth={1.75} />
-                  Qidirish
-                </Button>
-              </form>
-            </CardDescription>
+            <form onSubmit={handleSearch} className="mt-2 flex items-end gap-2">
+              <FormField label="Qidirish" htmlFor="search" className="w-64">
+                <input
+                  id="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Ism yoki familiya"
+                  className={fieldClass}
+                />
+              </FormField>
+              <Button type="submit" variant="outline" size="sm">
+                <Search className="size-3.5" strokeWidth={1.75} />
+                Qidirish
+              </Button>
+            </form>
           </CardHeader>
           <CardContent>
             {isLoading ? (
