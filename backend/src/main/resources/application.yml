@@ -33,6 +33,16 @@ spring:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
 
+  # Spring Boot's defaults (1MB file / 10MB request) are too low for real homework-photo
+  # uploads — a real phone-camera photo of an exercise book (11.5MB) tripped the default
+  # 10MB request cap with a raw SizeLimitExceededException before reaching any controller
+  # (no ApiException/ERR_INVALID_FILE shape, just a Tomcat-level rejection). 20MB covers a
+  # realistic single high-res photo; requests carry one image plus small form fields.
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
 server:
   port: ${SERVER_PORT:8080}
 

@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -34,6 +35,25 @@ public class GlobalExceptionHandler {
                 "ERR_ACCESS_DENIED",
                 "Ushbu ma'lumotni ko'rishga ruxsatingiz yo'q.",
                 "Ruxsat chegarasini tekshiring."));
+  }
+
+  // Without this, a multipart upload over spring.servlet.multipart.max-file-size/
+  // max-request-size never reaches any controller — it's rejected at the DispatcherServlet
+  // level and, before this handler existed, fell through to the generic Exception.class
+  // handler below as a raw 500 ERR_INTERNAL (confirmed by a real 11.5MB photo upload
+  // against the default 10MB request cap). A too-large file is a client mistake, not a
+  // server failure — same ERR_INVALID_FILE code already used for other upload validation
+  // (SyllabusService, StudentSubmissionService, ExamSubmissionService).
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<ApiErrorResponse> handleMaxUploadSizeExceeded(
+      MaxUploadSizeExceededException e) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(
+            new ApiErrorResponse(
+                400,
+                "ERR_INVALID_FILE",
+                "Fayl hajmi juda katta.",
+                "Faylni siqib yoki kichikroq o'lchamda qayta yuklang (maksimal 20MB)."));
   }
 
   @ExceptionHandler(Exception.class)
