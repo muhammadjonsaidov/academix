@@ -3,8 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Eye, UserPlus } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { EmptyState } from "@/components/psychologist/EmptyState";
-import { fieldClass, FormField } from "@/components/psychologist/FormField";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { fieldClass, FormField } from "@/components/shared/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";

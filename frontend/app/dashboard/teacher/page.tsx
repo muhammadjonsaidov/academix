@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ClipboardCheck, GraduationCap, School, Star, TrendingUp } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { EmptyState } from "@/components/teacher/EmptyState";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTeacherAnalyticsStore } from "@/stores/useTeacherAnalyticsStore";

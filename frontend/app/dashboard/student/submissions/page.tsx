@@ -7,8 +7,8 @@ import { DashboardShell } from "@/components/shared/DashboardShell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/student/EmptyState";
-import { FULL_STATUS_META } from "@/components/student/submission-status";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { FULL_STATUS_META } from "@/components/shared/submission-status";
 import { useStudentStore } from "@/stores/useStudentStore";
 import { cn } from "@/lib/utils";
 

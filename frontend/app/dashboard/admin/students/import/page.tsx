@@ -4,7 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, FileSpreadsheet, ListChecks, Table2, Upload } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { fieldClass } from "@/components/admin/FormField";
+import { fieldClass } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";

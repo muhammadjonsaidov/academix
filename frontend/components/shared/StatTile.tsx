@@ -7,22 +7,24 @@ interface StatTileProps {
   label: string;
   value: React.ReactNode;
   icon: LucideIcon;
-  accentClassName?: string;
-  /** Applied to the outer Card — e.g. "rail-critical" for the CRITICAL-count tile, so the
-   * signature verification rail carries extra visual weight beyond the icon chip alone. */
+  /** Icon-chip background/foreground, e.g. "bg-role-admin-muted text-role-admin" or a
+   * severity accent like "bg-severity-critical text-severity-critical-foreground". */
+  accentClassName: string;
+  /** Applied to the outer Card — e.g. "rail-critical" so the signature verification rail
+   * carries extra visual weight beyond the icon chip alone. */
   className?: string;
 }
 
-/** Psychologist dashboard stat tile — Card-based, role-psychologist accent by default
- * (override via accentClassName for severity-colored tiles), numeric value in font-data
- * per the design system's convention for verified/tabular numbers. */
+/** Dashboard stat tile — Card-based icon chip + font-data numeric value, shared across
+ * every role dashboard. Accent color is always explicit at the call site (no hidden
+ * per-role default) so severity/role tiles read the same way in the source. */
 export function StatTile({ label, value, icon: Icon, accentClassName, className }: StatTileProps) {
   return (
     <Card className={className}>
       <CardContent className="flex items-center gap-4 py-5">
         <span
           className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-lg bg-role-psychologist-muted text-role-psychologist",
+            "flex size-10 shrink-0 items-center justify-center rounded-lg",
             accentClassName,
           )}
         >

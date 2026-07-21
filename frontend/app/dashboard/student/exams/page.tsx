@@ -7,7 +7,7 @@ import { DashboardShell } from "@/components/shared/DashboardShell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/student/EmptyState";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { useExamStore } from "@/stores/useExamStore";
 import { cn } from "@/lib/utils";
 

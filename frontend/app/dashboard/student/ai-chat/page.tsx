@@ -5,7 +5,7 @@ import { MessageSquareText, Send, ShieldAlert } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { EmptyState } from "@/components/student/EmptyState";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { useAiChatStore } from "@/stores/useAiChatStore";
 import type { SubjectType } from "@/types/aiChat";
 import { cn } from "@/lib/utils";

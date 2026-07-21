@@ -10,8 +10,8 @@ import {
   Users,
 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { EmptyState } from "@/components/admin/EmptyState";
-import { StatTile, StatTileSkeleton } from "@/components/admin/StatTile";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { StatTile, StatTileSkeleton } from "@/components/shared/StatTile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAdminAnalyticsStore } from "@/stores/useAdminAnalyticsStore";
 
@@ -53,13 +53,25 @@ export default function AdminDashboardPage() {
                 label="O'quvchilar"
                 value={dashboard.totalStudents}
                 icon={GraduationCap}
+                accentClassName="bg-role-admin-muted text-role-admin"
               />
-              <StatTile label="O'qituvchilar" value={dashboard.totalTeachers} icon={Users} />
-              <StatTile label="Bugun faol" value={dashboard.activeToday} icon={TrendingUp} />
+              <StatTile
+                label="O'qituvchilar"
+                value={dashboard.totalTeachers}
+                icon={Users}
+                accentClassName="bg-role-admin-muted text-role-admin"
+              />
+              <StatTile
+                label="Bugun faol"
+                value={dashboard.activeToday}
+                icon={TrendingUp}
+                accentClassName="bg-role-admin-muted text-role-admin"
+              />
               <StatTile
                 label="Topshirish darajasi (30 kun)"
                 value={`${dashboard.homeworkSubmissionRate}%`}
                 icon={ClipboardList}
+                accentClassName="bg-role-admin-muted text-role-admin"
               />
             </div>
 

@@ -6,7 +6,7 @@ import { BookOpen, Flame, GraduationCap, Sparkles, Star, Trophy } from "lucide-r
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/student/EmptyState";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { StatCard } from "@/components/student/StatCard";
 import { useStudentStore } from "@/stores/useStudentStore";
 

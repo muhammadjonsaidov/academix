@@ -1,8 +1,9 @@
 import { cn } from "@/lib/utils";
 
-/** Shared input/select classes for psychologist forms — matches
- * components/admin/FormField.tsx's fieldClass (no <Input>/<Select> primitive exists in
- * components/ui yet), keeps every psychologist form field visually consistent. */
+/** Shared input/select classes for forms across every role — no <Input>/<Select>
+ * primitive exists in components/ui yet, so this keeps every form field visually
+ * consistent (matches Button's focus-ring treatment) without inventing a one-off style
+ * per page. */
 export const fieldClass =
   "h-9 rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 

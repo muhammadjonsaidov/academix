@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, Gauge, School, Settings as SettingsIcon } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { fieldClass, FormField } from "@/components/admin/FormField";
+import { fieldClass, FormField } from "@/components/shared/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";

@@ -5,7 +5,7 @@ import { Award, BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/student/EmptyState";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { ProgressBar } from "@/components/student/ProgressBar";
 import { StatCard } from "@/components/student/StatCard";
 import { useStudentStore } from "@/stores/useStudentStore";

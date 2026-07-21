@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { FULL_STATUS_META } from "@/components/student/submission-status";
+import { FULL_STATUS_META } from "@/components/shared/submission-status";
 import { useStudentStore } from "@/stores/useStudentStore";
 import { cn } from "@/lib/utils";
 

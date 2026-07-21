@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
 import { RefreshCw, UserCheck } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { SubmissionStatusBadge, submissionRailClass } from "@/components/teacher/SubmissionStatusBadge";
+import { SubmissionStatusBadge, submissionRailClass } from "@/components/shared/submission-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

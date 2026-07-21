@@ -5,7 +5,7 @@ import { History, Sparkles } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/student/EmptyState";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { useStudentStore } from "@/stores/useStudentStore";
 
 export default function StudentXpHistoryPage() {

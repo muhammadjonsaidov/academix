@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
 import { AlertTriangle, CheckCircle2, HeartPulse } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { fieldClass, FormField } from "@/components/psychologist/FormField";
+import { fieldClass, FormField } from "@/components/shared/FormField";
 import {
   CriticalNotifyNote,
   SEVERITY_BADGE_VARIANT,

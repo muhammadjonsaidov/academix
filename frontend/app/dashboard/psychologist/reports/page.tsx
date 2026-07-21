@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, FileBarChart } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { EmptyState } from "@/components/psychologist/EmptyState";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { SEVERITY_BADGE_VARIANT, SEVERITY_LABEL, TYPE_LABEL } from "@/components/psychologist/severity";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

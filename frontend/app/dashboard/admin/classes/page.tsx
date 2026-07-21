@@ -3,8 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { School as SchoolIcon, Trash2 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { EmptyState } from "@/components/admin/EmptyState";
-import { fieldClass, FormField } from "@/components/admin/FormField";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { fieldClass, FormField } from "@/components/shared/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";

@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, CheckCircle2, Eye, HeartPulse } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { EmptyState } from "@/components/psychologist/EmptyState";
-import { StatTile, StatTileSkeleton } from "@/components/psychologist/StatTile";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { StatTile, StatTileSkeleton } from "@/components/shared/StatTile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePsychologyStore } from "@/stores/usePsychologyStore";
 
