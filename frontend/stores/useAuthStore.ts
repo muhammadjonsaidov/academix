@@ -10,6 +10,7 @@ interface AuthState {
   login: (phone: string, password: string) => Promise<void>;
   logout: () => void;
   setAccessToken: (token: string) => void;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
@@ -55,4 +56,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setAccessToken: (token) => set({ accessToken: token }),
+
+  changePassword: async (oldPassword, newPassword) => {
+    const token = get().accessToken;
+    // Deliberately plain axios (same reasoning as login/logout above), and specifically NOT
+    // the shared apiClient here: a wrong current password comes back as a real 401
+    // (ERR_INVALID_CREDENTIALS, same code login uses) — routing that through apiClient's
+    // 401-refresh-retry interceptor would burn a refresh cycle at best, or hard-redirect to
+    // /login on refresh failure at worst, neither of which is the right UX for "you typed
+    // your current password wrong."
+    await axios.put(
+      `${API_BASE_URL}/auth/change-password`,
+      { oldPassword, newPassword },
+      { headers: token ? { Authorization: `Bearer ${token}` } : undefined, withCredentials: true },
+    );
+  },
 }));

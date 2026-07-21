@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { KeyRound, Menu, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/shared/NotificationBell";
@@ -148,6 +148,14 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
           <div className="flex items-center gap-3">
             <TelegramConnect />
             <NotificationBell />
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Hisob sozlamalari"
+              render={<Link href="/dashboard/account" />}
+            >
+              <KeyRound className="size-4" strokeWidth={1.75} />
+            </Button>
             <Button variant="outline" onClick={handleLogout}>
               Chiqish
             </Button>
