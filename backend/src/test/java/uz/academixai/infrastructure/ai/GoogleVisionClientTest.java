@@ -2,16 +2,20 @@ package uz.academixai.infrastructure.ai;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Pure parsing-logic test against the exact response shape documented in academix_tz.md §3.1 — no
  * network call (no real GOOGLE_VISION_API_KEY is available in this environment; see CLAUDE.md).
+ *
+ * <p>Jackson 3 mapper matching {@code GoogleVisionClient}'s own HTTP-body-bound {@code
+ * tools.jackson.databind.JsonNode} type (confirmed real — the legacy type throws
+ * InvalidDefinitionException under Boot 4.1's primary Jackson 3 message converter).
  */
 class GoogleVisionClientTest {
 
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final JsonMapper objectMapper = JsonMapper.builder().build();
 
   @Test
   void parsesFullTextFromDocumentedResponseShape() throws Exception {

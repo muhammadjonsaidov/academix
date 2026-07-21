@@ -128,14 +128,19 @@ public class QwenAIClient {
                     Map.of("role", "system", "content", SYSTEM_PROMPT),
                     Map.of("role", "user", "content", userContent)));
 
-    JsonNode response =
+    // Boot 4.1 defaults to Jackson 3 as the primary message converter — binding directly to the
+    // legacy com.fasterxml.jackson.databind.JsonNode here throws InvalidDefinitionException
+    // ("no Creators... abstract type"), confirmed by a real request. Use Jackson 3's own JsonNode
+    // for this one outer HTTP-body binding; objectMapper.readTree(json) below (legacy
+    // ObjectMapper bean) still returns the legacy JsonNode for everything else in this file.
+    tools.jackson.databind.JsonNode response =
         restClient
             .post()
             .uri(properties.baseUrl() + "/chat/completions")
             .header("Authorization", "Bearer " + properties.apiKey())
             .body(requestBody)
             .retrieve()
-            .body(JsonNode.class);
+            .body(tools.jackson.databind.JsonNode.class);
 
     return parseGradingResult(response, objectMapper);
   }
@@ -169,14 +174,19 @@ public class QwenAIClient {
                     Map.of("role", "system", "content", LESSON_PLAN_SYSTEM_PROMPT),
                     Map.of("role", "user", "content", userContent)));
 
-    JsonNode response =
+    // Boot 4.1 defaults to Jackson 3 as the primary message converter — binding directly to the
+    // legacy com.fasterxml.jackson.databind.JsonNode here throws InvalidDefinitionException
+    // ("no Creators... abstract type"), confirmed by a real request. Use Jackson 3's own JsonNode
+    // for this one outer HTTP-body binding; objectMapper.readTree(json) below (legacy
+    // ObjectMapper bean) still returns the legacy JsonNode for everything else in this file.
+    tools.jackson.databind.JsonNode response =
         restClient
             .post()
             .uri(properties.baseUrl() + "/chat/completions")
             .header("Authorization", "Bearer " + properties.apiKey())
             .body(requestBody)
             .retrieve()
-            .body(JsonNode.class);
+            .body(tools.jackson.databind.JsonNode.class);
 
     return parseLessonPlanContent(response, objectMapper);
   }
@@ -187,7 +197,8 @@ public class QwenAIClient {
     throw new QwenUnavailableException("Qwen lesson-plan generation unavailable", cause);
   }
 
-  static LessonPlanContent parseLessonPlanContent(JsonNode response, ObjectMapper objectMapper) {
+  static LessonPlanContent parseLessonPlanContent(
+      tools.jackson.databind.JsonNode response, ObjectMapper objectMapper) {
     String content = response.path("choices").path(0).path("message").path("content").asText("");
     String json = stripMarkdownFence(content);
 
@@ -227,14 +238,19 @@ public class QwenAIClient {
                     Map.of("role", "system", "content", UNIQUE_TASK_SYSTEM_PROMPT),
                     Map.of("role", "user", "content", userContent)));
 
-    JsonNode response =
+    // Boot 4.1 defaults to Jackson 3 as the primary message converter — binding directly to the
+    // legacy com.fasterxml.jackson.databind.JsonNode here throws InvalidDefinitionException
+    // ("no Creators... abstract type"), confirmed by a real request. Use Jackson 3's own JsonNode
+    // for this one outer HTTP-body binding; objectMapper.readTree(json) below (legacy
+    // ObjectMapper bean) still returns the legacy JsonNode for everything else in this file.
+    tools.jackson.databind.JsonNode response =
         restClient
             .post()
             .uri(properties.baseUrl() + "/chat/completions")
             .header("Authorization", "Bearer " + properties.apiKey())
             .body(requestBody)
             .retrieve()
-            .body(JsonNode.class);
+            .body(tools.jackson.databind.JsonNode.class);
 
     String content = response.path("choices").path(0).path("message").path("content").asText("");
     String json = stripMarkdownFence(content);
@@ -261,14 +277,19 @@ public class QwenAIClient {
                     Map.of("role", "system", "content", VERIFY_TASK_SYSTEM_PROMPT),
                     Map.of("role", "user", "content", taskContent)));
 
-    JsonNode response =
+    // Boot 4.1 defaults to Jackson 3 as the primary message converter — binding directly to the
+    // legacy com.fasterxml.jackson.databind.JsonNode here throws InvalidDefinitionException
+    // ("no Creators... abstract type"), confirmed by a real request. Use Jackson 3's own JsonNode
+    // for this one outer HTTP-body binding; objectMapper.readTree(json) below (legacy
+    // ObjectMapper bean) still returns the legacy JsonNode for everything else in this file.
+    tools.jackson.databind.JsonNode response =
         restClient
             .post()
             .uri(properties.baseUrl() + "/chat/completions")
             .header("Authorization", "Bearer " + properties.apiKey())
             .body(requestBody)
             .retrieve()
-            .body(JsonNode.class);
+            .body(tools.jackson.databind.JsonNode.class);
 
     String content = response.path("choices").path(0).path("message").path("content").asText("");
     String json = stripMarkdownFence(content);
@@ -298,14 +319,19 @@ public class QwenAIClient {
                     Map.of("role", "system", "content", TUTOR_CHAT_SYSTEM_PROMPT),
                     Map.of("role", "user", "content", userContent)));
 
-    JsonNode response =
+    // Boot 4.1 defaults to Jackson 3 as the primary message converter — binding directly to the
+    // legacy com.fasterxml.jackson.databind.JsonNode here throws InvalidDefinitionException
+    // ("no Creators... abstract type"), confirmed by a real request. Use Jackson 3's own JsonNode
+    // for this one outer HTTP-body binding; objectMapper.readTree(json) below (legacy
+    // ObjectMapper bean) still returns the legacy JsonNode for everything else in this file.
+    tools.jackson.databind.JsonNode response =
         restClient
             .post()
             .uri(properties.baseUrl() + "/chat/completions")
             .header("Authorization", "Bearer " + properties.apiKey())
             .body(requestBody)
             .retrieve()
-            .body(JsonNode.class);
+            .body(tools.jackson.databind.JsonNode.class);
 
     return response.path("choices").path(0).path("message").path("content").asText("");
   }
@@ -326,14 +352,19 @@ public class QwenAIClient {
                     Map.of("role", "system", "content", PSYCHOLOGY_SYSTEM_PROMPT),
                     Map.of("role", "user", "content", activitySummary)));
 
-    JsonNode response =
+    // Boot 4.1 defaults to Jackson 3 as the primary message converter — binding directly to the
+    // legacy com.fasterxml.jackson.databind.JsonNode here throws InvalidDefinitionException
+    // ("no Creators... abstract type"), confirmed by a real request. Use Jackson 3's own JsonNode
+    // for this one outer HTTP-body binding; objectMapper.readTree(json) below (legacy
+    // ObjectMapper bean) still returns the legacy JsonNode for everything else in this file.
+    tools.jackson.databind.JsonNode response =
         restClient
             .post()
             .uri(properties.baseUrl() + "/chat/completions")
             .header("Authorization", "Bearer " + properties.apiKey())
             .body(requestBody)
             .retrieve()
-            .body(JsonNode.class);
+            .body(tools.jackson.databind.JsonNode.class);
 
     return parsePsychologyResult(response, objectMapper);
   }
@@ -345,7 +376,7 @@ public class QwenAIClient {
   }
 
   static PsychologyAnalysisResult parsePsychologyResult(
-      JsonNode response, ObjectMapper objectMapper) {
+      tools.jackson.databind.JsonNode response, ObjectMapper objectMapper) {
     String content = response.path("choices").path(0).path("message").path("content").asText("");
     String json = stripMarkdownFence(content);
     try {
@@ -377,7 +408,8 @@ public class QwenAIClient {
   }
 
   /** Extracts and parses the OpenAI-shaped {@code choices[0].message.content} JSON string. */
-  static QwenGradingResult parseGradingResult(JsonNode response, ObjectMapper objectMapper) {
+  static QwenGradingResult parseGradingResult(
+      tools.jackson.databind.JsonNode response, ObjectMapper objectMapper) {
     String content = response.path("choices").path(0).path("message").path("content").asText("");
     String json = stripMarkdownFence(content);
 

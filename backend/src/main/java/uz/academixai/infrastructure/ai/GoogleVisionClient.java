@@ -1,6 +1,5 @@
 package uz.academixai.infrastructure.ai;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -9,6 +8,7 @@ import java.util.Map;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import tools.jackson.databind.JsonNode;
 
 /**
  * academix_tz.md §3.1 — Google Cloud Vision {@code DOCUMENT_TEXT_DETECTION}, plain REST (API key
@@ -20,6 +20,16 @@ import org.springframework.web.client.RestClient;
  * there's no URL Vision could fetch — this sends the image as inline base64 {@code image.content}
  * instead, which the same Vision API endpoint accepts. Functionally equivalent, just avoids
  * requiring SeaweedFS to be publicly exposed.
+ *
+ * <p><b>Uses Jackson 3's {@code tools.jackson.databind.JsonNode}, not the legacy {@code
+ * com.fasterxml.jackson.databind} package</b> — Boot 4.1 defaults to Jackson 3 as the primary
+ * message converter, and binding {@code .retrieve().body(JsonNode.class)} to the legacy abstract
+ * type throws {@code InvalidDefinitionException} ("no Creators... abstract type"), confirmed by a
+ * real request against {@link QwenAIClient} that hit this exact failure (this class had never
+ * actually been exercised with a real response before — {@code GOOGLE_VISION_API_KEY} has been
+ * empty this whole time — so the same latent bug existed here too, just never triggered). Unlike
+ * {@code QwenAIClient}, nothing in this file ever calls a legacy {@code ObjectMapper.readTree()},
+ * so the whole file can use Jackson 3's type consistently, not just the outer response binding.
  */
 @Component
 @EnableConfigurationProperties(GoogleVisionProperties.class)

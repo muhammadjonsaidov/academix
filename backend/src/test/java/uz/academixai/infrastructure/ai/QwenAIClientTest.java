@@ -6,16 +6,24 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 import uz.academixai.domain.CriteriaScore;
 import uz.academixai.domain.LessonPlanContent;
 
 /**
  * Pure parsing-logic test against the exact grading JSON shape documented in academix_tz.md §3.2 —
  * no network call (no real QWEN_API_KEY is available in this environment; see CLAUDE.md).
+ *
+ * <p>Two Jackson stacks on purpose, mirroring production: {@code jackson3Mapper} builds the outer
+ * "chat completion" response fixture (Jackson 3 — matches {@code QwenAIClient}'s HTTP-body-bound
+ * {@code response} parameter type, confirmed real by an actual InvalidDefinitionException when this
+ * used the legacy type), while {@code objectMapper} (legacy Jackson 2, the same {@code
+ * JacksonConfig} bean used at runtime) parses the extracted content string internally.
  */
 class QwenAIClientTest {
 
   private final ObjectMapper objectMapper = new ObjectMapper();
+  private final JsonMapper jackson3Mapper = JsonMapper.builder().build();
 
   private static final String GRADING_JSON =
       """
@@ -38,7 +46,7 @@ class QwenAIClientTest {
   @Test
   void parsesGradingResultFromOpenAiShapedResponse() throws Exception {
     var response =
-        objectMapper.readTree(
+        jackson3Mapper.readTree(
             wrapAsChatCompletion(GRADING_JSON.replace("\"", "\\\"").replace("\n", "\\n")));
 
     QwenGradingResult result = QwenAIClient.parseGradingResult(response, objectMapper);
@@ -57,7 +65,7 @@ class QwenAIClientTest {
   void stripsMarkdownCodeFenceBeforeParsing() throws Exception {
     String fenced = "```json\n" + GRADING_JSON + "\n```";
     var response =
-        objectMapper.readTree(
+        jackson3Mapper.readTree(
             wrapAsChatCompletion(fenced.replace("\"", "\\\"").replace("\n", "\\n")));
 
     QwenGradingResult result = QwenAIClient.parseGradingResult(response, objectMapper);
@@ -67,7 +75,7 @@ class QwenAIClientTest {
 
   @Test
   void throwsQwenUnavailableExceptionOnUnparsableContent() throws Exception {
-    var response = objectMapper.readTree(wrapAsChatCompletion("not json at all"));
+    var response = jackson3Mapper.readTree(wrapAsChatCompletion("not json at all"));
 
     assertThatThrownBy(() -> QwenAIClient.parseGradingResult(response, objectMapper))
         .isInstanceOf(QwenUnavailableException.class);
@@ -101,7 +109,7 @@ class QwenAIClientTest {
   @Test
   void parsesLessonPlanContentFromOpenAiShapedResponse() throws Exception {
     var response =
-        objectMapper.readTree(
+        jackson3Mapper.readTree(
             wrapAsChatCompletion(LESSON_PLAN_JSON.replace("\"", "\\\"").replace("\n", "\\n")));
 
     LessonPlanContent result = QwenAIClient.parseLessonPlanContent(response, objectMapper);
@@ -115,7 +123,7 @@ class QwenAIClientTest {
 
   @Test
   void throwsQwenUnavailableExceptionOnUnparsableLessonPlanContent() throws Exception {
-    var response = objectMapper.readTree(wrapAsChatCompletion("not json at all"));
+    var response = jackson3Mapper.readTree(wrapAsChatCompletion("not json at all"));
 
     assertThatThrownBy(() -> QwenAIClient.parseLessonPlanContent(response, objectMapper))
         .isInstanceOf(QwenUnavailableException.class);
