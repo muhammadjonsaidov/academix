@@ -313,6 +313,22 @@
     letter-spacing: -0.01em;
   }
 
+  /* Quality-floor requirement: visible keyboard focus. Button/FormField (and anything
+     built on them) already carry their own focus-visible ring, but a bare next/link
+     <Link> — used unwrapped for the persistent sidebar nav (every role, every page),
+     "view all" links, and whole-card links on parent/psychologist/student dashboards —
+     has nothing else styling it, so it fell back to each browser's own default focus
+     indicator: present, but not the system's ink-derived --ring token, and easy to lose
+     against --sidebar's tinted background. One base-layer rule covers every such link
+     instead of hand-adding focus-visible classes at each call site. Doesn't affect
+     Button-as-<Link> (`render={<Link />}`): Button's own `outline-none` + ring classes
+     live in Tailwind's utilities layer, which always wins over this base layer. */
+  a:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
   /* Quality-floor requirement: reduced motion is respected everywhere,
      including the skeleton shimmer / spinner / critical-severity pulse
      introduced by this system. */
