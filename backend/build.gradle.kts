@@ -107,6 +107,29 @@ tasks.withType<Test> {
 	useJUnitPlatform()
 }
 
+// backend/.env was never actually loaded by `./gradlew bootRun` — no dotenv library, no task
+// config existed anywhere. Confirmed real: QWEN_API_KEY sat in .env with a genuine value while
+// every bootRun this session ran with it empty (a live 401 "You didn't provide an API key" from
+// Qwen proved it — a manual curl with the same key worked fine). DATABASE_URL/JWT_SECRET/etc.
+// only ever *looked* wired because their .env values happen to equal application.yml's inline
+// defaults — pure coincidence, not evidence .env was loading. Fix: read .env and inject as
+// process environment for the bootRun JVM specifically (this is the one command CLAUDE.md
+// documents as "run locally" — IDE run configs and docker-compose still need their own env
+// wiring, unaffected by this).
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+	val envFile = file(".env")
+	if (envFile.exists()) {
+		envFile.readLines()
+			.map { it.trim() }
+			.filter { it.isNotEmpty() && !it.startsWith("#") && it.contains("=") }
+			.forEach { line ->
+				val key = line.substringBefore("=").trim()
+				val value = line.substringAfter("=").trim()
+				environment(key, value)
+			}
+	}
+}
+
 spotless {
 	java {
 		googleJavaFormat()
