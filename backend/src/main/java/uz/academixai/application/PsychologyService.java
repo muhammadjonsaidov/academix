@@ -1,18 +1,21 @@
 package uz.academixai.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Limit;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 import uz.academixai.domain.NotificationType;
 import uz.academixai.domain.PsychologicalSignal;
 import uz.academixai.domain.Role;
@@ -34,6 +37,7 @@ import uz.academixai.infrastructure.persistence.SchoolClassEntity;
 import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
+import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
 import uz.academixai.infrastructure.persistence.XpHistoryEntity;
 import uz.academixai.infrastructure.persistence.XpHistoryRepository;
@@ -77,6 +81,8 @@ public class PsychologyService {
   private final NotificationService notificationService;
   private final QwenAIClient qwenAIClient;
   private final ObjectMapper objectMapper;
+  private final TransactionTemplate transactionTemplate;
+  private final EntityManager entityManager;
 
   public PsychologyService(
       StudentProfileRepository studentProfileRepository,
@@ -90,7 +96,9 @@ public class PsychologyService {
       ParentStudentLinkRepository parentStudentLinkRepository,
       NotificationService notificationService,
       QwenAIClient qwenAIClient,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      TransactionTemplate transactionTemplate,
+      EntityManager entityManager) {
     this.studentProfileRepository = studentProfileRepository;
     this.homeworkSubmissionRepository = homeworkSubmissionRepository;
     this.examSubmissionRepository = examSubmissionRepository;
@@ -103,6 +111,8 @@ public class PsychologyService {
     this.notificationService = notificationService;
     this.qwenAIClient = qwenAIClient;
     this.objectMapper = objectMapper;
+    this.transactionTemplate = transactionTemplate;
+    this.entityManager = entityManager;
   }
 
   // Nightly at 23:00, matching backend_tdd.md/TZ §4's literal schedule.
@@ -123,7 +133,14 @@ public class PsychologyService {
   }
 
   public List<PsychologicalSignal> analyzeStudentBehavior(UUID studentId) {
-    String activitySummary = buildActivitySummary(studentId);
+    Optional<UUID> schoolId =
+        studentProfileRepository.findByUserId(studentId).map(StudentProfileEntity::getSchoolId);
+    if (schoolId.isEmpty()) {
+      log.warn(
+          "Psychological analysis skipped for student {}: no school_id on profile.", studentId);
+      return List.of();
+    }
+    String activitySummary = buildActivitySummary(studentId, schoolId.get());
     PsychologyAnalysisResult result;
     try {
       result = qwenAIClient.analyzePsychology(activitySummary);
@@ -245,7 +262,7 @@ public class PsychologyService {
         .map(StudentProfileEntity::getClassId)
         .flatMap(
             classId -> classRepository.findById(classId).map(SchoolClassEntity::getClassTeacherId))
-        .ifPresent(
+        .ifPresentOrElse(
             teacherId ->
                 notificationService.sendNotification(
                     teacherId,
@@ -258,76 +275,109 @@ public class PsychologyService {
                         "type",
                         type.name(),
                         "severity",
-                        severity.name())));
+                        severity.name())),
+            // Real, flagged case (same principle as the parent-notify gap already logged
+            // below): a student with no classId, or a class with no classTeacherId set, means
+            // a MEDIUM+ signal silently reaches no teacher — was previously a silent no-op.
+            () ->
+                log.warn(
+                    "Psychological signal for student {} has no class teacher to notify"
+                        + " (missing classId or classTeacherId).",
+                    studentId));
   }
 
   private void notifyPsychologists(UUID studentId, SignalType type, SignalSeverity severity) {
-    studentProfileRepository
-        .findByUserId(studentId)
-        .map(StudentProfileEntity::getSchoolId)
-        .ifPresent(
-            schoolId ->
-                userRepository
-                    .findByRoleAndSchoolIdOrderByLastNameAscFirstNameAsc(
-                        Role.PSYCHOLOGIST, schoolId)
-                    .forEach(
-                        psychologist ->
-                            notificationService.sendNotification(
-                                psychologist.getId(),
-                                NotificationType.PSYCHOLOGICAL_ALERT,
-                                "Psixologik signal",
-                                "O'quvchida %s (%s) darajali signal aniqlandi."
-                                    .formatted(type, severity),
-                                Map.of(
-                                    "studentId", studentId.toString(),
-                                    "type", type.name(),
-                                    "severity", severity.name()))));
+    Optional<UUID> schoolId =
+        studentProfileRepository.findByUserId(studentId).map(StudentProfileEntity::getSchoolId);
+    if (schoolId.isEmpty()) {
+      log.warn(
+          "Psychological signal for student {} has no school to resolve psychologists for.",
+          studentId);
+      return;
+    }
+    List<UserEntity> psychologists =
+        userRepository.findByRoleAndSchoolIdOrderByLastNameAscFirstNameAsc(
+            Role.PSYCHOLOGIST, schoolId.get());
+    if (psychologists.isEmpty()) {
+      log.warn("Psychological signal for student {} has no psychologists to notify.", studentId);
+      return;
+    }
+    psychologists.forEach(
+        psychologist ->
+            notificationService.sendNotification(
+                psychologist.getId(),
+                NotificationType.PSYCHOLOGICAL_ALERT,
+                "Psixologik signal",
+                "O'quvchida %s (%s) darajali signal aniqlandi.".formatted(type, severity),
+                Map.of(
+                    "studentId", studentId.toString(),
+                    "type", type.name(),
+                    "severity", severity.name())));
   }
 
-  private String buildActivitySummary(UUID studentId) {
-    LocalDateTime since = LocalDateTime.now().minusDays(LOOKBACK_DAYS);
-    List<LocalDateTime> submissionTimes = new ArrayList<>();
-    homeworkSubmissionRepository.findByStudentIdOrderBySubmittedAtDesc(studentId).stream()
-        .filter(s -> s.toDomain().submittedAt().isAfter(since))
-        .forEach(s -> submissionTimes.add(s.toDomain().submittedAt()));
-    examSubmissionRepository.findByStudentIdOrderByUploadedAtDesc(studentId).stream()
-        .filter(s -> s.toDomain().uploadedAt().isAfter(since))
-        .forEach(s -> submissionTimes.add(s.toDomain().uploadedAt()));
+  /**
+   * Runs its own {@code SET LOCAL app.current_school_id}, same as {@code RlsTransactionFilter} does
+   * for HTTP requests and {@code HomeworkSubmissionListener} does for its queue. This method is
+   * called from the {@code @Scheduled} nightly job (no HTTP request, no filter) and touches 3
+   * RLS-enabled tables (homework_submissions, exam_submissions, ai_chat_messages) — confirmed
+   * necessary by a real {@code unrecognized configuration parameter "app.current_school_id"}
+   * failure the first time this job ever actually ran end-to-end.
+   */
+  private String buildActivitySummary(UUID studentId, UUID schoolId) {
+    return transactionTemplate.execute(
+        status -> {
+          // SET LOCAL doesn't accept JDBC bind parameters, so the UUID is inlined directly —
+          // safe here because schoolId always originated from student_profiles.school_id (a
+          // real column value), never raw user input.
+          entityManager
+              .createNativeQuery("SET LOCAL app.current_school_id = '" + schoolId + "'")
+              .executeUpdate();
 
-    long nightSubmissions = submissionTimes.stream().filter(PsychologyService::isNightTime).count();
+          LocalDateTime since = LocalDateTime.now().minusDays(LOOKBACK_DAYS);
+          List<LocalDateTime> submissionTimes = new ArrayList<>();
+          homeworkSubmissionRepository.findByStudentIdOrderBySubmittedAtDesc(studentId).stream()
+              .filter(s -> s.toDomain().submittedAt().isAfter(since))
+              .forEach(s -> submissionTimes.add(s.toDomain().submittedAt()));
+          examSubmissionRepository.findByStudentIdOrderByUploadedAtDesc(studentId).stream()
+              .filter(s -> s.toDomain().uploadedAt().isAfter(since))
+              .forEach(s -> submissionTimes.add(s.toDomain().uploadedAt()));
 
-    List<XpHistoryEntity> xpHistory =
-        xpHistoryRepository.findByStudentIdOrderByOccurredAtDesc(studentId);
-    long recentXp =
-        xpHistory.stream()
-            .filter(x -> x.toDomain().occurredAt().isAfter(since))
-            .mapToLong(x -> x.toDomain().xp())
-            .sum();
+          long nightSubmissions =
+              submissionTimes.stream().filter(PsychologyService::isNightTime).count();
 
-    LocalDate lastSubmissionDate =
-        studentProfileRepository
-            .findByUserId(studentId)
-            .map(StudentProfileEntity::toDomain)
-            .map(p -> p.lastSubmissionDate())
-            .orElse(null);
-    long daysSinceLastSubmission =
-        lastSubmissionDate == null
-            ? LOOKBACK_DAYS
-            : java.time.temporal.ChronoUnit.DAYS.between(lastSubmissionDate, LocalDate.now());
+          List<XpHistoryEntity> xpHistory =
+              xpHistoryRepository.findByStudentIdOrderByOccurredAtDesc(studentId);
+          long recentXp =
+              xpHistory.stream()
+                  .filter(x -> x.toDomain().occurredAt().isAfter(since))
+                  .mapToLong(x -> x.toDomain().xp())
+                  .sum();
 
-    return """
-        Oxirgi %d kunlik faollik: jami %d marta topshiriq yubordi, shulardan %d marotaba \
-        tungi soat 23:00-05:00 oralig'ida. Oxirgi topshiriqdan beri %d kun o'tdi. \
-        Shu davrda jami %d XP to'pladi.
+          LocalDate lastSubmissionDate =
+              studentProfileRepository
+                  .findByUserId(studentId)
+                  .map(StudentProfileEntity::toDomain)
+                  .map(p -> p.lastSubmissionDate())
+                  .orElse(null);
+          long daysSinceLastSubmission =
+              lastSubmissionDate == null
+                  ? LOOKBACK_DAYS
+                  : java.time.temporal.ChronoUnit.DAYS.between(lastSubmissionDate, LocalDate.now());
 
-        %s"""
-        .formatted(
-            LOOKBACK_DAYS,
-            submissionTimes.size(),
-            nightSubmissions,
-            daysSinceLastSubmission,
-            recentXp,
-            buildChatTranscriptSummary(studentId, since));
+          return """
+              Oxirgi %d kunlik faollik: jami %d marta topshiriq yubordi, shulardan %d marotaba \
+              tungi soat 23:00-05:00 oralig'ida. Oxirgi topshiriqdan beri %d kun o'tdi. \
+              Shu davrda jami %d XP to'pladi.
+
+              %s"""
+              .formatted(
+                  LOOKBACK_DAYS,
+                  submissionTimes.size(),
+                  nightSubmissions,
+                  daysSinceLastSubmission,
+                  recentXp,
+                  buildChatTranscriptSummary(studentId, since));
+        });
   }
 
   // Sprint 12 added AI Tutor chat (ai_chat_messages) — wired in here now that real data exists,
