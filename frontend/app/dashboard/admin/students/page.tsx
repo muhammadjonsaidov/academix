@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { FileSpreadsheet, GraduationCap, Search, UserPlus } from "lucide-react";
+import {
+  FileSpreadsheet,
+  GraduationCap,
+  Link2,
+  Search,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { fieldClass, FormField } from "@/components/shared/FormField";
@@ -12,6 +19,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminStore } from "@/stores/useAdminStore";
 import type { ApiErrorResponse } from "@/types/auth";
+import type { ParentRelation } from "@/types/admin";
+
+const RELATION_LABELS: Record<ParentRelation, string> = {
+  MOTHER: "Ona",
+  FATHER: "Ota",
+  GUARDIAN: "Vasiy",
+};
 
 export default function AdminStudentsPage() {
   const students = useAdminStore((state) => state.students);
@@ -20,6 +34,8 @@ export default function AdminStudentsPage() {
   const fetchClasses = useAdminStore((state) => state.fetchClasses);
   const createStudent = useAdminStore((state) => state.createStudent);
   const unlockHandwritingReset = useAdminStore((state) => state.unlockHandwritingReset);
+  const transferStudentClass = useAdminStore((state) => state.transferStudentClass);
+  const linkParentToStudent = useAdminStore((state) => state.linkParentToStudent);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -31,6 +47,28 @@ export default function AdminStudentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [unlockingId, setUnlockingId] = useState<string | null>(null);
   const [unlockMessage, setUnlockMessage] = useState<{
+    studentId: string;
+    text: string;
+    isError: boolean;
+  } | null>(null);
+
+  const [openPanel, setOpenPanel] = useState<{
+    studentId: string;
+    type: "transfer" | "link";
+  } | null>(null);
+
+  const [transferClassId, setTransferClassId] = useState("");
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [transferMessage, setTransferMessage] = useState<{
+    studentId: string;
+    text: string;
+    isError: boolean;
+  } | null>(null);
+
+  const [linkPhone, setLinkPhone] = useState("");
+  const [linkRelation, setLinkRelation] = useState<ParentRelation>("MOTHER");
+  const [isLinking, setIsLinking] = useState(false);
+  const [linkMessage, setLinkMessage] = useState<{
     studentId: string;
     text: string;
     isError: boolean;
@@ -86,6 +124,60 @@ export default function AdminStudentsPage() {
       });
     } finally {
       setUnlockingId(null);
+    }
+  }
+
+  function openTransferPanel(student: { id: string; classId: string | null }) {
+    setOpenPanel({ studentId: student.id, type: "transfer" });
+    setTransferClassId(student.classId ?? "");
+    setTransferMessage(null);
+  }
+
+  function openLinkPanel(studentId: string) {
+    setOpenPanel({ studentId, type: "link" });
+    setLinkPhone("");
+    setLinkRelation("MOTHER");
+    setLinkMessage(null);
+  }
+
+  function closePanel() {
+    setOpenPanel(null);
+  }
+
+  async function handleTransfer(studentId: string) {
+    if (!transferClassId) return;
+    setIsTransferring(true);
+    try {
+      await transferStudentClass(studentId, transferClassId);
+      setOpenPanel(null);
+    } catch (err) {
+      const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
+      setTransferMessage({
+        studentId,
+        text: apiError?.message ?? "Sinfni almashtirib bo'lmadi.",
+        isError: true,
+      });
+    } finally {
+      setIsTransferring(false);
+    }
+  }
+
+  async function handleLinkParent(studentId: string) {
+    setIsLinking(true);
+    setLinkMessage(null);
+    try {
+      await linkParentToStudent({ parentPhone: linkPhone, studentId, relation: linkRelation });
+      setLinkMessage({ studentId, text: "Ota-ona muvaffaqiyatli bog'landi.", isError: false });
+      setLinkPhone("");
+    } catch (err) {
+      const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
+      setLinkMessage({
+        studentId,
+        text: apiError?.message ?? "Ota-onani bog'lab bo'lmadi.",
+        isError: true,
+      });
+    } finally {
+      setIsLinking(false);
     }
   }
 
@@ -210,43 +302,199 @@ export default function AdminStudentsPage() {
                     <th className="py-2 font-medium">Sinf</th>
                     <th className="py-2 font-medium">Holati</th>
                     <th className="py-2 font-medium">Yozuv profili</th>
+                    <th className="py-2 font-medium">Amallar</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {students.map((student) => (
-                    <tr key={student.id} className="border-b border-border last:border-0">
-                      <td className="py-2.5 font-medium">
-                        {student.firstName} {student.lastName}
-                      </td>
-                      <td className="py-2.5 font-data text-muted-foreground">{student.phone}</td>
-                      <td className="py-2.5">{classFullName(student.classId)}</td>
-                      <td className="py-2.5">
-                        <Badge variant={student.isActive ? "success" : "secondary"}>
-                          {student.isActive ? "Faol" : "Faol emas"}
-                        </Badge>
-                      </td>
-                      <td className="py-2.5">
-                        <div className="flex flex-col items-start gap-1">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={unlockingId === student.id}
-                            onClick={() => handleUnlockReset(student.id)}
-                          >
-                            {unlockingId === student.id ? "Tiklanmoqda..." : "Reset limitini tiklash"}
-                          </Button>
-                          {unlockMessage?.studentId === student.id ? (
-                            <span
-                              className={`text-xs ${unlockMessage.isError ? "text-destructive" : "text-success"}`}
-                            >
-                              {unlockMessage.text}
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {students.map((student) => {
+                    const isTransferOpen =
+                      openPanel?.studentId === student.id && openPanel.type === "transfer";
+                    const isLinkOpen =
+                      openPanel?.studentId === student.id && openPanel.type === "link";
+                    return (
+                      <Fragment key={student.id}>
+                        <tr className="border-b border-border last:border-0">
+                          <td className="py-2.5 font-medium">
+                            {student.firstName} {student.lastName}
+                          </td>
+                          <td className="py-2.5 font-data text-muted-foreground">
+                            {student.phone}
+                          </td>
+                          <td className="py-2.5">{classFullName(student.classId)}</td>
+                          <td className="py-2.5">
+                            <Badge variant={student.isActive ? "success" : "secondary"}>
+                              {student.isActive ? "Faol" : "Faol emas"}
+                            </Badge>
+                          </td>
+                          <td className="py-2.5">
+                            <div className="flex flex-col items-start gap-1">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={unlockingId === student.id}
+                                onClick={() => handleUnlockReset(student.id)}
+                              >
+                                {unlockingId === student.id
+                                  ? "Tiklanmoqda..."
+                                  : "Reset limitini tiklash"}
+                              </Button>
+                              {unlockMessage?.studentId === student.id ? (
+                                <span
+                                  className={`text-xs ${unlockMessage.isError ? "text-destructive" : "text-success"}`}
+                                >
+                                  {unlockMessage.text}
+                                </span>
+                              ) : null}
+                            </div>
+                          </td>
+                          <td className="py-2.5">
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openTransferPanel(student)}
+                              >
+                                <Users className="size-3.5" strokeWidth={1.75} />
+                                Sinfni almashtirish
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openLinkPanel(student.id)}
+                              >
+                                <Link2 className="size-3.5" strokeWidth={1.75} />
+                                Ota-onani bog&apos;lash
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                        {isTransferOpen ? (
+                          <tr className="border-b border-border bg-muted/30">
+                            <td colSpan={6} className="py-3">
+                              <div className="flex flex-wrap items-end gap-3">
+                                <FormField
+                                  label="Yangi sinf"
+                                  htmlFor={`transfer-class-${student.id}`}
+                                  className="w-48"
+                                >
+                                  <select
+                                    id={`transfer-class-${student.id}`}
+                                    value={transferClassId}
+                                    onChange={(e) => setTransferClassId(e.target.value)}
+                                    className={fieldClass}
+                                  >
+                                    <option value="" disabled>
+                                      Tanlang
+                                    </option>
+                                    {classes.map((schoolClass) => (
+                                      <option key={schoolClass.id} value={schoolClass.id}>
+                                        {schoolClass.fullName}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </FormField>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  disabled={isTransferring || !transferClassId}
+                                  onClick={() => handleTransfer(student.id)}
+                                >
+                                  {isTransferring ? "Almashtirilmoqda..." : "Tasdiqlash"}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={isTransferring}
+                                  onClick={closePanel}
+                                >
+                                  Bekor qilish
+                                </Button>
+                                {transferMessage?.studentId === student.id ? (
+                                  <span
+                                    className={`text-xs ${transferMessage.isError ? "text-destructive" : "text-success"}`}
+                                  >
+                                    {transferMessage.text}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                        {isLinkOpen ? (
+                          <tr className="border-b border-border bg-muted/30">
+                            <td colSpan={6} className="py-3">
+                              <div className="flex flex-wrap items-end gap-3">
+                                <FormField
+                                  label="Ota-ona telefon raqami"
+                                  htmlFor={`link-phone-${student.id}`}
+                                  className="w-56"
+                                >
+                                  <input
+                                    id={`link-phone-${student.id}`}
+                                    type="tel"
+                                    placeholder="+998901234567"
+                                    value={linkPhone}
+                                    onChange={(e) => setLinkPhone(e.target.value)}
+                                    className={fieldClass}
+                                  />
+                                </FormField>
+                                <FormField
+                                  label="Qarindoshlik"
+                                  htmlFor={`link-relation-${student.id}`}
+                                  className="w-36"
+                                >
+                                  <select
+                                    id={`link-relation-${student.id}`}
+                                    value={linkRelation}
+                                    onChange={(e) =>
+                                      setLinkRelation(e.target.value as ParentRelation)
+                                    }
+                                    className={fieldClass}
+                                  >
+                                    {(Object.keys(RELATION_LABELS) as ParentRelation[]).map(
+                                      (relation) => (
+                                        <option key={relation} value={relation}>
+                                          {RELATION_LABELS[relation]}
+                                        </option>
+                                      ),
+                                    )}
+                                  </select>
+                                </FormField>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  disabled={isLinking || !linkPhone}
+                                  onClick={() => handleLinkParent(student.id)}
+                                >
+                                  {isLinking ? "Bog'lanmoqda..." : "Bog'lash"}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={isLinking}
+                                  onClick={closePanel}
+                                >
+                                  Bekor qilish
+                                </Button>
+                                {linkMessage?.studentId === student.id ? (
+                                  <span
+                                    className={`text-xs ${linkMessage.isError ? "text-destructive" : "text-success"}`}
+                                  >
+                                    {linkMessage.text}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             )}

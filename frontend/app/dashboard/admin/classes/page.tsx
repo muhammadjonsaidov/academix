@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { School as SchoolIcon, Trash2 } from "lucide-react";
+import { Pencil, School as SchoolIcon, Trash2, X } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { fieldClass, FormField } from "@/components/shared/FormField";
@@ -15,6 +15,7 @@ export default function AdminClassesPage() {
   const classes = useAdminStore((state) => state.classes);
   const fetchClasses = useAdminStore((state) => state.fetchClasses);
   const createClass = useAdminStore((state) => state.createClass);
+  const updateClass = useAdminStore((state) => state.updateClass);
   const deleteClass = useAdminStore((state) => state.deleteClass);
 
   const [grade, setGrade] = useState("");
@@ -23,6 +24,12 @@ export default function AdminClassesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editGrade, setEditGrade] = useState("");
+  const [editLetter, setEditLetter] = useState("");
+  const [editError, setEditError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     fetchClasses()
@@ -52,6 +59,36 @@ export default function AdminClassesPage() {
       await deleteClass(classId);
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  function startEdit(schoolClass: { id: string; grade: number; letter: string }) {
+    setEditingId(schoolClass.id);
+    setEditGrade(String(schoolClass.grade));
+    setEditLetter(schoolClass.letter);
+    setEditError(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditError(null);
+  }
+
+  async function handleUpdate(classId: string, classTeacherId: string | null) {
+    setEditError(null);
+    setIsUpdating(true);
+    try {
+      await updateClass(classId, {
+        grade: Number(editGrade),
+        letter: editLetter.toUpperCase(),
+        classTeacherId: classTeacherId ?? undefined,
+      });
+      setEditingId(null);
+    } catch (err) {
+      const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
+      setEditError(apiError?.message ?? "Sinfni yangilab bo'lmadi.");
+    } finally {
+      setIsUpdating(false);
     }
   }
 
@@ -131,26 +168,89 @@ export default function AdminClassesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {classes.map((schoolClass) => (
-                    <tr key={schoolClass.id} className="border-b border-border last:border-0">
-                      <td className="py-2.5 font-medium">{schoolClass.fullName}</td>
-                      <td className="py-2.5 font-data text-muted-foreground">
-                        {schoolClass.academicYear}
-                      </td>
-                      <td className="py-2.5 font-data">{schoolClass.studentCount}</td>
-                      <td className="py-2.5 text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={deletingId === schoolClass.id}
-                          onClick={() => handleDelete(schoolClass.id)}
-                        >
-                          <Trash2 className="size-3.5" strokeWidth={1.75} />
-                          {deletingId === schoolClass.id ? "..." : "O'chirish"}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {classes.map((schoolClass) => {
+                    const isEditing = editingId === schoolClass.id;
+                    return (
+                      <tr key={schoolClass.id} className="border-b border-border last:border-0">
+                        {isEditing ? (
+                          <>
+                            <td className="py-2.5" colSpan={2}>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={11}
+                                  value={editGrade}
+                                  onChange={(e) => setEditGrade(e.target.value)}
+                                  className={`${fieldClass} w-16`}
+                                />
+                                <input
+                                  type="text"
+                                  maxLength={5}
+                                  value={editLetter}
+                                  onChange={(e) => setEditLetter(e.target.value)}
+                                  className={`${fieldClass} w-16`}
+                                />
+                                {editError ? (
+                                  <span className="text-xs text-destructive">{editError}</span>
+                                ) : null}
+                              </div>
+                            </td>
+                            <td className="py-2.5 font-data">{schoolClass.studentCount}</td>
+                            <td className="py-2.5 text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={isUpdating}
+                                  onClick={() => handleUpdate(schoolClass.id, schoolClass.classTeacherId)}
+                                >
+                                  {isUpdating ? "Saqlanmoqda..." : "Saqlash"}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  disabled={isUpdating}
+                                  onClick={cancelEdit}
+                                >
+                                  <X className="size-3.5" strokeWidth={1.75} />
+                                </Button>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="py-2.5 font-medium">{schoolClass.fullName}</td>
+                            <td className="py-2.5 font-data text-muted-foreground">
+                              {schoolClass.academicYear}
+                            </td>
+                            <td className="py-2.5 font-data">{schoolClass.studentCount}</td>
+                            <td className="py-2.5 text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => startEdit(schoolClass)}
+                                >
+                                  <Pencil className="size-3.5" strokeWidth={1.75} />
+                                  Tahrirlash
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={deletingId === schoolClass.id}
+                                  onClick={() => handleDelete(schoolClass.id)}
+                                >
+                                  <Trash2 className="size-3.5" strokeWidth={1.75} />
+                                  {deletingId === schoolClass.id ? "..." : "O'chirish"}
+                                </Button>
+                              </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
