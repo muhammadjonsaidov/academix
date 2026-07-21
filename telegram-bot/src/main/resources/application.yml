@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: telegram-bot
+
+  datasource:
+    # Same restricted, non-superuser role backend's runtime datasource uses — this service never
+    # needs superuser (no migrations, no CREATE EXTENSION), and telegram_connections/notifications
+    # are both non-RLS tables, so no SET LOCAL dance is needed either.
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/academix}
+    username: ${DATABASE_APP_USERNAME:academix_app}
+    password: ${DATABASE_APP_PASSWORD:academix_app_local_dev_only}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+
+server:
+  port: ${SERVER_PORT:8081}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+academix:
+  telegram:
+    # Same TELEGRAM_BOT_TOKEN/USERNAME env vars as backend — both services need the same bot
+    # identity (backend issues deep-links pointing at this bot, this service IS the bot).
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    bot-username: ${TELEGRAM_BOT_USERNAME:academix_notify_bot}

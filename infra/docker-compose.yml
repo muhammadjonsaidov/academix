@@ -115,6 +115,26 @@ services:
   #       condition: service_started
   #   profiles: ["prod"]
   #
+  # telegram-bot:
+  #   build:
+  #     context: ../telegram-bot
+  #   environment:
+  #     DATABASE_URL: jdbc:postgresql://postgres:5432/academix
+  #     DATABASE_APP_USERNAME: academix_app
+  #     DATABASE_APP_PASSWORD: ${DATABASE_APP_PASSWORD:-academix_app_local_dev_only}
+  #     REDIS_HOST: redis
+  #     RABBITMQ_HOST: rabbitmq
+  #     TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+  #     TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_started
+  #     rabbitmq:
+  #       condition: service_started
+  #   profiles: ["prod"]
+  #
   # frontend:
   #   build:
   #     context: ../frontend
