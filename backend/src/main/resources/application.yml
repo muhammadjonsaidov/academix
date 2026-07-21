@@ -102,5 +102,11 @@ resilience4j:
     instances:
       googleVision:
         base-config: default
+      # qwen3.7-max has extended "reasoning" mode on — a real request took 52.9s (2218 of 2859
+      # completion tokens were reasoning_content thinking tokens before the actual answer). The
+      # shared 5s slow-call-duration-threshold would classify nearly every real Qwen call as
+      # "slow," tripping the circuit open even when Qwen is working correctly. 75s gives margin
+      # under AiRestClientTimeoutConfig's 90s read timeout while still catching genuine hangs.
       qwen:
         base-config: default
+        slow-call-duration-threshold: 75s
