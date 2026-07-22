@@ -299,6 +299,7 @@ export default function TeacherHomeworkPage() {
       ) : (
         <Card>
           <CardContent className="px-0">
+            <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="text-muted-foreground">
                 <tr className="border-b border-border">
@@ -367,6 +368,7 @@ export default function TeacherHomeworkPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
       )}

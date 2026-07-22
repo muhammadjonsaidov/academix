@@ -184,7 +184,7 @@ export default function AdminStudentsPage() {
   return (
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-heading text-xl font-semibold">O&apos;quvchilar</h2>
             <p className="text-sm text-muted-foreground">
@@ -264,7 +264,7 @@ export default function AdminStudentsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Ro&apos;yxat</CardTitle>
-            <form onSubmit={handleSearch} className="mt-2 flex items-end gap-2">
+            <form onSubmit={handleSearch} className="mt-2 flex flex-wrap items-end gap-2">
               <FormField label="Qidirish" htmlFor="search" className="w-64">
                 <input
                   id="search"
@@ -294,6 +294,7 @@ export default function AdminStudentsPage() {
                 description="Yuqoridagi shakl orqali qo'shing yoki Excel orqali ommaviy import qiling."
               />
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-muted-foreground">
                   <tr className="border-b border-border">
@@ -497,6 +498,7 @@ export default function AdminStudentsPage() {
                   })}
                 </tbody>
               </table>
+              </div>
             )}
           </CardContent>
         </Card>

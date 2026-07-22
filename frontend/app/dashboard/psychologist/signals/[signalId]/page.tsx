@@ -235,7 +235,7 @@ export default function PsychologistSignalDetailPage() {
                     className={`${fieldClass} w-full`}
                   />
                 </FormField>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   <Button type="submit" disabled={isResolving}>
                     {isResolving ? "Saqlanmoqda..." : "Hal qilish"}
                   </Button>

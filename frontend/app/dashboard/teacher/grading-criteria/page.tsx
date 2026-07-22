@@ -117,6 +117,7 @@ export default function TeacherGradingCriteriaPage() {
 
           {subjectId ? (
             <div className="space-y-3">
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-muted-foreground">
                   <tr>
@@ -162,8 +163,9 @@ export default function TeacherGradingCriteriaPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Button variant="outline" onClick={addRow}>
                   <Plus className="size-4" strokeWidth={1.75} />
                   Mezon qo&apos;shish

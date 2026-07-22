@@ -180,6 +180,7 @@ export default function TeacherSubmissionDetailPage() {
             <p className="text-sm">{submission.aiFeedback.feedback}</p>
 
             {submission.aiFeedback.criteriaScores.length > 0 ? (
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-muted-foreground">
                   <tr>
@@ -198,9 +199,10 @@ export default function TeacherSubmissionDetailPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             ) : null}
 
-            <div className="flex gap-6 text-sm text-muted-foreground">
+            <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
               <span>
                 Plagiat: <span className="font-data">{submission.aiFeedback.plagiarismScore}</span> (
                 {submission.aiFeedback.plagiarismType})

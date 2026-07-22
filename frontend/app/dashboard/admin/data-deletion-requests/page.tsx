@@ -91,6 +91,7 @@ export default function AdminDataDeletionRequestsPage() {
                 description="Ota-onalar tomonidan yuborilgan o'chirish so'rovlari shu yerda ko'rinadi."
               />
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-muted-foreground">
                   <tr className="border-b border-border">
@@ -130,6 +131,7 @@ export default function AdminDataDeletionRequestsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </CardContent>
         </Card>

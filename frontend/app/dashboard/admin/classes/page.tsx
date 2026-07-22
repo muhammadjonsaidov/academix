@@ -108,7 +108,7 @@ export default function AdminClassesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="flex items-end gap-3">
+            <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
               <FormField label="Sinf raqami" htmlFor="grade" className="w-24">
                 <input
                   id="grade"
@@ -158,6 +158,7 @@ export default function AdminClassesPage() {
                 description="Yuqoridagi shakl orqali birinchi sinfni qo'shing."
               />
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-muted-foreground">
                   <tr className="border-b border-border">
@@ -253,6 +254,7 @@ export default function AdminClassesPage() {
                   })}
                 </tbody>
               </table>
+              </div>
             )}
           </CardContent>
         </Card>

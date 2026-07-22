@@ -88,7 +88,7 @@ export default function PsychologistWatchlistPage() {
                   onChange={(e) => setStudentId(e.target.value)}
                   required
                   placeholder="uuid"
-                  className={`${fieldClass} w-72`}
+                  className={`${fieldClass} w-full max-w-72`}
                 />
               </FormField>
               <FormField label="Sabab" htmlFor="reason">
@@ -96,7 +96,7 @@ export default function PsychologistWatchlistPage() {
                   id="reason"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className={`${fieldClass} w-72`}
+                  className={`${fieldClass} w-full max-w-72`}
                 />
               </FormField>
               <Button type="submit" disabled={isSubmitting}>
@@ -125,6 +125,7 @@ export default function PsychologistWatchlistPage() {
                 description="Yuqoridagi shakl orqali birinchi o'quvchini kuzatuvga qo'shing."
               />
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-muted-foreground">
                   <tr className="border-b border-border">
@@ -157,6 +158,7 @@ export default function PsychologistWatchlistPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </CardContent>
         </Card>

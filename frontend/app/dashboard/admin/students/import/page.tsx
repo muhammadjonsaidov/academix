@@ -139,6 +139,7 @@ export default function AdminStudentsImportPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <table className="w-full max-w-lg text-left text-sm">
                 <tbody>
                   {IMPORT_TARGET_FIELDS.map((field) => (
@@ -162,6 +163,7 @@ export default function AdminStudentsImportPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </CardContent>
             <CardFooter>
               <Button onClick={goToPreview}>Ko&apos;rib chiqish</Button>

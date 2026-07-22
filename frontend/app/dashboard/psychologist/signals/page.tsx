@@ -125,6 +125,7 @@ export default function PsychologistSignalsPage() {
                 description="Tanlangan filtrlarga mos psixologik signal mavjud emas."
               />
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-muted-foreground">
                   <tr className="border-b border-border">
@@ -188,6 +189,7 @@ export default function PsychologistSignalsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </CardContent>
         </Card>

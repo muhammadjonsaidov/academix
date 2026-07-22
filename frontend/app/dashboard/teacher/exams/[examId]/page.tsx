@@ -213,7 +213,7 @@ export default function TeacherExamDetailPage() {
           {files.length > 0 ? (
             <ul className="space-y-2 text-sm">
               {files.map((file, index) => (
-                <li key={`${file.name}-${index}`} className="flex items-center gap-2">
+                <li key={`${file.name}-${index}`} className="flex flex-wrap items-center gap-2">
                   <span className="w-48 truncate">{file.name}</span>
                   <select
                     value={studentIds[index] ?? ""}
@@ -259,6 +259,7 @@ export default function TeacherExamDetailPage() {
       ) : (
         <Card className="mb-4">
           <CardContent className="px-0">
+            <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="text-muted-foreground">
                 <tr className="border-b border-border">
@@ -274,6 +275,7 @@ export default function TeacherExamDetailPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
       )}

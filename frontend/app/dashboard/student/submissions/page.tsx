@@ -49,7 +49,7 @@ export default function StudentSubmissionsPage() {
             return (
               <Link key={s.submissionId} href={`/dashboard/student/submissions/${s.submissionId}`}>
                 <Card className={cn("card-lift transition-colors hover:bg-muted/40", meta.rail || undefined)}>
-                  <CardContent className="flex items-center justify-between gap-3">
+                  <CardContent className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <span className="font-data text-sm text-muted-foreground">
                         {new Date(s.submittedAt).toLocaleString()}

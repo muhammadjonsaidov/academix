@@ -181,6 +181,7 @@ export default function AdminAssignmentsPage() {
                 description="Yuqoridagi shakl orqali birinchi biriktirishni qo'shing."
               />
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-muted-foreground">
                   <tr className="border-b border-border">
@@ -217,6 +218,7 @@ export default function AdminAssignmentsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </CardContent>
         </Card>

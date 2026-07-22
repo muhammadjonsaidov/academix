@@ -146,6 +146,7 @@ export default function AdminPsychologistsPage() {
                 description="Yuqoridagi shakl orqali birinchi psixologni taklif qiling."
               />
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-muted-foreground">
                   <tr className="border-b border-border">
@@ -193,6 +194,7 @@ export default function AdminPsychologistsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </CardContent>
         </Card>

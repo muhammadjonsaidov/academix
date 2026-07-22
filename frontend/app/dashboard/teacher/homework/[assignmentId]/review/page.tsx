@@ -79,7 +79,7 @@ function UniqueTaskRow({ assignmentId, task }: { assignmentId: string; task: Uni
           rows={2}
         />
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handleSaveContent} disabled={isSaving}>
             {isSaving ? "Saqlanmoqda..." : "Matnni saqlash"}
           </Button>
@@ -193,7 +193,7 @@ export default function UniqueTaskReviewPage() {
                 <span className="font-data font-semibold">{flaggedTasks.length}</span> tasi ko&apos;rib
                 chiqishni talab qiladi.
               </span>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <Button
                   variant="outline"
                   onClick={handleApproveAll}

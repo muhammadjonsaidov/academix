@@ -135,6 +135,7 @@ export default function AdminTeachersPage() {
                 description="Yuqoridagi shakl orqali birinchi o'qituvchini taklif qiling."
               />
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-muted-foreground">
                   <tr className="border-b border-border">
@@ -174,6 +175,7 @@ export default function AdminTeachersPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </CardContent>
         </Card>

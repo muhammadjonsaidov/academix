@@ -65,7 +65,7 @@ function SubmitForm({ assignmentId, onDone }: { assignmentId: string; onDone: ()
 
   return (
     <form onSubmit={handleSubmit} className="mt-3 space-y-3 border-t border-border pt-3">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {TYPE_OPTIONS.map((opt) => {
           const Icon = opt.icon;
           const active = type === opt.value;

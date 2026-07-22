@@ -83,7 +83,7 @@ export default function StudentSubmissionDetailPage() {
 
       {isProcessing ? (
         <Card className="rail-processing mb-6">
-          <CardContent className="flex items-center justify-between gap-3">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Badge variant="status-processing">AI tahlil qilmoqda</Badge>
               <Spinner label="AI tahlil qilmoqda" />

@@ -185,9 +185,9 @@ export default function AdminReportsPage() {
                 {reports.map((r) => (
                   <li
                     key={r.id}
-                    className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2.5 text-sm"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline">{TYPE_LABEL[r.type]}</Badge>
                       <span className="font-medium">{r.quarter}</span>
                       <span className="font-data text-xs text-muted-foreground">
