@@ -5,6 +5,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -59,6 +60,20 @@ public class AuthController {
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, clearedAuthCookie().toString())
         .body(new LogoutResponse(true));
+  }
+
+  @GetMapping("/profile")
+  public ProfileResponse profile(@AuthenticationPrincipal AcademixPrincipal principal) {
+    return ProfileResponse.from(authService.profile(principal.userId()));
+  }
+
+  @PutMapping("/profile")
+  public ProfileResponse updateProfile(
+      @AuthenticationPrincipal AcademixPrincipal principal,
+      @RequestBody UpdateProfileRequest request) {
+    return ProfileResponse.from(
+        authService.updateProfile(
+            principal.userId(), request.firstName(), request.lastName(), request.email()));
   }
 
   @PutMapping("/change-password")

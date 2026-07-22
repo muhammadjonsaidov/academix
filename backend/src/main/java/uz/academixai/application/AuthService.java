@@ -84,6 +84,59 @@ public class AuthService {
     refreshTokenStore.revokeAllForUser(userId);
   }
 
+  /** Current user's own profile — deviation, no /auth/profile in academix_tz.md §2.1. */
+  public User profile(UUID userId) {
+    return userRepository
+        .findById(userId)
+        .map(UserEntity::toDomain)
+        .orElseThrow(
+            () ->
+                new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "ERR_USER_NOT_FOUND",
+                    "Foydalanuvchi topilmadi.",
+                    "Qaytadan tizimga kiring."));
+  }
+
+  /**
+   * Self-service profile edit (name/email only — phone is the login identifier and stays
+   * immutable). Deviation, same flag as {@link #profile}. Preserves {@code schoolId} via the
+   * 11-arg constructor — the 10-arg one silently nulls it (see the RLS-wipe fix in git history).
+   */
+  public User updateProfile(UUID userId, String firstName, String lastName, String email) {
+    UserEntity entity =
+        userRepository
+            .findById(userId)
+            .orElseThrow(
+                () ->
+                    new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "ERR_USER_NOT_FOUND",
+                        "Foydalanuvchi topilmadi.",
+                        "Qaytadan tizimga kiring."));
+    if (firstName == null || firstName.isBlank() || lastName == null || lastName.isBlank()) {
+      throw new ApiException(
+          HttpStatus.BAD_REQUEST,
+          "ERR_VALIDATION",
+          "Ism va familiya bo'sh bo'lishi mumkin emas.",
+          "Maydonlarni to'ldirib qayta urinib ko'ring.");
+    }
+    UserEntity updated =
+        new UserEntity(
+            entity.getId(),
+            firstName.trim(),
+            lastName.trim(),
+            entity.getPhone(),
+            email == null || email.isBlank() ? null : email.trim(),
+            entity.getPasswordHash(),
+            entity.getRole(),
+            entity.isActive(),
+            entity.getCreatedAt(),
+            entity.getLastLoginAt(),
+            entity.getSchoolId());
+    return userRepository.save(updated).toDomain();
+  }
+
   public void changePassword(UUID userId, String oldPassword, String newPassword) {
     UserEntity entity =
         userRepository

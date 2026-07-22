@@ -1,11 +1,12 @@
 import { create } from "zustand";
 import axios from "axios";
-import type { LoginResponse, UserSummary } from "@/types/auth";
+import type { LoginResponse, Profile, UserSummary } from "@/types/auth";
 
 interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   user: UserSummary | null;
+  profile: Profile | null;
   isAuthenticated: boolean;
   login: (phone: string, password: string) => Promise<void>;
   logout: () => void;
@@ -13,6 +14,8 @@ interface AuthState {
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   forgotPassword: (phone: string) => Promise<string>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
+  fetchProfile: () => Promise<void>;
+  updateProfile: (firstName: string, lastName: string, email: string) => Promise<void>;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
@@ -24,6 +27,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   accessToken: null,
   refreshToken: null,
   user: null,
+  profile: null,
   isAuthenticated: false,
 
   login: async (phone, password) => {
@@ -42,7 +46,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: () => {
     const token = get().accessToken;
-    set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false });
+    set({
+      accessToken: null,
+      refreshToken: null,
+      user: null,
+      profile: null,
+      isAuthenticated: false,
+    });
     if (token) {
       // Best-effort — the client-side session is already cleared above regardless of
       // whether this call succeeds, matching the store's job (client state), not the
@@ -87,5 +97,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   resetPassword: async (token, newPassword) => {
     await axios.post(`${API_BASE_URL}/auth/reset-password`, { token, newPassword });
+  },
+
+  // Plain axios like the rest of this store (see the module comment) — profile lives here
+  // rather than a separate store since it's the same identity the header/user chrome reads.
+  fetchProfile: async () => {
+    const token = get().accessToken;
+    const { data } = await axios.get<Profile>(`${API_BASE_URL}/auth/profile`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      withCredentials: true,
+    });
+    set({ profile: data });
+  },
+
+  updateProfile: async (firstName, lastName, email) => {
+    const token = get().accessToken;
+    const { data } = await axios.put<Profile>(
+      `${API_BASE_URL}/auth/profile`,
+      { firstName, lastName, email },
+      { headers: token ? { Authorization: `Bearer ${token}` } : undefined, withCredentials: true },
+    );
+    const user = get().user;
+    set({
+      profile: data,
+      // Keep the header greeting in sync with the edited name.
+      user: user ? { ...user, firstName: data.firstName, lastName: data.lastName } : user,
+    });
   },
 }));

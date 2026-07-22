@@ -20,6 +20,17 @@ export interface RefreshResponse {
   accessToken: string;
 }
 
+// Deviation — /auth/profile has no shape in academix_tz.md §2.1 (self-service settings UI),
+// mirrors backend interfaces/web/auth/ProfileResponse.
+export interface Profile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string | null;
+  role: Role;
+}
+
 export interface ApiErrorResponse {
   status: number;
   code: string;
