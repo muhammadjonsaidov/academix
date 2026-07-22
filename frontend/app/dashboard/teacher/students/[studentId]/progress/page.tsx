@@ -2,24 +2,47 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { FileCheck2, History, TrendingUp } from "lucide-react";
+import { FileCheck2, History, KeyRound, TrendingUp } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusLabel, submissionRailClass } from "@/components/shared/submission-status";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTeacherAnalyticsStore } from "@/stores/useTeacherAnalyticsStore";
+import { useTeacherStore } from "@/stores/useTeacherStore";
 import type { SubmissionStatus } from "@/types/teacher";
 
 export default function TeacherStudentProgressPage() {
   const params = useParams<{ studentId: string }>();
   const progress = useTeacherAnalyticsStore((state) => state.studentProgress);
   const fetchStudentProgress = useTeacherAnalyticsStore((state) => state.fetchStudentProgress);
+  const resetStudentPassword = useTeacherStore((state) => state.resetStudentPassword);
   const [error, setError] = useState<string | null>(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStudentProgress(params.studentId).catch(() => setError("Progressni yuklab bo'lmadi."));
   }, [params.studentId, fetchStudentProgress]);
+
+  async function handleResetPassword() {
+    const confirmed = window.confirm(
+      "Bu o'quvchining parolini reset qilmoqchimisiz? Vaqtinchalik parol shu yerda ko'rsatiladi — uni o'quvchiga shaxsan yetkazing.",
+    );
+    if (!confirmed) return;
+    setResetError(null);
+    setIsResettingPassword(true);
+    try {
+      const password = await resetStudentPassword(params.studentId);
+      setTempPassword(password);
+    } catch {
+      setResetError("Parolni reset qilib bo'lmadi.");
+    } finally {
+      setIsResettingPassword(false);
+    }
+  }
 
   return (
     <DashboardShell role="TEACHER">
@@ -34,9 +57,31 @@ export default function TeacherStudentProgressPage() {
 
       {progress ? (
         <>
-          <h2 className="mb-4 font-heading text-lg font-semibold">
-            {progress.student.firstName} {progress.student.lastName}
-          </h2>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2 className="font-heading text-lg font-semibold">
+              {progress.student.firstName} {progress.student.lastName}
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isResettingPassword}
+              onClick={handleResetPassword}
+            >
+              <KeyRound className="size-3.5" strokeWidth={1.75} />
+              {isResettingPassword ? "..." : "Parolni reset qilish"}
+            </Button>
+          </div>
+
+          {tempPassword ? (
+            <Card className="mb-4 border-severity-medium/40 bg-severity-medium-bg">
+              <CardContent className="py-3 text-sm">
+                Vaqtinchalik parol:{" "}
+                <span className="font-data font-semibold">{tempPassword}</span> — buni
+                o&apos;quvchiga shaxsan yetkazing, keyin bu xabar ko&apos;rinmay qoladi.
+              </CardContent>
+            </Card>
+          ) : null}
+          {resetError ? <p className="mb-4 text-sm text-destructive">{resetError}</p> : null}
 
           <Card className="mb-6">
             <CardHeader>

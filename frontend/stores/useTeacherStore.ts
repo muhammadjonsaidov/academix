@@ -73,6 +73,8 @@ interface TeacherState {
     studentId: string,
     request: HandwritingResetRequest,
   ) => Promise<HandwritingResetResponse>;
+
+  resetStudentPassword: (studentId: string) => Promise<string>;
 }
 
 // One store for the teacher homework area (classes/subjects/assignments/submissions/syllabuses/
@@ -249,5 +251,12 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
       request,
     );
     return data;
+  },
+
+  resetStudentPassword: async (studentId) => {
+    const { data } = await apiClient.put<{ temporaryPassword: string }>(
+      `/teacher/students/${studentId}/reset-password`,
+    );
+    return data.temporaryPassword;
   },
 }));
