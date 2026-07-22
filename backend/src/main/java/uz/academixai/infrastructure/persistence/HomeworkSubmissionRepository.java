@@ -26,6 +26,8 @@ public interface HomeworkSubmissionRepository
 
   boolean existsByAssignmentIdAndStudentId(UUID assignmentId, UUID studentId);
 
+  long countByAssignmentId(UUID assignmentId);
+
   /**
    * admin dashboard's {@code activeToday}/{@code homeworkSubmissionRate} — count of distinct
    * students who submitted at least once since {@code since}, judgment call: "active" isn't defined

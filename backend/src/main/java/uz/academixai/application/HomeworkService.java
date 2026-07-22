@@ -9,6 +9,7 @@ import uz.academixai.domain.AssignmentType;
 import uz.academixai.domain.HomeworkAssignment;
 import uz.academixai.infrastructure.persistence.HomeworkAssignmentEntity;
 import uz.academixai.infrastructure.persistence.HomeworkAssignmentRepository;
+import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
 import uz.academixai.interfaces.web.ApiException;
 
 /** academix_tz.md §2.3 "Uy vazifasi yaratish" — teacher CRUD over homework_assignments. */
@@ -16,14 +17,17 @@ import uz.academixai.interfaces.web.ApiException;
 public class HomeworkService {
 
   private final HomeworkAssignmentRepository assignmentRepository;
+  private final HomeworkSubmissionRepository submissionRepository;
   private final TeacherContextService teacherContextService;
   private final UniqueTaskGenerationService uniqueTaskGenerationService;
 
   public HomeworkService(
       HomeworkAssignmentRepository assignmentRepository,
+      HomeworkSubmissionRepository submissionRepository,
       TeacherContextService teacherContextService,
       UniqueTaskGenerationService uniqueTaskGenerationService) {
     this.assignmentRepository = assignmentRepository;
+    this.submissionRepository = submissionRepository;
     this.teacherContextService = teacherContextService;
     this.uniqueTaskGenerationService = uniqueTaskGenerationService;
   }
@@ -119,8 +123,24 @@ public class HomeworkService {
     return assignmentRepository.save(HomeworkAssignmentEntity.fromDomain(updated)).toDomain();
   }
 
+  /**
+   * Real, flagged gap fixed here: deleting an assignment used to cascade-delete every student's
+   * submission/grade/AI-feedback silently (homework_submissions.assignment_id is ON DELETE CASCADE)
+   * with zero backend guard — confirmed by reading the migration directly. A submission count is a
+   * real fact, not just a bigger confirm-dialog string on the frontend (which can't be trusted to
+   * actually gate this — a direct API call bypasses it entirely).
+   */
   public void delete(UUID schoolId, UUID teacherId, UUID assignmentId) {
     HomeworkAssignmentEntity entity = requireOwnedByTeacher(schoolId, teacherId, assignmentId);
+    long submissionCount = submissionRepository.countByAssignmentId(assignmentId);
+    if (submissionCount > 0) {
+      throw new ApiException(
+          HttpStatus.CONFLICT,
+          "ERR_HW_HAS_SUBMISSIONS",
+          "Bu vazifaga %d ta o'quvchi javob yuborgan — o'chirish mumkin emas."
+              .formatted(submissionCount),
+          "O'quvchilar javoblarini o'chirmasdan bu vazifani bekor qilib bo'lmaydi.");
+    }
     assignmentRepository.delete(entity);
   }
 

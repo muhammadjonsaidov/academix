@@ -81,9 +81,9 @@ export default function TeacherHomeworkPage() {
   }
 
   async function handleDelete(hw: Homework) {
-    const confirmed = window.confirm(
-      `"${hw.title}" vazifasini o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi va unga tegishli barcha o'quvchi topshiriqlari ham butunlay o'chib ketadi.`,
-    );
+    // Real safety net is server-side (HomeworkService.delete rejects if any submission exists,
+    // ERR_HW_HAS_SUBMISSIONS) — this dialog is just a normal are-you-sure, not the actual guard.
+    const confirmed = window.confirm(`"${hw.title}" vazifasini o'chirmoqchimisiz?`);
     if (!confirmed) return;
     setError(null);
     setDeletingId(hw.id);
