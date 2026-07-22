@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.application.AuthService;
+import uz.academixai.application.PasswordResetService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.infrastructure.security.JwtService;
 
@@ -23,10 +24,13 @@ public class AuthController {
 
   private final AuthService authService;
   private final JwtService jwtService;
+  private final PasswordResetService passwordResetService;
 
-  public AuthController(AuthService authService, JwtService jwtService) {
+  public AuthController(
+      AuthService authService, JwtService jwtService, PasswordResetService passwordResetService) {
     this.authService = authService;
     this.jwtService = jwtService;
+    this.passwordResetService = passwordResetService;
   }
 
   @PostMapping("/login")
@@ -62,6 +66,22 @@ public class AuthController {
       @AuthenticationPrincipal AcademixPrincipal principal,
       @RequestBody ChangePasswordRequest request) {
     authService.changePassword(principal.userId(), request.oldPassword(), request.newPassword());
+    return ResponseEntity.ok().build();
+  }
+
+  @PostMapping("/forgot-password")
+  public ForgotPasswordResponse forgotPassword(@RequestBody ForgotPasswordRequest request) {
+    passwordResetService.forgotPassword(request.phone());
+    // Always the same response regardless of outcome — see PasswordResetService's Javadoc
+    // (anti-enumeration: a caller can't tell "no account," "no email on file," or "sent" apart).
+    return new ForgotPasswordResponse(
+        true,
+        "Agar hisobingiz mavjud bo'lsa va email kiritilgan bo'lsa, tiklash havolasi yuborildi.");
+  }
+
+  @PostMapping("/reset-password")
+  public ResponseEntity<Void> resetPassword(@RequestBody ResetPasswordRequest request) {
+    passwordResetService.resetPassword(request.token(), request.newPassword());
     return ResponseEntity.ok().build();
   }
 

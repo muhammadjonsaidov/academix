@@ -43,6 +43,22 @@ spring:
       max-file-size: 20MB
       max-request-size: 20MB
 
+  # Gmail SMTP for password-reset email — CLAUDE.md "Supporting tooling"'s decided approach
+  # (academix_tz.md §2.1 forgot-password). GMAIL_USERNAME must be a real Gmail address,
+  # GMAIL_APP_PASSWORD a 16-char App Password (not the account password — Gmail requires 2FA +
+  # an App Password for SMTP since it doesn't accept plain account passwords for this anymore).
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL_USERNAME:}
+    password: ${GMAIL_APP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 server:
   port: ${SERVER_PORT:8080}
 
