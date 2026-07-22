@@ -1,13 +1,24 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { BellRing, CheckCircle2, KeyRound, Lock, Send, UserRound } from "lucide-react";
+import {
+  BellRing,
+  CheckCircle2,
+  Gauge,
+  KeyRound,
+  Lock,
+  School,
+  Send,
+  UserRound,
+} from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { fieldClass, FormField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ROLE_ACCENT_CLASSES } from "@/components/shared/nav-config";
+import { useAdminStore } from "@/stores/useAdminStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useTelegramStore } from "@/stores/useTelegramStore";
@@ -22,19 +33,30 @@ const ROLE_LABEL: Record<Role, string> = {
   PSYCHOLOGIST: "Psixolog",
 };
 
-type SettingsSection = "profile" | "security" | "notifications" | "telegram";
+type SettingsSection = "profile" | "school" | "security" | "notifications" | "telegram";
 
-const SECTIONS: Array<{
+interface SectionDef {
   key: SettingsSection;
   label: string;
   description: string;
   icon: typeof UserRound;
-}> = [
+  /** Restrict a section to specific roles — omitted means every role sees it. */
+  roles?: Role[];
+}
+
+const SECTIONS: SectionDef[] = [
   {
     key: "profile",
     label: "Profil",
     description: "Ism, familiya va email manzilingiz.",
     icon: UserRound,
+  },
+  {
+    key: "school",
+    label: "Muassasa",
+    description: "Ta'lim muassasasi ma'lumotlari va AI foydalanish limiti.",
+    icon: School,
+    roles: ["ADMIN"],
   },
   {
     key: "security",
@@ -67,7 +89,8 @@ export default function AccountPage() {
   const role: Role = user?.role ?? "STUDENT";
   const [section, setSection] = useState<SettingsSection>("profile");
 
-  const active = SECTIONS.find((s) => s.key === section) ?? SECTIONS[0];
+  const visibleSections = SECTIONS.filter((s) => !s.roles || s.roles.includes(role));
+  const active = visibleSections.find((s) => s.key === section) ?? visibleSections[0];
 
   return (
     <DashboardShell role={role}>
@@ -82,9 +105,9 @@ export default function AccountPage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
           {/* Section nav — vertical on desktop, horizontal scroll strip on mobile */}
           <nav className="flex shrink-0 gap-1 overflow-x-auto lg:w-52 lg:flex-col lg:overflow-visible">
-            {SECTIONS.map((s) => {
+            {visibleSections.map((s) => {
               const Icon = s.icon;
-              const isActive = s.key === section;
+              const isActive = s.key === active.key;
               return (
                 <button
                   key={s.key}
@@ -101,15 +124,16 @@ export default function AccountPage() {
           </nav>
 
           {/* Active section content — keyed so switching re-runs the rise animation */}
-          <div key={section} className="animate-rise min-w-0 flex-1">
+          <div key={active.key} className="animate-rise min-w-0 flex-1">
             <div className="mb-4">
               <h3 className="font-heading text-base font-semibold">{active.label}</h3>
               <p className="text-sm text-muted-foreground">{active.description}</p>
             </div>
-            {section === "profile" ? <ProfileCard role={role} /> : null}
-            {section === "security" ? <PasswordCard /> : null}
-            {section === "notifications" ? <NotificationPreferencesCard /> : null}
-            {section === "telegram" ? <TelegramCard /> : null}
+            {active.key === "profile" ? <ProfileCard role={role} /> : null}
+            {active.key === "school" ? <SchoolCard /> : null}
+            {active.key === "security" ? <PasswordCard /> : null}
+            {active.key === "notifications" ? <NotificationPreferencesCard /> : null}
+            {active.key === "telegram" ? <TelegramCard /> : null}
           </div>
         </div>
       </div>
@@ -324,6 +348,158 @@ function PasswordCard() {
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+// ADMIN-only "Muassasa" section — moved wholesale from the old /dashboard/admin/settings page
+// (that route now redirects here). Same useAdminStore school fetch/update wiring.
+function SchoolCard() {
+  const school = useAdminStore((state) => state.school);
+  const fetchSchool = useAdminStore((state) => state.fetchSchool);
+  const updateSchool = useAdminStore((state) => state.updateSchool);
+
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [region, setRegion] = useState("");
+  const [district, setDistrict] = useState("");
+  const [phone, setPhone] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    fetchSchool()
+      .then(() => {
+        const loaded = useAdminStore.getState().school;
+        if (loaded) {
+          setName(loaded.name);
+          setAddress(loaded.address);
+          setRegion(loaded.region);
+          setDistrict(loaded.district);
+          setPhone(loaded.phone ?? "");
+        }
+      })
+      .catch(() => setError("Muassasa ma'lumotlarini yuklab bo'lmadi."))
+      .finally(() => setIsLoading(false));
+  }, [fetchSchool]);
+
+  async function handleSave() {
+    setError(null);
+    setSaved(false);
+    setIsSaving(true);
+    try {
+      await updateSchool({ name, address, region, district, phone: phone || null });
+      setSaved(true);
+    } catch {
+      setError("Saqlab bo'lmadi.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="py-6">
+          {isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+            </div>
+          ) : school ? (
+            <div className="space-y-3">
+              <FormField label="Nomi" htmlFor="schoolName">
+                <input
+                  id="schoolName"
+                  className={`${fieldClass} w-full`}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </FormField>
+              <FormField label="Manzil" htmlFor="schoolAddress">
+                <input
+                  id="schoolAddress"
+                  className={`${fieldClass} w-full`}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </FormField>
+              <FormField label="Viloyat" htmlFor="schoolRegion">
+                <input
+                  id="schoolRegion"
+                  className={`${fieldClass} w-full`}
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                />
+              </FormField>
+              <FormField label="Tuman" htmlFor="schoolDistrict">
+                <input
+                  id="schoolDistrict"
+                  className={`${fieldClass} w-full`}
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                />
+              </FormField>
+              <FormField label="Telefon" htmlFor="schoolPhone">
+                <input
+                  id="schoolPhone"
+                  className={`${fieldClass} w-full`}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </FormField>
+              {saved ? (
+                <p className="flex items-center gap-1.5 text-sm text-success">
+                  <CheckCircle2 className="size-3.5" strokeWidth={1.75} />
+                  Saqlandi.
+                </p>
+              ) : null}
+              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving ? "Saqlanmoqda..." : "Saqlash"}
+              </Button>
+            </div>
+          ) : error ? (
+            <p className="text-sm text-destructive">{error}</p>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      {school ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Card>
+            <CardContent className="flex items-center gap-4 py-5">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-role-admin-muted text-role-admin">
+                <Gauge className="size-5" strokeWidth={1.75} />
+              </span>
+              <div>
+                <p className="font-data text-2xl leading-none font-semibold">
+                  {school.currentMonthAiUsage} / {school.monthlyAiCallLimit}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">AI limiti (bu oy)</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-4 py-5">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-role-admin-muted text-role-admin">
+                <School className="size-5" strokeWidth={1.75} />
+              </span>
+              <div>
+                <p className="font-data text-2xl leading-none font-semibold">
+                  {school.totalClasses}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">Jami sinflar</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

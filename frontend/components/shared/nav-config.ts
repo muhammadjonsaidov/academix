@@ -71,7 +71,7 @@ export const NAV_CONFIG: Record<Role, NavGroup[]> = {
           label: "O'chirish so'rovlari",
           icon: ShieldOff,
         },
-        { href: "/dashboard/admin/settings", label: "Sozlamalar", icon: Settings },
+        { href: "/dashboard/account", label: "Sozlamalar", icon: Settings },
       ],
     },
   ],
@@ -105,6 +105,9 @@ export const NAV_CONFIG: Record<Role, NavGroup[]> = {
         },
       ],
     },
+    {
+      items: [{ href: "/dashboard/account", label: "Sozlamalar", icon: Settings }],
+    },
   ],
   STUDENT: [
     {
@@ -121,6 +124,7 @@ export const NAV_CONFIG: Record<Role, NavGroup[]> = {
         { href: "/dashboard/student/progress", label: "Progress", icon: TrendingUp },
         { href: "/dashboard/student/xp-history", label: "XP tarixi", icon: History },
         { href: "/dashboard/student/badges", label: "Yutuqlar", icon: Trophy },
+        { href: "/dashboard/account", label: "Sozlamalar", icon: Settings },
       ],
     },
   ],
@@ -128,6 +132,7 @@ export const NAV_CONFIG: Record<Role, NavGroup[]> = {
     {
       items: [
         { href: "/dashboard/parent", label: "O'quvchilar ro'yxati", icon: Users },
+        { href: "/dashboard/account", label: "Sozlamalar", icon: Settings },
       ],
     },
   ],
@@ -138,6 +143,7 @@ export const NAV_CONFIG: Record<Role, NavGroup[]> = {
         { href: "/dashboard/psychologist/signals", label: "Signallar", icon: AlertTriangle },
         { href: "/dashboard/psychologist/watchlist", label: "Kuzatuv ro'yxati", icon: Eye },
         { href: "/dashboard/psychologist/reports", label: "Hisobotlar", icon: FileBarChart },
+        { href: "/dashboard/account", label: "Sozlamalar", icon: Settings },
       ],
     },
   ],
