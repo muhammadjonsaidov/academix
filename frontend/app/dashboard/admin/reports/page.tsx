@@ -81,7 +81,7 @@ export default function AdminReportsPage() {
         <div>
           <h2 className="font-heading text-xl font-semibold">Hisobotlar</h2>
           <p className="text-sm text-muted-foreground">
-            Maktab, sinf yoki o&apos;quvchi bo&apos;yicha semestrlik PDF hisobot yarating.
+            Maktab, sinf yoki o&apos;quvchi bo&apos;yicha choraklik PDF hisobot yarating.
           </p>
         </div>
 

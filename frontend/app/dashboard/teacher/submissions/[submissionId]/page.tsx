@@ -222,7 +222,7 @@ export default function TeacherSubmissionDetailPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Faqat shu sinf rahbari o&apos;qituvchisi qayta tiklashi mumkin (semestrda 3 martagacha).
+            Faqat shu sinf rahbari o&apos;qituvchisi qayta tiklashi mumkin (chorakda 3 martagacha).
           </p>
           <form onSubmit={handleReset} className="flex flex-wrap items-end gap-3">
             <div className="space-y-1">

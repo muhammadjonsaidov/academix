@@ -142,12 +142,12 @@ export default function StudentProgressPage() {
                             ) : (
                               <TrendingDown className="size-3.5" strokeWidth={1.75} />
                             )}
-                            {s.currentAvg}%
+                            {s.currentAvg.toFixed(1)}%
                           </span>
                         </div>
                         <ProgressBar percent={s.currentAvg} />
                         <p className="mt-1 text-xs text-muted-foreground">
-                          O&apos;tgan oy: {s.previousMonthAvg}% — Topshirish darajasi:{" "}
+                          O&apos;tgan oy: {s.previousMonthAvg.toFixed(1)}% — Topshirish darajasi:{" "}
                           {Math.round(s.submissionRate * 100)}%
                         </p>
                       </li>
