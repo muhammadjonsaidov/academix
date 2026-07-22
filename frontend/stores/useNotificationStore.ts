@@ -1,12 +1,22 @@
 import { create } from "zustand";
 import { apiClient } from "@/lib/api/client";
-import type { Notification } from "@/types/notification";
+import type { Notification, NotificationPreference } from "@/types/notification";
 
 interface NotificationState {
   notifications: Notification[];
+  preferences: NotificationPreference[];
   isOpen: boolean;
   fetchNotifications: () => Promise<void>;
   markRead: (id: string) => Promise<void>;
+  markAllRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
+  clearAll: () => Promise<void>;
+  fetchPreferences: () => Promise<void>;
+  updatePreference: (
+    type: NotificationPreference["type"],
+    inAppEnabled: boolean,
+    telegramEnabled: boolean,
+  ) => Promise<void>;
   toggleOpen: () => void;
 }
 
@@ -14,6 +24,7 @@ interface NotificationState {
 // this codebase's Zustand stores.
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
+  preferences: [],
   isOpen: false,
 
   fetchNotifications: async () => {
@@ -28,6 +39,40 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         n.id === id ? { ...n, isRead: true, readAt: new Date().toISOString() } : n,
       ),
     });
+  },
+
+  markAllRead: async () => {
+    await apiClient.put("/notifications/read-all");
+    const now = new Date().toISOString();
+    set({
+      notifications: get().notifications.map((n) =>
+        n.isRead ? n : { ...n, isRead: true, readAt: now },
+      ),
+    });
+  },
+
+  deleteNotification: async (id) => {
+    await apiClient.delete(`/notifications/${id}`);
+    set({ notifications: get().notifications.filter((n) => n.id !== id) });
+  },
+
+  clearAll: async () => {
+    await apiClient.delete("/notifications");
+    set({ notifications: [] });
+  },
+
+  fetchPreferences: async () => {
+    const { data } = await apiClient.get<NotificationPreference[]>("/notifications/preferences");
+    set({ preferences: data });
+  },
+
+  updatePreference: async (type, inAppEnabled, telegramEnabled) => {
+    const { data } = await apiClient.put<NotificationPreference[]>("/notifications/preferences", {
+      type,
+      inAppEnabled,
+      telegramEnabled,
+    });
+    set({ preferences: data });
   },
 
   toggleOpen: () => set((state) => ({ isOpen: !state.isOpen })),

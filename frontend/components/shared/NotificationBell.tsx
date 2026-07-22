@@ -13,6 +13,8 @@ import {
   Flame,
   HeartPulse,
   LineChart,
+  Trash2,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -56,6 +58,9 @@ export function NotificationBell() {
   const isOpen = useNotificationStore((state) => state.isOpen);
   const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
   const markRead = useNotificationStore((state) => state.markRead);
+  const markAllRead = useNotificationStore((state) => state.markAllRead);
+  const deleteNotification = useNotificationStore((state) => state.deleteNotification);
+  const clearAll = useNotificationStore((state) => state.clearAll);
   const toggleOpen = useNotificationStore((state) => state.toggleOpen);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -74,10 +79,6 @@ export function NotificationBell() {
   }, [isOpen, toggleOpen]);
 
   const unread = notifications.filter((n) => !n.isRead);
-
-  function markAllRead() {
-    unread.forEach((n) => markRead(n.id));
-  }
 
   return (
     <div ref={containerRef} className="relative">
@@ -106,12 +107,24 @@ export function NotificationBell() {
                 </span>
               )}
             </p>
-            {unread.length > 0 && (
-              <Button variant="ghost" size="xs" onClick={markAllRead}>
-                <CheckCheck data-icon="inline-start" className="size-3.5" strokeWidth={1.75} />
-                Barchasini o&apos;qish
-              </Button>
-            )}
+            <span className="flex items-center gap-1">
+              {unread.length > 0 && (
+                <Button variant="ghost" size="xs" onClick={() => markAllRead()}>
+                  <CheckCheck data-icon="inline-start" className="size-3.5" strokeWidth={1.75} />
+                  Barchasini o&apos;qish
+                </Button>
+              )}
+              {notifications.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="Barcha bildirishnomalarni o'chirish"
+                  onClick={() => clearAll()}
+                >
+                  <Trash2 className="size-3.5" strokeWidth={1.75} />
+                </Button>
+              )}
+            </span>
           </div>
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
@@ -124,14 +137,17 @@ export function NotificationBell() {
                 const meta = TYPE_META[n.type] ?? { icon: Bell, className: "text-ink" };
                 const Icon = meta.icon;
                 return (
-                  <li key={n.id}>
+                  <li
+                    key={n.id}
+                    className={cn(
+                      "group flex items-start gap-1 pr-2 transition-colors",
+                      n.isRead ? "opacity-70" : "bg-accent/40 hover:bg-accent/60",
+                    )}
+                  >
                     <button
                       type="button"
                       onClick={() => !n.isRead && markRead(n.id)}
-                      className={cn(
-                        "flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition-colors",
-                        n.isRead ? "opacity-70" : "bg-accent/40 hover:bg-accent/60",
-                      )}
+                      className="flex min-w-0 flex-1 items-start gap-3 py-3 pl-4 text-left text-sm"
                     >
                       <Icon
                         className={cn("mt-0.5 size-4 shrink-0", meta.className)}
@@ -151,6 +167,14 @@ export function NotificationBell() {
                           {relativeTime(n.createdAt)}
                         </span>
                       </span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Bildirishnomani o'chirish"
+                      onClick={() => deleteNotification(n.id)}
+                      className="mt-3 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:ring-3 focus-visible:ring-ring/50 outline-none"
+                    >
+                      <X className="size-3.5" strokeWidth={1.75} />
                     </button>
                   </li>
                 );

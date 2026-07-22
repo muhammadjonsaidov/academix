@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { CheckCircle2, KeyRound, Send, UserRound } from "lucide-react";
+import { BellRing, CheckCircle2, KeyRound, Lock, Send, UserRound } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { fieldClass, FormField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ROLE_ACCENT_CLASSES } from "@/components/shared/nav-config";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useTelegramStore } from "@/stores/useTelegramStore";
 import type { ApiErrorResponse, Role } from "@/types/auth";
+import type { NotificationType } from "@/types/notification";
 
 const ROLE_LABEL: Record<Role, string> = {
   ADMIN: "Administrator",
@@ -40,7 +42,10 @@ export default function AccountPage() {
         </div>
 
         <div className="stagger-rise grid max-w-4xl gap-6 lg:grid-cols-2">
-          <ProfileCard role={role} />
+          <div className="space-y-6">
+            <ProfileCard role={role} />
+            <NotificationPreferencesCard />
+          </div>
           <div className="space-y-6">
             <PasswordCard />
             <TelegramCard />
@@ -259,6 +264,120 @@ function PasswordCard() {
             {isSubmitting ? "Saqlanmoqda..." : "Parolni yangilash"}
           </Button>
         </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
+  HOMEWORK_ASSIGNED: "Yangi uy vazifasi",
+  DEADLINE_REMINDER: "Muddat eslatmasi",
+  HOMEWORK_GRADED: "Baholangan ishlar",
+  STREAK_BROKEN: "Streak uzilishi",
+  STREAK_MILESTONE: "Streak yutuqlari",
+  BADGE_EARNED: "Yutuq belgilari",
+  PSYCHOLOGICAL_ALERT: "Psixologik signallar",
+  LATE_SUBMISSION: "Kechikkan topshiriqlar",
+  CLASS_PROGRESS_REPORT: "Sinf hisobotlari",
+  HANDWRITING_PROFILE_RESET: "Qo'lyozma profili reset",
+  AI_BUDGET_LOW: "AI byudjet ogohlantirishi",
+};
+
+function NotificationPreferencesCard() {
+  const preferences = useNotificationStore((state) => state.preferences);
+  const fetchPreferences = useNotificationStore((state) => state.fetchPreferences);
+  const updatePreference = useNotificationStore((state) => state.updatePreference);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPreferences().catch(() => setError("Sozlamalarni yuklab bo'lmadi."));
+  }, [fetchPreferences]);
+
+  async function handleToggle(
+    type: NotificationType,
+    inAppEnabled: boolean,
+    telegramEnabled: boolean,
+  ) {
+    setError(null);
+    try {
+      // In-app is the base channel (the inbox row is what Telegram delivery hangs off) —
+      // turning it off turns Telegram off with it, mirroring the backend's send logic.
+      await updatePreference(type, inAppEnabled, inAppEnabled ? telegramEnabled : false);
+    } catch {
+      setError("Sozlamani saqlab bo'lmadi.");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <BellRing className="size-4" strokeWidth={1.75} />
+          Bildirishnoma sozlamalari
+        </CardTitle>
+        <CardDescription>
+          Qaysi turdagi bildirishnomalarni qaysi kanal orqali olishni tanlang.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {preferences.length === 0 && !error ? (
+          <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
+        ) : (
+          <div className="space-y-1">
+            <div className="flex items-center justify-end gap-4 pb-1 text-xs font-medium text-muted-foreground">
+              <span className="w-12 text-center">Ilova</span>
+              <span className="w-12 text-center">Telegram</span>
+            </div>
+            {preferences.map((pref) => (
+              <div
+                key={pref.type}
+                className="flex items-center justify-between gap-3 rounded-md py-1.5 text-sm"
+              >
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="truncate">{NOTIFICATION_TYPE_LABEL[pref.type] ?? pref.type}</span>
+                  {pref.locked && (
+                    <Lock
+                      className="size-3 shrink-0 text-muted-foreground"
+                      strokeWidth={1.75}
+                      aria-label="Har doim yuboriladi"
+                    />
+                  )}
+                </span>
+                <span className="flex items-center gap-4">
+                  <span className="flex w-12 justify-center">
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-[var(--ink)]"
+                      checked={pref.inAppEnabled}
+                      disabled={pref.locked}
+                      aria-label={`${NOTIFICATION_TYPE_LABEL[pref.type]} — ilova ichida`}
+                      onChange={(e) =>
+                        handleToggle(pref.type, e.target.checked, pref.telegramEnabled)
+                      }
+                    />
+                  </span>
+                  <span className="flex w-12 justify-center">
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-[var(--ink)]"
+                      checked={pref.telegramEnabled}
+                      disabled={pref.locked || !pref.inAppEnabled}
+                      aria-label={`${NOTIFICATION_TYPE_LABEL[pref.type]} — Telegram`}
+                      onChange={(e) =>
+                        handleToggle(pref.type, pref.inAppEnabled, e.target.checked)
+                      }
+                    />
+                  </span>
+                </span>
+              </div>
+            ))}
+            <p className="pt-2 text-xs text-muted-foreground">
+              Psixologik signallar xavfsizlik qoidasi bo&apos;yicha doim yuboriladi. Ilova kanali
+              o&apos;chirilsa, Telegram ham o&apos;chadi.
+            </p>
+          </div>
+        )}
+        {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
       </CardContent>
     </Card>
   );

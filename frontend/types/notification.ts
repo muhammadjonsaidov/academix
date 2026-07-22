@@ -24,3 +24,12 @@ export interface Notification {
   createdAt: string;
   readAt: string | null;
 }
+
+// Mirrors backend NotificationPreferenceResponse — `locked` types (psychological alerts)
+// can't be muted, per the TZ §1.14 severity→notify safety matrix.
+export interface NotificationPreference {
+  type: NotificationType;
+  inAppEnabled: boolean;
+  telegramEnabled: boolean;
+  locked: boolean;
+}
