@@ -14,6 +14,7 @@ import type {
   School,
   SchoolClass,
   Student,
+  Subject,
   Teacher,
   UpdateClassRequest,
   UpdateSchoolRequest,
@@ -26,6 +27,7 @@ interface AdminState {
   school: School | null;
   psychologists: Psychologist[];
   assignments: Assignment[];
+  subjects: Subject[];
   dataDeletionRequests: AdminDataDeletionRequest[];
 
   fetchClasses: () => Promise<void>;
@@ -54,6 +56,8 @@ interface AdminState {
   createAssignment: (request: CreateAssignmentRequest) => Promise<void>;
   deleteAssignment: (assignmentId: string) => Promise<void>;
 
+  fetchSubjects: () => Promise<void>;
+
   fetchDataDeletionRequests: () => Promise<void>;
   approveDataDeletionRequest: (id: string) => Promise<void>;
 }
@@ -68,6 +72,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   school: null,
   psychologists: [],
   assignments: [],
+  subjects: [],
   dataDeletionRequests: [],
 
   fetchClasses: async () => {
@@ -169,6 +174,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   deleteAssignment: async (assignmentId) => {
     await apiClient.delete(`/admin/assignments/${assignmentId}`);
     await get().fetchAssignments();
+  },
+
+  fetchSubjects: async () => {
+    const { data } = await apiClient.get<Subject[]>("/admin/subjects");
+    set({ subjects: data });
   },
 
   fetchDataDeletionRequests: async () => {

@@ -123,11 +123,18 @@ export interface InvitePsychologistRequest {
   email?: string;
 }
 
-// academix_tz.md §2.2 "O'qituvchi-Sinf-Fan biriktirish" — AdminAssignmentController's exact
-// shape. No admin-facing subjects-catalog endpoint exists anywhere (GET /teacher/subjects is
-// hasRole('TEACHER')-gated and only ever derives from that teacher's *existing* assignments —
-// checked against TeacherContextService.mySubjects, a chicken-and-egg source, unusable here) —
-// flagged as a further gap, not invented.
+// GET /admin/subjects — added to close the gap AdminAssignmentController's own doc-comment used
+// to flag: no admin-facing subjects catalog existed, so the assignment form had to use a raw
+// UUID text input instead of a dropdown. Subjects themselves have no admin-facing create
+// endpoint (seed/fixture data per CLAUDE.md known gaps) — this is read-only.
+export interface Subject {
+  id: string;
+  name: string;
+  type: string;
+  icon: string | null;
+}
+
+// academix_tz.md §2.2 "O'qituvchi-Sinf-Fan biriktirish" — AdminAssignmentController's exact shape.
 export interface Assignment {
   id: string;
   teacherId: string;

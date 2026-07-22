@@ -15,9 +15,11 @@ export default function AdminAssignmentsPage() {
   const assignments = useAdminStore((state) => state.assignments);
   const teachers = useAdminStore((state) => state.teachers);
   const classes = useAdminStore((state) => state.classes);
+  const subjects = useAdminStore((state) => state.subjects);
   const fetchAssignments = useAdminStore((state) => state.fetchAssignments);
   const fetchTeachers = useAdminStore((state) => state.fetchTeachers);
   const fetchClasses = useAdminStore((state) => state.fetchClasses);
+  const fetchSubjects = useAdminStore((state) => state.fetchSubjects);
   const createAssignment = useAdminStore((state) => state.createAssignment);
   const deleteAssignment = useAdminStore((state) => state.deleteAssignment);
 
@@ -32,10 +34,11 @@ export default function AdminAssignmentsPage() {
   useEffect(() => {
     fetchTeachers().catch(() => {});
     fetchClasses().catch(() => {});
+    fetchSubjects().catch(() => {});
     fetchAssignments()
       .catch(() => setError("Biriktirishlar ro'yxatini yuklab bo'lmadi."))
       .finally(() => setIsLoading(false));
-  }, [fetchTeachers, fetchClasses, fetchAssignments]);
+  }, [fetchTeachers, fetchClasses, fetchSubjects, fetchAssignments]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -72,6 +75,10 @@ export default function AdminAssignmentsPage() {
     return classes.find((c) => c.id === id)?.fullName ?? id;
   }
 
+  function subjectName(id: string) {
+    return subjects.find((s) => s.id === id)?.name ?? id;
+  }
+
   return (
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
@@ -89,8 +96,7 @@ export default function AdminAssignmentsPage() {
               Yangi biriktirish qo&apos;shish
             </CardTitle>
             <CardDescription>
-              Fan katalogi uchun alohida admin endpoint mavjud emas — hozircha Fan ID (UUID)ni
-              qo&apos;lda kiriting.
+              O&apos;qituvchini sinf va fanga biriktiring.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -131,15 +137,23 @@ export default function AdminAssignmentsPage() {
                   ))}
                 </select>
               </FormField>
-              <FormField label="Fan ID (UUID)" htmlFor="subjectId">
-                <input
+              <FormField label="Fan" htmlFor="subjectId">
+                <select
                   id="subjectId"
                   value={subjectId}
                   onChange={(e) => setSubjectId(e.target.value)}
-                  placeholder="00000000-0000-0000-0000-000000000000"
                   required
-                  className={`${fieldClass} font-data w-72`}
-                />
+                  className={fieldClass}
+                >
+                  <option value="" disabled>
+                    Tanlang
+                  </option>
+                  {subjects.map((subject) => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </option>
+                  ))}
+                </select>
               </FormField>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Qo'shilmoqda..." : "Biriktirish"}
@@ -172,7 +186,7 @@ export default function AdminAssignmentsPage() {
                   <tr className="border-b border-border">
                     <th className="py-2 font-medium">O&apos;qituvchi</th>
                     <th className="py-2 font-medium">Sinf</th>
-                    <th className="py-2 font-medium">Fan ID</th>
+                    <th className="py-2 font-medium">Fan</th>
                     <th className="py-2 font-medium">O&apos;quv yili</th>
                     <th className="py-2"></th>
                   </tr>
@@ -182,8 +196,8 @@ export default function AdminAssignmentsPage() {
                     <tr key={assignment.id} className="border-b border-border last:border-0">
                       <td className="py-2.5 font-medium">{teacherName(assignment.teacherId)}</td>
                       <td className="py-2.5">{classFullName(assignment.classId)}</td>
-                      <td className="py-2.5 font-data text-muted-foreground">
-                        {assignment.subjectId}
+                      <td className="py-2.5 text-muted-foreground">
+                        {subjectName(assignment.subjectId)}
                       </td>
                       <td className="py-2.5 font-data text-muted-foreground">
                         {assignment.academicYear}
