@@ -28,6 +28,17 @@ export default function StudentSubmissionDetailPage() {
     fetchSubmission(submissionId).catch(() => setError("Topshiriqni yuklab bo'lmadi."));
   }, [fetchSubmission, submissionId]);
 
+  // Auto-poll while the AI pipeline is running — the status flips to AI_DONE/AI_SKIPPED
+  // without the student having to mash "Yangilash" (no push channel exists by design).
+  const status = submission?.status;
+  useEffect(() => {
+    if (!status || !REFETCHABLE_STATUSES.has(status)) return;
+    const timer = setInterval(() => {
+      fetchSubmission(submissionId).catch(() => {});
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [status, fetchSubmission, submissionId]);
+
   async function handleRefresh() {
     setError(null);
     setIsRefreshing(true);

@@ -9,6 +9,7 @@ import { SubmissionStatusBadge, submissionRailClass } from "@/components/shared/
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { InkMark } from "@/components/ui/ink-mark";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useTeacherStore } from "@/stores/useTeacherStore";
@@ -179,6 +180,44 @@ export default function TeacherSubmissionDetailPage() {
               {Math.round(submission.aiFeedback.aiScorePercent)}%
             </p>
             <p className="text-sm">{submission.aiFeedback.feedback}</p>
+
+            {submission.aiFeedback.extractedText ? (
+              <details className="text-sm">
+                <summary className="cursor-pointer text-muted-foreground select-none">
+                  O&apos;qilgan matn (OCR)
+                </summary>
+                <p className="mt-2 rounded-md border border-border bg-background/60 p-3 whitespace-pre-wrap">
+                  {submission.aiFeedback.extractedText}
+                </p>
+              </details>
+            ) : null}
+
+            {submission.aiFeedback.stepAnalyses.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Qadam-baqadam tahlil</p>
+                {submission.aiFeedback.stepAnalyses.map((step) => (
+                  <div
+                    key={step.stepNumber}
+                    className="flex items-start gap-2.5 rounded-md border border-border px-3 py-2 text-sm"
+                  >
+                    {step.isCorrect ? (
+                      <InkMark variant="check" className="mt-0.5 size-4" />
+                    ) : (
+                      <InkMark variant="cross" label="Xato" className="mt-0.5 size-4" />
+                    )}
+                    <div className="min-w-0">
+                      <p>{step.stepContent}</p>
+                      {!step.isCorrect && step.errorDescription ? (
+                        <p className="mt-0.5 text-pen-red">{step.errorDescription}</p>
+                      ) : null}
+                      {step.suggestion ? (
+                        <p className="mt-0.5 text-muted-foreground">{step.suggestion}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
 
             {submission.aiFeedback.criteriaScores.length > 0 ? (
               <div className="overflow-x-auto">

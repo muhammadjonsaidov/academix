@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { FileField } from "@/components/shared/FileField";
 import { fieldClass, SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
+import { InkMark } from "@/components/ui/ink-mark";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useExamStore } from "@/stores/useExamStore";
@@ -65,7 +66,34 @@ function ExamSubmissionRow({ examId, submission }: { examId: string; submission:
           </div>
         ) : null}
       </td>
-      <td className="py-3 align-top font-data">{submission.aiFeedback?.aiScorePercent ?? "—"}</td>
+      <td className="py-3 align-top">
+        {submission.aiFeedback ? (
+          <details>
+            <summary className="font-data cursor-pointer select-none">
+              {Math.round(submission.aiFeedback.aiScorePercent)}%
+            </summary>
+            <div className="mt-2 max-w-md space-y-1.5 text-xs">
+              <p className="whitespace-pre-wrap">{submission.aiFeedback.feedback}</p>
+              {submission.aiFeedback.stepAnalyses.map((step) => (
+                <p key={step.stepNumber} className="flex items-start gap-1.5">
+                  <InkMark
+                    variant={step.isCorrect ? "check" : "cross"}
+                    className="mt-0.5 size-3.5"
+                  />
+                  <span>
+                    {step.stepContent}
+                    {!step.isCorrect && step.errorDescription ? (
+                      <span className="text-pen-red"> — {step.errorDescription}</span>
+                    ) : null}
+                  </span>
+                </p>
+              ))}
+            </div>
+          </details>
+        ) : (
+          <span className="font-data">—</span>
+        )}
+      </td>
       <td className="py-3 align-top">
         {submission.status === "GRADED" ? (
           <span className="font-data">
