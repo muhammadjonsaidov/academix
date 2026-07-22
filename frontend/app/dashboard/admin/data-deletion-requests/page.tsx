@@ -19,9 +19,10 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function AdminDataDeletionRequestsPage() {
   const requests = useAdminStore((state) => state.dataDeletionRequests);
-  const students = useAdminStore((state) => state.students);
+  // Full unpaginated list — name lookups must cover every student, not one page.
+  const students = useAdminStore((state) => state.allStudents);
   const fetchDataDeletionRequests = useAdminStore((state) => state.fetchDataDeletionRequests);
-  const fetchStudents = useAdminStore((state) => state.fetchStudents);
+  const fetchAllStudents = useAdminStore((state) => state.fetchAllStudents);
   const approveDataDeletionRequest = useAdminStore((state) => state.approveDataDeletionRequest);
 
   const [error, setError] = useState<string | null>(null);
@@ -29,11 +30,11 @@ export default function AdminDataDeletionRequestsPage() {
   const [approvingId, setApprovingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchStudents().catch(() => {});
+    fetchAllStudents().catch(() => {});
     fetchDataDeletionRequests()
       .catch(() => setError("So'rovlar ro'yxatini yuklab bo'lmadi."))
       .finally(() => setIsLoading(false));
-  }, [fetchStudents, fetchDataDeletionRequests]);
+  }, [fetchAllStudents, fetchDataDeletionRequests]);
 
   async function handleApprove(id: string) {
     setApprovingId(id);

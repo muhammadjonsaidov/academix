@@ -13,6 +13,7 @@ import {
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
+import { PaginationControl } from "@/components/shared/PaginationControl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,11 @@ export default function AdminStudentsPage() {
   const students = useAdminStore((state) => state.students);
   const classes = useAdminStore((state) => state.classes);
   const fetchStudents = useAdminStore((state) => state.fetchStudents);
+  const studentsPage = useAdminStore((state) => state.studentsPage);
+  const studentsPageSize = useAdminStore((state) => state.studentsPageSize);
+  const studentsTotalItems = useAdminStore((state) => state.studentsTotalItems);
+  const setStudentsPage = useAdminStore((state) => state.setStudentsPage);
+  const setStudentsPageSize = useAdminStore((state) => state.setStudentsPageSize);
   const fetchClasses = useAdminStore((state) => state.fetchClasses);
   const createStudent = useAdminStore((state) => state.createStudent);
   const unlockHandwritingReset = useAdminStore((state) => state.unlockHandwritingReset);
@@ -499,6 +505,24 @@ export default function AdminStudentsPage() {
               </table>
               </div>
             )}
+            {!isLoading ? (
+              <PaginationControl
+                className="mt-4"
+                page={studentsPage}
+                size={studentsPageSize}
+                totalItems={studentsTotalItems}
+                onPageChange={(page) => {
+                  setStudentsPage(page).catch(() =>
+                    setError("O'quvchilar ro'yxatini yuklab bo'lmadi."),
+                  );
+                }}
+                onSizeChange={(size) => {
+                  setStudentsPageSize(size).catch(() =>
+                    setError("O'quvchilar ro'yxatini yuklab bo'lmadi."),
+                  );
+                }}
+              />
+            ) : null}
           </CardContent>
         </Card>
       </div>

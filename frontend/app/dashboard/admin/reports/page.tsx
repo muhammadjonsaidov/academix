@@ -21,9 +21,10 @@ const TYPE_LABEL: Record<ReportType, string> = {
 
 export default function AdminReportsPage() {
   const classes = useAdminStore((state) => state.classes);
-  const students = useAdminStore((state) => state.students);
+  // Full unpaginated list — the student select needs the whole school, not one page.
+  const students = useAdminStore((state) => state.allStudents);
   const fetchClasses = useAdminStore((state) => state.fetchClasses);
-  const fetchStudents = useAdminStore((state) => state.fetchStudents);
+  const fetchAllStudents = useAdminStore((state) => state.fetchAllStudents);
   const reports = useReportStore((state) => state.reports);
   const isGenerating = useReportStore((state) => state.isGenerating);
   const fetchReports = useReportStore((state) => state.fetchReports);
@@ -42,8 +43,8 @@ export default function AdminReportsPage() {
       .catch(() => setError("Hisobotlar ro'yxatini yuklab bo'lmadi."))
       .finally(() => setIsLoading(false));
     fetchClasses().catch(() => {});
-    fetchStudents().catch(() => {});
-  }, [fetchReports, fetchClasses, fetchStudents]);
+    fetchAllStudents().catch(() => {});
+  }, [fetchReports, fetchClasses, fetchAllStudents]);
 
   async function handleGenerate() {
     setError(null);

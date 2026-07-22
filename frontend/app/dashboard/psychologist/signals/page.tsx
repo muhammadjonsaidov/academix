@@ -6,6 +6,7 @@ import { AlertTriangle } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { FormField, SelectField } from "@/components/shared/FormField";
+import { PaginationControl } from "@/components/shared/PaginationControl";
 import { CriticalNotifyNote, SEVERITY_BADGE_VARIANT, SEVERITY_LABEL, TYPE_LABEL } from "@/components/psychologist/severity";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,6 +34,11 @@ const SEVERITY_OPTIONS: { value: SeverityFilterValue; label: string }[] = [
 export default function PsychologistSignalsPage() {
   const signals = usePsychologyStore((state) => state.signals);
   const fetchSignals = usePsychologyStore((state) => state.fetchSignals);
+  const signalsPage = usePsychologyStore((state) => state.signalsPage);
+  const signalsPageSize = usePsychologyStore((state) => state.signalsPageSize);
+  const signalsTotalItems = usePsychologyStore((state) => state.signalsTotalItems);
+  const setSignalsPage = usePsychologyStore((state) => state.setSignalsPage);
+  const setSignalsPageSize = usePsychologyStore((state) => state.setSignalsPageSize);
 
   // Default excludes LOW (log-only, not action-relevant) per the flow spec — LOW stays
   // reachable via the dropdown, just not the default view.
@@ -191,6 +197,20 @@ export default function PsychologistSignalsPage() {
             )}
           </CardContent>
         </Card>
+
+        {!isLoading ? (
+          <PaginationControl
+            page={signalsPage}
+            size={signalsPageSize}
+            totalItems={signalsTotalItems}
+            onPageChange={(page) => {
+              setSignalsPage(page).catch(() => setError("Signallarni yuklab bo'lmadi."));
+            }}
+            onSizeChange={(size) => {
+              setSignalsPageSize(size).catch(() => setError("Signallarni yuklab bo'lmadi."));
+            }}
+          />
+        ) : null}
       </div>
     </DashboardShell>
   );

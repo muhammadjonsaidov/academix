@@ -6,11 +6,17 @@ import { DashboardShell } from "@/components/shared/DashboardShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PaginationControl } from "@/components/shared/PaginationControl";
 import { useStudentStore } from "@/stores/useStudentStore";
 
 export default function StudentXpHistoryPage() {
   const xpHistory = useStudentStore((state) => state.xpHistory);
   const fetchXpHistory = useStudentStore((state) => state.fetchXpHistory);
+  const xpHistoryPage = useStudentStore((state) => state.xpHistoryPage);
+  const xpHistoryPageSize = useStudentStore((state) => state.xpHistoryPageSize);
+  const xpHistoryTotalItems = useStudentStore((state) => state.xpHistoryTotalItems);
+  const setXpHistoryPage = useStudentStore((state) => state.setXpHistoryPage);
+  const setXpHistoryPageSize = useStudentStore((state) => state.setXpHistoryPageSize);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,6 +48,7 @@ export default function StudentXpHistoryPage() {
           description="Vazifalarni topshirib, birinchi XP'ingizni qo'lga kiriting."
         />
       ) : (
+        <>
         <Card>
           <CardContent className="divide-y divide-border p-0">
             {xpHistory.map((item, i) => (
@@ -59,6 +66,19 @@ export default function StudentXpHistoryPage() {
             ))}
           </CardContent>
         </Card>
+        <PaginationControl
+          className="mt-4"
+          page={xpHistoryPage}
+          size={xpHistoryPageSize}
+          totalItems={xpHistoryTotalItems}
+          onPageChange={(page) => {
+            setXpHistoryPage(page).catch(() => setError("XP tarixini yuklab bo'lmadi."));
+          }}
+          onSizeChange={(size) => {
+            setXpHistoryPageSize(size).catch(() => setError("XP tarixini yuklab bo'lmadi."));
+          }}
+        />
+        </>
       )}
     </DashboardShell>
   );

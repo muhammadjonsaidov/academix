@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { FileCheck2, RefreshCw } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PaginationControl } from "@/components/shared/PaginationControl";
 import { SubmissionStatusBadge, submissionRailClass } from "@/components/shared/submission-status";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +26,11 @@ function TeacherSubmissionsList() {
   const assignmentId = searchParams.get("assignmentId") ?? undefined;
   const submissions = useTeacherStore((state) => state.submissions);
   const fetchSubmissions = useTeacherStore((state) => state.fetchSubmissions);
+  const submissionsPage = useTeacherStore((state) => state.submissionsPage);
+  const submissionsPageSize = useTeacherStore((state) => state.submissionsPageSize);
+  const submissionsTotalItems = useTeacherStore((state) => state.submissionsTotalItems);
+  const setSubmissionsPage = useTeacherStore((state) => state.setSubmissionsPage);
+  const setSubmissionsPageSize = useTeacherStore((state) => state.setSubmissionsPageSize);
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -72,6 +78,7 @@ function TeacherSubmissionsList() {
           description="O'quvchilar vazifani topshirganda bu yerda ko'rinadi."
         />
       ) : (
+        <>
         <Card>
           <CardContent className="px-0">
             <div className="overflow-x-auto">
@@ -116,6 +123,19 @@ function TeacherSubmissionsList() {
             </div>
           </CardContent>
         </Card>
+        <PaginationControl
+          className="mt-4"
+          page={submissionsPage}
+          size={submissionsPageSize}
+          totalItems={submissionsTotalItems}
+          onPageChange={(page) => {
+            setSubmissionsPage(page).catch(() => setError("Topshiriqlarni yuklab bo'lmadi."));
+          }}
+          onSizeChange={(size) => {
+            setSubmissionsPageSize(size).catch(() => setError("Topshiriqlarni yuklab bo'lmadi."));
+          }}
+        />
+        </>
       )}
     </DashboardShell>
   );

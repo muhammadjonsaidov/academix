@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { apiClient } from "@/lib/api/client";
+import type { PageResponse } from "@/types/api";
 import type {
   CreateHomeworkRequest,
   CriteriaItem,
@@ -17,10 +18,17 @@ import type {
   TeacherSubject,
   TeacherSubmissionDetail,
   TeacherSubmissionListItem,
+  SubmissionStatus,
   UniqueTask,
   UpdateHomeworkRequest,
   UpdateLessonPlanRequest,
 } from "@/types/teacher";
+
+interface SubmissionFilters {
+  assignmentId?: string;
+  classId?: string;
+  status?: SubmissionStatus;
+}
 
 interface TeacherState {
   classes: TeacherClass[];
@@ -29,6 +37,11 @@ interface TeacherState {
   psychologicalSignals: TeacherPsychologicalSignal[];
   homework: Homework[];
   submissions: TeacherSubmissionListItem[];
+  submissionsPage: number;
+  submissionsPageSize: number;
+  submissionsTotalItems: number;
+  /** Last filters passed to fetchSubmissions — reused by the page/size setters. */
+  submissionsFilters: SubmissionFilters;
   selectedSubmission: TeacherSubmissionDetail | null;
   syllabuses: Syllabus[];
   lessonPlans: LessonPlan[];
@@ -44,7 +57,9 @@ interface TeacherState {
   createHomework: (request: CreateHomeworkRequest) => Promise<Homework>;
   updateHomework: (assignmentId: string, request: UpdateHomeworkRequest) => Promise<Homework>;
   deleteHomework: (assignmentId: string) => Promise<void>;
-  fetchSubmissions: (filters?: { assignmentId?: string; classId?: string }) => Promise<void>;
+  fetchSubmissions: (filters?: SubmissionFilters) => Promise<void>;
+  setSubmissionsPage: (page: number) => Promise<void>;
+  setSubmissionsPageSize: (size: number) => Promise<void>;
   fetchSubmission: (submissionId: string) => Promise<void>;
   gradeSubmission: (submissionId: string, request: GradeSubmissionRequest) => Promise<void>;
 
@@ -85,6 +100,10 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
   subjects: [],
   homework: [],
   submissions: [],
+  submissionsPage: 0,
+  submissionsPageSize: 20,
+  submissionsTotalItems: 0,
+  submissionsFilters: {},
   selectedSubmission: null,
   syllabuses: [],
   lessonPlans: [],
@@ -148,11 +167,45 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
     await get().fetchHomework();
   },
 
+  // New filters always restart from page 0; page/size setters below reuse the last filters.
   fetchSubmissions: async (filters) => {
-    const { data } = await apiClient.get<TeacherSubmissionListItem[]>("/teacher/submissions", {
-      params: filters,
+    const { data } = await apiClient.get<PageResponse<TeacherSubmissionListItem>>(
+      "/teacher/submissions",
+      { params: { ...(filters ?? {}), page: 0, size: get().submissionsPageSize } },
+    );
+    set({
+      submissions: data.items,
+      submissionsPage: data.page,
+      submissionsPageSize: data.size,
+      submissionsTotalItems: data.totalItems,
+      submissionsFilters: filters ?? {},
     });
-    set({ submissions: data });
+  },
+
+  setSubmissionsPage: async (page) => {
+    const { submissionsFilters, submissionsPageSize } = get();
+    const { data } = await apiClient.get<PageResponse<TeacherSubmissionListItem>>(
+      "/teacher/submissions",
+      { params: { ...submissionsFilters, page, size: submissionsPageSize } },
+    );
+    set({
+      submissions: data.items,
+      submissionsPage: data.page,
+      submissionsTotalItems: data.totalItems,
+    });
+  },
+
+  setSubmissionsPageSize: async (size) => {
+    const { data } = await apiClient.get<PageResponse<TeacherSubmissionListItem>>(
+      "/teacher/submissions",
+      { params: { ...get().submissionsFilters, page: 0, size } },
+    );
+    set({
+      submissions: data.items,
+      submissionsPage: data.page,
+      submissionsPageSize: data.size,
+      submissionsTotalItems: data.totalItems,
+    });
   },
 
   fetchSubmission: async (submissionId) => {

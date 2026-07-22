@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { apiClient } from "@/lib/api/client";
+import type { PageResponse } from "@/types/api";
 import type {
   MonthlyReport,
   PsychologistDashboard,
@@ -10,15 +11,27 @@ import type {
   WatchlistStudent,
 } from "@/types/psychologist";
 
+interface SignalFilters {
+  severity?: SignalSeverity;
+  resolved?: boolean;
+}
+
 interface PsychologyState {
   dashboard: PsychologistDashboard | null;
   signals: PsychologistSignalListItem[];
+  signalsPage: number;
+  signalsPageSize: number;
+  signalsTotalItems: number;
+  /** Last filters passed to fetchSignals — reused by the page/size setters. */
+  signalsFilters: SignalFilters;
   selectedSignal: PsychologistSignalDetail | null;
   watchlist: WatchlistStudent[];
   monthlyReport: MonthlyReport | null;
 
   fetchDashboard: () => Promise<void>;
-  fetchSignals: (filters?: { severity?: SignalSeverity; resolved?: boolean }) => Promise<void>;
+  fetchSignals: (filters?: SignalFilters) => Promise<void>;
+  setSignalsPage: (page: number) => Promise<void>;
+  setSignalsPageSize: (size: number) => Promise<void>;
   fetchSignalDetail: (signalId: string) => Promise<void>;
   resolveSignal: (signalId: string, request: ResolveSignalRequest) => Promise<void>;
   markManipulation: (signalId: string) => Promise<void>;
@@ -33,6 +46,10 @@ interface PsychologyState {
 export const usePsychologyStore = create<PsychologyState>((set, get) => ({
   dashboard: null,
   signals: [],
+  signalsPage: 0,
+  signalsPageSize: 20,
+  signalsTotalItems: 0,
+  signalsFilters: {},
   selectedSignal: null,
   watchlist: [],
   monthlyReport: null,
@@ -42,11 +59,45 @@ export const usePsychologyStore = create<PsychologyState>((set, get) => ({
     set({ dashboard: data });
   },
 
+  // New filters always restart from page 0; page/size setters below reuse the last filters.
   fetchSignals: async (filters) => {
-    const { data } = await apiClient.get<PsychologistSignalListItem[]>("/psychologist/signals", {
-      params: filters,
+    const { data } = await apiClient.get<PageResponse<PsychologistSignalListItem>>(
+      "/psychologist/signals",
+      { params: { ...(filters ?? {}), page: 0, size: get().signalsPageSize } },
+    );
+    set({
+      signals: data.items,
+      signalsPage: data.page,
+      signalsPageSize: data.size,
+      signalsTotalItems: data.totalItems,
+      signalsFilters: filters ?? {},
     });
-    set({ signals: data });
+  },
+
+  setSignalsPage: async (page) => {
+    const { signalsFilters, signalsPageSize } = get();
+    const { data } = await apiClient.get<PageResponse<PsychologistSignalListItem>>(
+      "/psychologist/signals",
+      { params: { ...signalsFilters, page, size: signalsPageSize } },
+    );
+    set({
+      signals: data.items,
+      signalsPage: data.page,
+      signalsTotalItems: data.totalItems,
+    });
+  },
+
+  setSignalsPageSize: async (size) => {
+    const { data } = await apiClient.get<PageResponse<PsychologistSignalListItem>>(
+      "/psychologist/signals",
+      { params: { ...get().signalsFilters, page: 0, size } },
+    );
+    set({
+      signals: data.items,
+      signalsPage: data.page,
+      signalsPageSize: data.size,
+      signalsTotalItems: data.totalItems,
+    });
   },
 
   fetchSignalDetail: async (signalId) => {

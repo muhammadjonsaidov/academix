@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { apiClient } from "@/lib/api/client";
+import type { PageResponse } from "@/types/api";
 import type {
   AdminDataDeletionRequest,
   Assignment,
@@ -20,10 +21,23 @@ import type {
   UpdateSchoolRequest,
 } from "@/types/admin";
 
+interface StudentFilters {
+  classId?: string;
+  search?: string;
+}
+
 interface AdminState {
   classes: SchoolClass[];
   teachers: Teacher[];
   students: Student[];
+  studentsPage: number;
+  studentsPageSize: number;
+  studentsTotalItems: number;
+  /** Last filters passed to fetchStudents — reused by the page/size setters. */
+  studentsFilters: StudentFilters;
+  /** Full (unpaginated) student list for dropdowns/name lookups — kept separate so
+   * the paginated students page can't clobber it. Filled by fetchAllStudents. */
+  allStudents: Student[];
   school: School | null;
   psychologists: Psychologist[];
   assignments: Assignment[];
@@ -39,7 +53,10 @@ interface AdminState {
   inviteTeacher: (request: InviteTeacherRequest) => Promise<void>;
   setTeacherActive: (teacherId: string, active: boolean) => Promise<void>;
 
-  fetchStudents: (filters?: { classId?: string; search?: string }) => Promise<void>;
+  fetchStudents: (filters?: StudentFilters) => Promise<void>;
+  setStudentsPage: (page: number) => Promise<void>;
+  setStudentsPageSize: (size: number) => Promise<void>;
+  fetchAllStudents: () => Promise<void>;
   createStudent: (request: CreateStudentRequest) => Promise<void>;
   transferStudentClass: (studentId: string, newClassId: string) => Promise<void>;
   unlockHandwritingReset: (studentId: string) => Promise<void>;
@@ -69,6 +86,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   classes: [],
   teachers: [],
   students: [],
+  studentsPage: 0,
+  studentsPageSize: 20,
+  studentsTotalItems: 0,
+  studentsFilters: {},
+  allStudents: [],
   school: null,
   psychologists: [],
   assignments: [],
@@ -110,9 +132,60 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     await get().fetchTeachers();
   },
 
+  // New filters always restart from page 0; page/size setters below reuse the last filters.
   fetchStudents: async (filters) => {
-    const { data } = await apiClient.get<Student[]>("/admin/students", { params: filters });
-    set({ students: data });
+    const { data } = await apiClient.get<PageResponse<Student>>("/admin/students", {
+      params: { ...(filters ?? {}), page: 0, size: get().studentsPageSize },
+    });
+    set({
+      students: data.items,
+      studentsPage: data.page,
+      studentsPageSize: data.size,
+      studentsTotalItems: data.totalItems,
+      studentsFilters: filters ?? {},
+    });
+  },
+
+  setStudentsPage: async (page) => {
+    const { studentsFilters, studentsPageSize } = get();
+    const { data } = await apiClient.get<PageResponse<Student>>("/admin/students", {
+      params: { ...studentsFilters, page, size: studentsPageSize },
+    });
+    set({
+      students: data.items,
+      studentsPage: data.page,
+      studentsTotalItems: data.totalItems,
+    });
+  },
+
+  setStudentsPageSize: async (size) => {
+    const { data } = await apiClient.get<PageResponse<Student>>("/admin/students", {
+      params: { ...get().studentsFilters, page: 0, size },
+    });
+    set({
+      students: data.items,
+      studentsPage: data.page,
+      studentsPageSize: data.size,
+      studentsTotalItems: data.totalItems,
+    });
+  },
+
+  // Walks every page at the max size (100) so dropdowns/name lookups always see the
+  // whole school, independent of the students page's pagination state.
+  fetchAllStudents: async () => {
+    const size = 100;
+    const first = await apiClient.get<PageResponse<Student>>("/admin/students", {
+      params: { page: 0, size },
+    });
+    const items = [...first.data.items];
+    const totalPages = Math.ceil(first.data.totalItems / size);
+    for (let page = 1; page < totalPages; page += 1) {
+      const { data } = await apiClient.get<PageResponse<Student>>("/admin/students", {
+        params: { page, size },
+      });
+      items.push(...data.items);
+    }
+    set({ allStudents: items });
   },
 
   createStudent: async (request) => {

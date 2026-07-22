@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { apiClient } from "@/lib/api/client";
+import type { PageResponse } from "@/types/api";
 import type {
   Badge,
   StudentDashboard,
@@ -19,6 +20,9 @@ interface StudentState {
   dashboard: StudentDashboard | null;
   badges: Badge[];
   xpHistory: XpHistoryItem[];
+  xpHistoryPage: number;
+  xpHistoryPageSize: number;
+  xpHistoryTotalItems: number;
   progress: StudentProgress | null;
 
   fetchHomework: () => Promise<void>;
@@ -33,6 +37,8 @@ interface StudentState {
   fetchDashboard: () => Promise<void>;
   fetchBadges: () => Promise<void>;
   fetchXpHistory: () => Promise<void>;
+  setXpHistoryPage: (page: number) => Promise<void>;
+  setXpHistoryPageSize: (size: number) => Promise<void>;
   fetchProgress: () => Promise<void>;
 }
 
@@ -45,6 +51,9 @@ export const useStudentStore = create<StudentState>((set, get) => ({
   dashboard: null,
   badges: [],
   xpHistory: [],
+  xpHistoryPage: 0,
+  xpHistoryPageSize: 20,
+  xpHistoryTotalItems: 0,
   progress: null,
 
   fetchHomework: async () => {
@@ -93,8 +102,38 @@ export const useStudentStore = create<StudentState>((set, get) => ({
   },
 
   fetchXpHistory: async () => {
-    const { data } = await apiClient.get<XpHistoryItem[]>("/student/xp-history");
-    set({ xpHistory: data });
+    const { data } = await apiClient.get<PageResponse<XpHistoryItem>>("/student/xp-history", {
+      params: { page: 0, size: get().xpHistoryPageSize },
+    });
+    set({
+      xpHistory: data.items,
+      xpHistoryPage: data.page,
+      xpHistoryPageSize: data.size,
+      xpHistoryTotalItems: data.totalItems,
+    });
+  },
+
+  setXpHistoryPage: async (page) => {
+    const { data } = await apiClient.get<PageResponse<XpHistoryItem>>("/student/xp-history", {
+      params: { page, size: get().xpHistoryPageSize },
+    });
+    set({
+      xpHistory: data.items,
+      xpHistoryPage: data.page,
+      xpHistoryTotalItems: data.totalItems,
+    });
+  },
+
+  setXpHistoryPageSize: async (size) => {
+    const { data } = await apiClient.get<PageResponse<XpHistoryItem>>("/student/xp-history", {
+      params: { page: 0, size },
+    });
+    set({
+      xpHistory: data.items,
+      xpHistoryPage: data.page,
+      xpHistoryPageSize: data.size,
+      xpHistoryTotalItems: data.totalItems,
+    });
   },
 
   fetchProgress: async () => {
