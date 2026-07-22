@@ -6,11 +6,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.application.StudentDashboardService;
 import uz.academixai.application.StudentProgressService;
 import uz.academixai.application.StudentSubmissionService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.interfaces.web.PageResponse;
 
 /** academix_tz.md §2.4 "Vazifalar" / "Topshirilgan ishlar tarixi" — read-only, exact contract. */
 @RestController
@@ -51,11 +53,15 @@ public class StudentHomeworkController {
   }
 
   @GetMapping("/api/v1/student/xp-history")
-  public List<XpHistoryResponse> listXpHistory(
-      @AuthenticationPrincipal AcademixPrincipal principal) {
-    return dashboardService.listXpHistory(principal.schoolId(), principal.userId()).stream()
-        .map(XpHistoryResponse::from)
-        .toList();
+  public PageResponse<XpHistoryResponse> listXpHistory(
+      @AuthenticationPrincipal AcademixPrincipal principal,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    List<XpHistoryResponse> all =
+        dashboardService.listXpHistory(principal.schoolId(), principal.userId()).stream()
+            .map(XpHistoryResponse::from)
+            .toList();
+    return PageResponse.slice(all, page, size);
   }
 
   @GetMapping("/api/v1/student/homework")

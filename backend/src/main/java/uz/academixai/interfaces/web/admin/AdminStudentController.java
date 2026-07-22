@@ -17,6 +17,7 @@ import uz.academixai.application.HandwritingService;
 import uz.academixai.application.StudentManagementService;
 import uz.academixai.domain.StudentProfile;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.interfaces.web.PageResponse;
 
 /** academix_tz.md §2.2 "O'quvchilar" — exact contract, don't drift path/shape from the spec. */
 @RestController
@@ -34,13 +35,17 @@ public class AdminStudentController {
   }
 
   @GetMapping
-  public List<StudentResponse> list(
+  public PageResponse<StudentResponse> list(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @RequestParam(required = false) UUID classId,
-      @RequestParam(required = false) String search) {
-    return studentService.list(principal.schoolId(), classId, search).stream()
-        .map(StudentResponse::from)
-        .toList();
+      @RequestParam(required = false) String search,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    List<StudentResponse> all =
+        studentService.list(principal.schoolId(), classId, search).stream()
+            .map(StudentResponse::from)
+            .toList();
+    return PageResponse.slice(all, page, size);
   }
 
   @PostMapping

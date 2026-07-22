@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.application.PsychologistService;
 import uz.academixai.domain.SignalSeverity;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.interfaces.web.PageResponse;
 
 /** academix_tz.md §2.6 "Psychologist API" — exact paths, some response/request shapes deviate. */
 @RestController
@@ -37,13 +38,17 @@ public class PsychologistController {
   }
 
   @GetMapping("/signals")
-  public List<PsychologistSignalListItemResponse> listSignals(
+  public PageResponse<PsychologistSignalListItemResponse> listSignals(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @RequestParam(required = false) SignalSeverity severity,
-      @RequestParam(required = false) Boolean resolved) {
-    return psychologistService.listSignals(principal.schoolId(), severity, resolved).stream()
-        .map(PsychologistSignalListItemResponse::from)
-        .toList();
+      @RequestParam(required = false) Boolean resolved,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    List<PsychologistSignalListItemResponse> all =
+        psychologistService.listSignals(principal.schoolId(), severity, resolved).stream()
+            .map(PsychologistSignalListItemResponse::from)
+            .toList();
+    return PageResponse.slice(all, page, size);
   }
 
   @GetMapping("/signals/{signalId}")

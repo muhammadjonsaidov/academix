@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.application.TeacherSubmissionService;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.interfaces.web.PageResponse;
 
 /** academix_tz.md §2.3 "Topshirilgan ishlarni ko'rish va baholash" — exact contract. */
 @RestController
@@ -28,16 +29,20 @@ public class TeacherSubmissionController {
   }
 
   @GetMapping
-  public List<TeacherSubmissionListItemResponse> list(
+  public PageResponse<TeacherSubmissionListItemResponse> list(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @RequestParam(required = false) UUID assignmentId,
       @RequestParam(required = false) UUID classId,
-      @RequestParam(required = false) SubmissionStatus status) {
-    return submissionService
-        .list(principal.schoolId(), principal.userId(), assignmentId, classId, status)
-        .stream()
-        .map(TeacherSubmissionListItemResponse::from)
-        .toList();
+      @RequestParam(required = false) SubmissionStatus status,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    List<TeacherSubmissionListItemResponse> all =
+        submissionService
+            .list(principal.schoolId(), principal.userId(), assignmentId, classId, status)
+            .stream()
+            .map(TeacherSubmissionListItemResponse::from)
+            .toList();
+    return PageResponse.slice(all, page, size);
   }
 
   @GetMapping("/{submissionId}")

@@ -92,7 +92,7 @@ public class PollingService {
               apiClient.sendMessage(
                   chatId,
                   "Ulanish muvaffaqiyatli! Endi bildirishnomalarni shu yerda olasiz.\n\n"
-                      + BotCommandService.HELP_TEXT);
+                      + commandService.welcomeText(userId));
               log.info("Telegram connection established for user {}", userId);
             },
             () -> {
