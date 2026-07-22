@@ -13,7 +13,26 @@ import {
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { DashboardShell } from "@/components/shared/DashboardShell";
+import {
+  chartAxisTick,
+  chartBarCursor,
+  chartDataTick,
+  chartGridProps,
+  chartLegendStyle,
+  chartTooltipLabelStyle,
+  chartTooltipStyle,
+} from "@/components/shared/chart-style";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -166,7 +185,44 @@ export default function ParentChildDetailPage() {
               <Skeleton className="h-4 w-2/3" />
             </div>
           ) : progress && progress.subjectProgress.length > 0 ? (
-            <div className="overflow-x-auto">
+            <div>
+              <ResponsiveContainer width="100%" height={240} className="mb-4">
+                <BarChart
+                  data={progress.subjectProgress}
+                  margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid {...chartGridProps} vertical={false} />
+                  <XAxis
+                    dataKey="subject"
+                    tick={chartAxisTick}
+                    tickLine={false}
+                    axisLine={{ stroke: "var(--border)" }}
+                  />
+                  <YAxis tick={chartDataTick} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={chartTooltipStyle}
+                    labelStyle={chartTooltipLabelStyle}
+                    cursor={chartBarCursor}
+                  />
+                  <Legend wrapperStyle={chartLegendStyle} />
+                  <Bar
+                    dataKey="currentAvg"
+                    name="Joriy o'rtacha"
+                    fill="var(--color-chart-4)"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={36}
+                  />
+                  <Bar
+                    dataKey="previousMonthAvg"
+                    name="O'tgan oy"
+                    fill="var(--graphite)"
+                    fillOpacity={0.55}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={36}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-muted-foreground">
                   <tr>
@@ -198,6 +254,7 @@ export default function ParentChildDetailPage() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border py-8 text-center">
@@ -205,6 +262,40 @@ export default function ParentChildDetailPage() {
               <p className="text-sm text-muted-foreground">Hozircha rivojlanish ma&apos;lumoti yo&apos;q.</p>
             </div>
           )}
+
+          {progress && progress.monthlyXpChart.length > 0 ? (
+            <div className="mt-4">
+              <p className="mb-2 text-sm font-medium">Oylik XP</p>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart
+                  data={progress.monthlyXpChart}
+                  margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid {...chartGridProps} vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tick={chartDataTick}
+                    tickLine={false}
+                    axisLine={{ stroke: "var(--border)" }}
+                  />
+                  <YAxis tick={chartDataTick} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={chartTooltipStyle}
+                    labelStyle={chartTooltipLabelStyle}
+                    cursor={chartBarCursor}
+                  />
+                  <Bar
+                    dataKey="xp"
+                    name="XP"
+                    unit=" XP"
+                    fill="var(--color-chart-4)"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={36}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : null}
 
           {progress && progress.badges.length > 0 ? (
             <div className="mt-4">

@@ -1,9 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BarChart3, Bot, Inbox, TrendingUp, Users } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import {
+  chartAxisTick,
+  chartBarCursor,
+  chartDataTick,
+  chartGridProps,
+  chartLineCursor,
+  chartTooltipLabelStyle,
+  chartTooltipStyle,
+} from "@/components/shared/chart-style";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -73,11 +93,31 @@ function AnalyticsBody({ period }: { period: Period }) {
       .finally(() => setIsLoading(false));
   }, [period, fetchClassesComparison, fetchTeachersRanking, fetchSchoolProgress, fetchAiUsage]);
 
+  const rankingData = useMemo(
+    () =>
+      teachersRanking.map((t) => ({
+        name: `${t.firstName} ${t.lastName}`,
+        avgGrade: t.avgGrade,
+        gradedCount: t.gradedCount,
+      })),
+    [teachersRanking],
+  );
+
+  const progressData = useMemo(
+    () =>
+      schoolProgress.map((p) => ({
+        label: new Date(p.periodStart).toLocaleDateString(),
+        avgScore: p.avgScore,
+        gradedCount: p.gradedCount,
+      })),
+    [schoolProgress],
+  );
+
   return (
     <>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      <div className="space-y-6">
+      <div className="stagger-rise space-y-6">
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
@@ -92,19 +132,31 @@ function AnalyticsBody({ period }: { period: Period }) {
               ) : classesComparison.length === 0 ? (
                 <EmptyState icon={Inbox} title="Ma'lumot yo'q" description="Ushbu davr uchun sinflar bo'yicha ma'lumot topilmadi." />
               ) : (
-                <ul className="space-y-2">
-                  {classesComparison.map((c) => (
-                    <li
-                      key={c.classId}
-                      className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm"
-                    >
-                      <span className="font-medium">{c.className}</span>
-                      <span className="font-data text-muted-foreground">
-                        {c.avgScore}% ({c.gradedCount} baholangan)
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={classesComparison} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                    <CartesianGrid {...chartGridProps} vertical={false} />
+                    <XAxis
+                      dataKey="className"
+                      tick={chartAxisTick}
+                      tickLine={false}
+                      axisLine={{ stroke: "var(--border)" }}
+                    />
+                    <YAxis domain={[0, 100]} tick={chartDataTick} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      contentStyle={chartTooltipStyle}
+                      labelStyle={chartTooltipLabelStyle}
+                      cursor={chartBarCursor}
+                    />
+                    <Bar
+                      dataKey="avgScore"
+                      name="O'rtacha ball"
+                      unit="%"
+                      fill="var(--color-chart-1)"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={48}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               )}
             </CardContent>
           </Card>
@@ -119,24 +171,46 @@ function AnalyticsBody({ period }: { period: Period }) {
             <CardContent>
               {isLoading ? (
                 <ListSkeleton />
-              ) : teachersRanking.length === 0 ? (
+              ) : rankingData.length === 0 ? (
                 <EmptyState icon={Inbox} title="Ma'lumot yo'q" description="O'qituvchilar reytingi hali hisoblanmagan." />
               ) : (
-                <ul className="space-y-2">
-                  {teachersRanking.map((t) => (
-                    <li
-                      key={t.teacherId}
-                      className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm"
-                    >
-                      <span className="font-medium">
-                        {t.firstName} {t.lastName}
-                      </span>
-                      <span className="font-data text-muted-foreground">
-                        {t.avgGrade}/5 ({t.gradedCount})
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart
+                    data={rankingData}
+                    layout="vertical"
+                    margin={{ top: 4, right: 16, left: 8, bottom: 0 }}
+                  >
+                    <CartesianGrid {...chartGridProps} horizontal={false} />
+                    <XAxis
+                      type="number"
+                      domain={[0, 5]}
+                      tick={chartDataTick}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={130}
+                      tick={chartAxisTick}
+                      tickLine={false}
+                      axisLine={{ stroke: "var(--border)" }}
+                    />
+                    <Tooltip
+                      contentStyle={chartTooltipStyle}
+                      labelStyle={chartTooltipLabelStyle}
+                      cursor={chartBarCursor}
+                    />
+                    <Bar
+                      dataKey="avgGrade"
+                      name="O'rtacha baho"
+                      unit="/5"
+                      fill="var(--color-chart-2)"
+                      radius={[0, 4, 4, 0]}
+                      maxBarSize={22}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               )}
             </CardContent>
           </Card>
@@ -152,22 +226,32 @@ function AnalyticsBody({ period }: { period: Period }) {
           <CardContent>
             {isLoading ? (
               <ListSkeleton />
-            ) : schoolProgress.length === 0 ? (
+            ) : progressData.length === 0 ? (
               <EmptyState icon={Inbox} title="Ma'lumot yo'q" description="Ushbu davr uchun dinamika ma'lumoti topilmadi." />
             ) : (
-              <ul className="space-y-2">
-                {schoolProgress.map((p) => (
-                  <li
-                    key={p.periodStart}
-                    className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm"
-                  >
-                    <span className="font-data">{new Date(p.periodStart).toLocaleDateString()}</span>
-                    <span className="font-data text-muted-foreground">
-                      {p.avgScore}% ({p.gradedCount} baholangan)
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={progressData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid {...chartGridProps} vertical={false} />
+                  <XAxis dataKey="label" tick={chartDataTick} tickLine={false} axisLine={{ stroke: "var(--border)" }} />
+                  <YAxis domain={[0, 100]} tick={chartDataTick} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={chartTooltipStyle}
+                    labelStyle={chartTooltipLabelStyle}
+                    cursor={chartLineCursor}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="avgScore"
+                    name="O'rtacha ball"
+                    unit="%"
+                    stroke="var(--color-chart-1)"
+                    strokeWidth={2}
+                    fill="var(--color-chart-1)"
+                    fillOpacity={0.15}
+                    activeDot={{ r: 4, fill: "var(--color-chart-1)", stroke: "var(--color-chart-1)" }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             )}
           </CardContent>
         </Card>

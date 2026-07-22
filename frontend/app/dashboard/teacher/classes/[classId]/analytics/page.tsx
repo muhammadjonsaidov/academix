@@ -4,8 +4,27 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { AlertTriangle, ArrowDown, ArrowUp, BarChart3 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import {
+  chartAxisTick,
+  chartBarCursor,
+  chartDataTick,
+  chartGridProps,
+  chartLegendStyle,
+  chartTooltipLabelStyle,
+  chartTooltipStyle,
+} from "@/components/shared/chart-style";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTeacherAnalyticsStore } from "@/stores/useTeacherAnalyticsStore";
@@ -123,25 +142,53 @@ export default function TeacherClassAnalyticsPage() {
             <CardHeader>
               <CardTitle>Fanlar bo&apos;yicha topshirish darajasi</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {analytics.submissionRateBySubject.map((s) => (
-                <div
-                  key={s.subject}
-                  className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm"
-                >
-                  <span>{s.subject}</span>
-                  <span className="font-data text-muted-foreground">
-                    {s.averageScore}% o&apos;rtacha &middot; {s.submissionRate}% topshirilgan
-                  </span>
-                </div>
-              ))}
+            <CardContent>
               {analytics.submissionRateBySubject.length === 0 ? (
                 <EmptyState
                   icon={BarChart3}
                   title="Ma'lumot yo'q"
                   description="Bu sinf uchun fanlar bo'yicha topshirish ma'lumotlari hali mavjud emas."
                 />
-              ) : null}
+              ) : (
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart
+                    data={analytics.submissionRateBySubject}
+                    margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                  >
+                    <CartesianGrid {...chartGridProps} vertical={false} />
+                    <XAxis
+                      dataKey="subject"
+                      tick={chartAxisTick}
+                      tickLine={false}
+                      axisLine={{ stroke: "var(--border)" }}
+                    />
+                    <YAxis domain={[0, 100]} tick={chartDataTick} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      contentStyle={chartTooltipStyle}
+                      labelStyle={chartTooltipLabelStyle}
+                      cursor={chartBarCursor}
+                    />
+                    <Legend wrapperStyle={chartLegendStyle} />
+                    <Bar
+                      dataKey="averageScore"
+                      name="O'rtacha ball"
+                      unit="%"
+                      fill="var(--color-chart-2)"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={36}
+                    />
+                    <Bar
+                      dataKey="submissionRate"
+                      name="Topshirish darajasi"
+                      unit="%"
+                      fill="var(--graphite)"
+                      fillOpacity={0.55}
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={36}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </>

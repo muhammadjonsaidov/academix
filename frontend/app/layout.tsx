@@ -35,6 +35,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // The pre-paint theme script below adds `dark` to this element before hydration —
+      // an expected, deliberate server/client difference (standard theming pattern).
+      suppressHydrationWarning
       className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

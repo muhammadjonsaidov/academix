@@ -1,11 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Award, BarChart3, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Legend,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import {
+  chartAxisTick,
+  chartDataTick,
+  chartGridProps,
+  chartLegendStyle,
+  chartLineCursor,
+  chartTooltipLabelStyle,
+  chartTooltipStyle,
+} from "@/components/shared/chart-style";
 import { ProgressBar } from "@/components/student/ProgressBar";
 import { StatCard } from "@/components/student/StatCard";
 import { useStudentStore } from "@/stores/useStudentStore";
@@ -19,6 +43,23 @@ export default function StudentProgressPage() {
   useEffect(() => {
     fetchProgress().catch(() => setError("Progressni yuklab bo'lmadi."));
   }, [fetchProgress]);
+
+  // Cumulative XP over time, aggregated per day so a busy day is one point, not many.
+  const xpTrend = useMemo(() => {
+    const history = progress?.xpHistory ?? [];
+    const byDay = new Map<string, number>();
+    for (const item of history) {
+      const day = item.date.slice(0, 10);
+      byDay.set(day, (byDay.get(day) ?? 0) + item.xp);
+    }
+    const trend: { label: string; totalXp: number }[] = [];
+    let total = 0;
+    for (const [day, xp] of [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+      total += xp;
+      trend.push({ label: new Date(day).toLocaleDateString(), totalXp: total });
+    }
+    return trend;
+  }, [progress?.xpHistory]);
 
   return (
     <DashboardShell role="STUDENT">
@@ -50,6 +91,38 @@ export default function StudentProgressPage() {
               <CardTitle>Fanlar bo&apos;yicha</CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Radar only makes sense as a polygon — needs at least 3 axes. */}
+              {progress.subjectStats.length >= 3 ? (
+                <ResponsiveContainer width="100%" height={260} className="mb-4">
+                  <RadarChart data={progress.subjectStats} outerRadius="70%">
+                    <PolarGrid stroke="var(--border)" />
+                    <PolarAngleAxis dataKey="subject" tick={chartAxisTick} />
+                    <PolarRadiusAxis
+                      domain={[0, 100]}
+                      tick={{ ...chartDataTick, fontSize: 10 }}
+                      stroke="var(--border)"
+                      axisLine={false}
+                    />
+                    <Radar
+                      name="Joriy o'rtacha"
+                      dataKey="currentAvg"
+                      stroke="var(--color-chart-3)"
+                      strokeWidth={2}
+                      fill="var(--color-chart-3)"
+                      fillOpacity={0.25}
+                    />
+                    <Radar
+                      name="O'tgan oy"
+                      dataKey="previousMonthAvg"
+                      stroke="var(--graphite)"
+                      fill="var(--graphite)"
+                      fillOpacity={0.1}
+                    />
+                    <Legend wrapperStyle={chartLegendStyle} />
+                    <Tooltip contentStyle={chartTooltipStyle} labelStyle={chartTooltipLabelStyle} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              ) : null}
               {progress.subjectStats.length > 0 ? (
                 <ul className="space-y-4">
                   {progress.subjectStats.map((s) => {
@@ -96,6 +169,37 @@ export default function StudentProgressPage() {
               <CardTitle>XP tarixi</CardTitle>
             </CardHeader>
             <CardContent>
+              {/* A single point can't draw a curve — the recent list below covers that case. */}
+              {xpTrend.length >= 2 ? (
+                <ResponsiveContainer width="100%" height={220} className="mb-4">
+                  <AreaChart data={xpTrend} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                    <CartesianGrid {...chartGridProps} vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      tick={chartDataTick}
+                      tickLine={false}
+                      axisLine={{ stroke: "var(--border)" }}
+                    />
+                    <YAxis tick={chartDataTick} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      contentStyle={chartTooltipStyle}
+                      labelStyle={chartTooltipLabelStyle}
+                      cursor={chartLineCursor}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="totalXp"
+                      name="Jami XP"
+                      unit=" XP"
+                      stroke="var(--color-chart-3)"
+                      strokeWidth={2}
+                      fill="var(--color-chart-3)"
+                      fillOpacity={0.15}
+                      activeDot={{ r: 4, fill: "var(--color-chart-3)", stroke: "var(--color-chart-3)" }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : null}
               {progress.xpHistory.length > 0 ? (
                 <ul className="space-y-2">
                   {progress.xpHistory.slice(0, 10).map((x, i) => (
