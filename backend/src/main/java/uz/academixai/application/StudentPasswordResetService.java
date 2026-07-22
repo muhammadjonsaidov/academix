@@ -91,7 +91,8 @@ public class StudentPasswordResetService {
             student.getRole(),
             student.isActive(),
             student.getCreatedAt(),
-            student.getLastLoginAt());
+            student.getLastLoginAt(),
+            student.getSchoolId());
     userRepository.save(updated);
 
     PasswordResetLog log =

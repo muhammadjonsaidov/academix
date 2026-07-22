@@ -100,7 +100,8 @@ public class PasswordResetService {
             entity.getRole(),
             entity.isActive(),
             entity.getCreatedAt(),
-            entity.getLastLoginAt());
+            entity.getLastLoginAt(),
+            entity.getSchoolId());
     userRepository.save(updated);
   }
 

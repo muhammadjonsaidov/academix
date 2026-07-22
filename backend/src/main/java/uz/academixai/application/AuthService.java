@@ -111,7 +111,8 @@ public class AuthService {
             entity.getRole(),
             entity.isActive(),
             entity.getCreatedAt(),
-            entity.getLastLoginAt());
+            entity.getLastLoginAt(),
+            entity.getSchoolId());
     userRepository.save(updated);
     refreshTokenStore.revokeAllForUser(userId);
   }
