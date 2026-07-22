@@ -11,6 +11,8 @@ interface AuthState {
   logout: () => void;
   setAccessToken: (token: string) => void;
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
+  forgotPassword: (phone: string) => Promise<string>;
+  resetPassword: (token: string, newPassword: string) => Promise<void>;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
@@ -70,5 +72,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       { oldPassword, newPassword },
       { headers: token ? { Authorization: `Bearer ${token}` } : undefined, withCredentials: true },
     );
+  },
+
+  // Unauthenticated, same plain-axios reasoning as login/logout above. Returns the (always
+  // success) message so the page can display it directly — backend intentionally never
+  // reveals whether the phone/email actually matched an account (anti-enumeration).
+  forgotPassword: async (phone) => {
+    const { data } = await axios.post<{ success: boolean; message: string }>(
+      `${API_BASE_URL}/auth/forgot-password`,
+      { phone },
+    );
+    return data.message;
+  },
+
+  resetPassword: async (token, newPassword) => {
+    await axios.post(`${API_BASE_URL}/auth/reset-password`, { token, newPassword });
   },
 }));
