@@ -6,7 +6,7 @@ import { DashboardShell } from "@/components/shared/DashboardShell";
 import { fieldClass, FormField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ROLE_ACCENT_CLASSES } from "@/components/shared/nav-config";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -22,38 +22,108 @@ const ROLE_LABEL: Record<Role, string> = {
   PSYCHOLOGIST: "Psixolog",
 };
 
+type SettingsSection = "profile" | "security" | "notifications" | "telegram";
+
+const SECTIONS: Array<{
+  key: SettingsSection;
+  label: string;
+  description: string;
+  icon: typeof UserRound;
+}> = [
+  {
+    key: "profile",
+    label: "Profil",
+    description: "Ism, familiya va email manzilingiz.",
+    icon: UserRound,
+  },
+  {
+    key: "security",
+    label: "Xavfsizlik",
+    description: "Hisobingiz parolini boshqaring.",
+    icon: KeyRound,
+  },
+  {
+    key: "notifications",
+    label: "Bildirishnomalar",
+    description: "Qaysi bildirishnoma qaysi kanaldan kelishini tanlang.",
+    icon: BellRing,
+  },
+  {
+    key: "telegram",
+    label: "Telegram",
+    description: "Bildirishnomalar uchun Telegram botni ulang.",
+    icon: Send,
+  },
+];
+
 // Not under any role-prefixed folder (/dashboard/{admin,teacher,...}/) — proxy.ts's
 // route-guard only enforces role-prefix matching for those literal segments, so this page
 // works for whichever role is currently logged in, driven off useAuthStore.user.role at
 // render time rather than a hardcoded role prop. One page for every role's self-service
-// management: profile info, password, Telegram — role-specific data stays on the dashboards.
+// management, laid out as a standard settings screen: a section nav on the left, one
+// section's content at a time on the right (top tabs on mobile).
 export default function AccountPage() {
   const user = useAuthStore((state) => state.user);
   const role: Role = user?.role ?? "STUDENT";
+  const [section, setSection] = useState<SettingsSection>("profile");
+
+  const active = SECTIONS.find((s) => s.key === section) ?? SECTIONS[0];
 
   return (
     <DashboardShell role={role}>
-      <div className="space-y-6">
+      <div className="mx-auto max-w-4xl space-y-6">
         <div>
-          <h2 className="font-heading text-xl font-semibold">Profil sozlamalari</h2>
+          <h2 className="font-heading text-xl font-semibold">Sozlamalar</h2>
           <p className="text-sm text-muted-foreground">
-            Shaxsiy ma&apos;lumotlaringiz, parolingiz va bildirishnoma ulanishlari.
+            Hisobingiz va bildirishnomalarni boshqaring.
           </p>
         </div>
 
-        <div className="stagger-rise grid max-w-4xl gap-6 lg:grid-cols-2">
-          <div className="space-y-6">
-            <ProfileCard role={role} />
-            <NotificationPreferencesCard />
-          </div>
-          <div className="space-y-6">
-            <PasswordCard />
-            <TelegramCard />
+        <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
+          {/* Section nav — vertical on desktop, horizontal scroll strip on mobile */}
+          <nav className="flex shrink-0 gap-1 overflow-x-auto lg:w-52 lg:flex-col lg:overflow-visible">
+            {SECTIONS.map((s) => {
+              const Icon = s.icon;
+              const isActive = s.key === section;
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => setSection(s.key)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cnSection(isActive)}
+                >
+                  <Icon className="size-4 shrink-0" strokeWidth={1.75} />
+                  {s.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Active section content — keyed so switching re-runs the rise animation */}
+          <div key={section} className="animate-rise min-w-0 flex-1">
+            <div className="mb-4">
+              <h3 className="font-heading text-base font-semibold">{active.label}</h3>
+              <p className="text-sm text-muted-foreground">{active.description}</p>
+            </div>
+            {section === "profile" ? <ProfileCard role={role} /> : null}
+            {section === "security" ? <PasswordCard /> : null}
+            {section === "notifications" ? <NotificationPreferencesCard /> : null}
+            {section === "telegram" ? <TelegramCard /> : null}
           </div>
         </div>
       </div>
     </DashboardShell>
   );
+}
+
+function cnSection(isActive: boolean): string {
+  return [
+    "flex items-center gap-2.5 rounded-md border-l-2 border-transparent px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+    isActive
+      ? "border-ink bg-accent text-foreground"
+      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+  ].join(" ");
 }
 
 function ProfileCard({ role }: { role: Role }) {
@@ -67,13 +137,7 @@ function ProfileCard({ role }: { role: Role }) {
 
   return (
     <Card className="self-start">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <UserRound className="size-4" strokeWidth={1.75} />
-          Shaxsiy ma&apos;lumotlar
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="py-6">
         {loadError ? (
           <p className="text-sm text-destructive">{loadError}</p>
         ) : !profile ? (
@@ -206,20 +270,14 @@ function PasswordCard() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <KeyRound className="size-4" strokeWidth={1.75} />
-          Parolni o&apos;zgartirish
-        </CardTitle>
-        {saved ? (
-          <CardDescription className="flex items-center gap-1.5 text-success">
-            <CheckCircle2 className="size-3.5" strokeWidth={1.75} />
-            Parol muvaffaqiyatli o&apos;zgartirildi.
-          </CardDescription>
-        ) : null}
-      </CardHeader>
-      <CardContent>
+      <CardContent className="py-6">
         <form onSubmit={handleSubmit} className="space-y-3">
+          {saved ? (
+            <p className="flex items-center gap-1.5 text-sm text-success">
+              <CheckCircle2 className="size-3.5" strokeWidth={1.75} />
+              Parol muvaffaqiyatli o&apos;zgartirildi.
+            </p>
+          ) : null}
           <FormField label="Joriy parol" htmlFor="oldPassword">
             <input
               id="oldPassword"
@@ -310,16 +368,7 @@ function NotificationPreferencesCard() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BellRing className="size-4" strokeWidth={1.75} />
-          Bildirishnoma sozlamalari
-        </CardTitle>
-        <CardDescription>
-          Qaysi turdagi bildirishnomalarni qaysi kanal orqali olishni tanlang.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="py-6">
         {preferences.length === 0 && !error ? (
           <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
         ) : (
@@ -397,13 +446,7 @@ function TelegramCard() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Send className="size-4" strokeWidth={1.75} />
-          Telegram bildirishnomalari
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="text-sm">
+      <CardContent className="py-6 text-sm">
         {!status ? (
           <p className="text-muted-foreground">Yuklanmoqda...</p>
         ) : status.connected ? (
