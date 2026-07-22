@@ -4,6 +4,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.School;
+import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.SchoolEntity;
 import uz.academixai.infrastructure.persistence.SchoolRepository;
 import uz.academixai.interfaces.web.ApiException;
@@ -13,16 +14,37 @@ import uz.academixai.interfaces.web.ApiException;
 public class AdminSchoolService {
 
   private final SchoolRepository schoolRepository;
+  private final SchoolClassRepository classRepository;
 
-  public AdminSchoolService(SchoolRepository schoolRepository) {
+  public AdminSchoolService(
+      SchoolRepository schoolRepository, SchoolClassRepository classRepository) {
     this.schoolRepository = schoolRepository;
+    this.classRepository = classRepository;
   }
 
   public School get(UUID schoolId) {
-    return schoolRepository
-        .findById(schoolId)
-        .map(SchoolEntity::toDomain)
-        .orElseThrow(AdminSchoolService::notFound);
+    School school =
+        schoolRepository
+            .findById(schoolId)
+            .map(SchoolEntity::toDomain)
+            .orElseThrow(AdminSchoolService::notFound);
+    // schools.total_classes is a stored column no service ever writes (same never-written
+    // trap as school_classes.student_count, see CLAUDE.md) — compute live instead.
+    return new School(
+        school.id(),
+        school.name(),
+        school.address(),
+        school.region(),
+        school.district(),
+        school.phone(),
+        school.email(),
+        (int) classRepository.countBySchoolIdAndIsActiveTrue(schoolId),
+        school.isActive(),
+        school.subscribedAt(),
+        school.subscriptionEndsAt(),
+        school.adminId(),
+        school.monthlyAiCallLimit(),
+        school.currentMonthAiUsage());
   }
 
   public School update(

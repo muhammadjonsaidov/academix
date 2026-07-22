@@ -12,6 +12,8 @@ public interface SchoolClassRepository extends JpaRepository<SchoolClassEntity, 
 
   List<SchoolClassEntity> findBySchoolIdOrderByGradeAscLetterAsc(UUID schoolId);
 
+  long countBySchoolIdAndIsActiveTrue(UUID schoolId);
+
   Optional<SchoolClassEntity> findByIdAndSchoolId(UUID id, UUID schoolId);
 
   List<SchoolClassEntity> findBySchoolIdAndClassTeacherId(UUID schoolId, UUID classTeacherId);

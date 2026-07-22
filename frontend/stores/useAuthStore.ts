@@ -16,6 +16,9 @@ interface AuthState {
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   fetchProfile: () => Promise<void>;
   updateProfile: (firstName: string, lastName: string, email: string) => Promise<void>;
+  /** Restore a session after a hard reload via the httpOnly refresh cookie. Resolves true on
+   *  success. Never throws — a failed bootstrap just means "not logged in". */
+  bootstrapSession: () => Promise<boolean>;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
@@ -108,6 +111,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       withCredentials: true,
     });
     set({ profile: data });
+  },
+
+  // Hard reload wipes the in-memory access token, but the httpOnly academix_refresh cookie
+  // (path-scoped to /api/v1/auth) survives — POST /auth/refresh with no body falls back to it
+  // server-side, then /auth/profile rebuilds the user summary. Plain axios like the rest of
+  // this store; withCredentials carries the cookie.
+  bootstrapSession: async () => {
+    try {
+      const { data } = await axios.post<{ accessToken: string }>(
+        `${API_BASE_URL}/auth/refresh`,
+        {},
+        { withCredentials: true },
+      );
+      const profileResponse = await axios.get<Profile>(`${API_BASE_URL}/auth/profile`, {
+        headers: { Authorization: `Bearer ${data.accessToken}` },
+        withCredentials: true,
+      });
+      const profile = profileResponse.data;
+      set({
+        accessToken: data.accessToken,
+        user: {
+          id: profile.id,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          role: profile.role,
+        },
+        profile,
+        isAuthenticated: true,
+      });
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   updateProfile: async (firstName, lastName, email) => {

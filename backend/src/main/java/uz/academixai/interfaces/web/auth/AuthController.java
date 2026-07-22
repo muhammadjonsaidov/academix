@@ -5,6 +5,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -16,12 +17,23 @@ import uz.academixai.application.PasswordResetService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.infrastructure.security.JwtService;
 
-/** academix_tz.md §2.1 — exact contract, don't drift path/shape from the spec. */
+/**
+ * academix_tz.md §2.1 — exact contract, don't drift path/shape from the spec.
+ *
+ * <p>Deviation on top of the spec (documented, judgment call): the refresh token is additionally
+ * set as its own httpOnly cookie ({@code academix_refresh}, path-scoped to /api/v1/auth) and
+ * {@code POST /refresh} falls back to that cookie when the body carries no token. This exists so
+ * the frontend can bootstrap a session after a hard page reload — its access token lives only in
+ * memory (frontend_tdd.md §5.5, deliberately not localStorage), so without this every F5 forced a
+ * fresh login. Same security posture as the existing {@code academix_auth} cookie: httpOnly,
+ * Secure, SameSite=Strict — JS never sees either token.
+ */
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
   private static final String COOKIE_NAME = "academix_auth";
+  private static final String REFRESH_COOKIE_NAME = "academix_refresh";
 
   private final AuthService authService;
   private final JwtService jwtService;
@@ -42,12 +54,19 @@ public class AuthController {
             result.accessToken(), result.refreshToken(), UserSummary.from(result.user()));
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, authCookie(result.accessToken()).toString())
+        .header(HttpHeaders.SET_COOKIE, refreshCookie(result.refreshToken()).toString())
         .body(body);
   }
 
   @PostMapping("/refresh")
-  public ResponseEntity<RefreshResponse> refresh(@RequestBody RefreshRequest request) {
-    String accessToken = authService.refresh(request.refreshToken());
+  public ResponseEntity<RefreshResponse> refresh(
+      @RequestBody(required = false) RefreshRequest request,
+      @CookieValue(value = REFRESH_COOKIE_NAME, required = false) String refreshCookie) {
+    String refreshToken =
+        request != null && request.refreshToken() != null && !request.refreshToken().isBlank()
+            ? request.refreshToken()
+            : refreshCookie;
+    String accessToken = authService.refresh(refreshToken);
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, authCookie(accessToken).toString())
         .body(new RefreshResponse(accessToken));
@@ -59,6 +78,7 @@ public class AuthController {
     authService.logout(principal.userId());
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, clearedAuthCookie().toString())
+        .header(HttpHeaders.SET_COOKIE, clearedRefreshCookie().toString())
         .body(new LogoutResponse(true));
   }
 
@@ -118,6 +138,28 @@ public class AuthController {
         .secure(true)
         .sameSite("Strict")
         .path("/")
+        .maxAge(0)
+        .build();
+  }
+
+  // Path-scoped to the auth endpoints only — the refresh token never rides along on ordinary
+  // API requests, it's presented exclusively to /api/v1/auth/refresh.
+  private ResponseCookie refreshCookie(String refreshToken) {
+    return ResponseCookie.from(REFRESH_COOKIE_NAME, refreshToken)
+        .httpOnly(true)
+        .secure(true)
+        .sameSite("Strict")
+        .path("/api/v1/auth")
+        .maxAge(Duration.ofSeconds(jwtService.refreshTokenTtlSeconds()))
+        .build();
+  }
+
+  private ResponseCookie clearedRefreshCookie() {
+    return ResponseCookie.from(REFRESH_COOKIE_NAME, "")
+        .httpOnly(true)
+        .secure(true)
+        .sameSite("Strict")
+        .path("/api/v1/auth")
         .maxAge(0)
         .build();
   }

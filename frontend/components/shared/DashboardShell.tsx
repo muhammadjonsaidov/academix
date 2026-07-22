@@ -40,20 +40,28 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const bootstrapSession = useAuthStore((state) => state.bootstrapSession);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // In-memory-only store means a fresh tab/hard reload loses the session even with a still-
-  // valid httpOnly cookie (proxy.ts would have already let the request through) — known gap,
-  // see CLAUDE.md "Reality checks". Redirect to login rather than render a broken shell.
+  // A hard reload wipes the in-memory session but keeps the httpOnly refresh cookie — try to
+  // silently restore before giving up and redirecting to login (this used to be an
+  // unconditional redirect, i.e. every F5 logged the user out).
   //
   // Navigation must happen in an effect, not directly in the render body — a real React
   // error caught by an actual browser test, not a lint rule: "Cannot update a component
   // (Router) while rendering a different component (DashboardShell)."
   useEffect(() => {
-    if (!user) {
-      router.replace("/login");
-    }
-  }, [user, router]);
+    if (user) return;
+    let cancelled = false;
+    bootstrapSession().then((restored) => {
+      if (!restored && !cancelled) {
+        router.replace("/login");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, router, bootstrapSession]);
 
   useEffect(() => {
     if (!isDrawerOpen) return;
@@ -69,7 +77,9 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
   }, [isDrawerOpen]);
 
   if (!user) {
-    return null;
+    // Session bootstrap in flight — neutral blank shell beats a login flash for the common
+    // "restores fine" case.
+    return <div className="min-h-screen bg-background" />;
   }
 
   function handleLogout() {

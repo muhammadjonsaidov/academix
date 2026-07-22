@@ -31,15 +31,13 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       const refreshToken = useAuthStore.getState().refreshToken;
 
-      if (!refreshToken) {
-        useAuthStore.getState().logout();
-        return Promise.reject(error);
-      }
-
       try {
+        // With no in-memory refresh token (fresh page load racing session bootstrap), an
+        // empty body still works: the backend falls back to the httpOnly academix_refresh
+        // cookie, which withCredentials carries along.
         const { data } = await axios.post<RefreshResponse>(
           `${apiClient.defaults.baseURL}/auth/refresh`,
-          { refreshToken },
+          refreshToken ? { refreshToken } : {},
           { withCredentials: true },
         );
         useAuthStore.getState().setAccessToken(data.accessToken);
