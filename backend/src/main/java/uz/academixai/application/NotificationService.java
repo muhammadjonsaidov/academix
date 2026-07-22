@@ -89,9 +89,19 @@ public class NotificationService {
     }
   }
 
-  /** Deviation: no inbox endpoint is documented anywhere in academix_tz.md — flagged, not spec. */
-  public List<Notification> listForUser(UUID userId) {
-    return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+  private static final int MAX_INBOX_PAGE = 100;
+
+  /**
+   * Deviation: no inbox endpoint is documented anywhere in academix_tz.md — flagged, not spec.
+   * Server-side capped: an inbox that only ever grows was returning every row on every bell
+   * render — the popover only shows the latest anyway.
+   */
+  public List<Notification> listForUser(UUID userId, int limit) {
+    int pageSize = Math.max(1, Math.min(limit, MAX_INBOX_PAGE));
+    return notificationRepository
+        .findByUserIdOrderByCreatedAtDesc(
+            userId, org.springframework.data.domain.PageRequest.of(0, pageSize))
+        .stream()
         .map(NotificationEntity::toDomain)
         .toList();
   }

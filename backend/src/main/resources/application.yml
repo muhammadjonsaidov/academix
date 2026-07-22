@@ -61,6 +61,11 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  # Gzip JSON/text responses over 1KB — analytics/list payloads shrink several-fold for free.
+  compression:
+    enabled: true
+    mime-types: application/json,text/plain,text/html
+    min-response-size: 1024
 
 management:
   endpoints:

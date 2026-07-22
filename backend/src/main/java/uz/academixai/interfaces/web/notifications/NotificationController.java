@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.application.NotificationService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
@@ -32,8 +33,10 @@ public class NotificationController {
 
   @GetMapping
   @PreAuthorize("isAuthenticated()")
-  public List<NotificationResponse> list(@AuthenticationPrincipal AcademixPrincipal principal) {
-    return notificationService.listForUser(principal.userId()).stream()
+  public List<NotificationResponse> list(
+      @AuthenticationPrincipal AcademixPrincipal principal,
+      @RequestParam(defaultValue = "30") int limit) {
+    return notificationService.listForUser(principal.userId(), limit).stream()
         .map(NotificationResponse::from)
         .toList();
   }
