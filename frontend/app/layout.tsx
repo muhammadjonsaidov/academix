@@ -37,7 +37,17 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {/* Apply the saved theme before first paint — avoids a light-mode flash for dark-mode
+            users on every reload. Reads the same key ThemeToggle writes. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(localStorage.getItem('academix-theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}",
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

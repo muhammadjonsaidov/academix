@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/shared/NotificationBell";
 import { TelegramConnect } from "@/components/shared/TelegramConnect";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import {
   NAV_CONFIG,
   ROLE_ACCENT_CLASSES,
@@ -156,6 +157,7 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <TelegramConnect />
             <NotificationBell />
             <UserMenu
