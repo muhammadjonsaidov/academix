@@ -90,8 +90,8 @@ public interface GradeRepository extends JpaRepository<GradeEntity, UUID> {
   }
 
   /**
-   * {@code school-progress?period=monthly|semester} — bucketed by calendar month either way
-   * (Postgres has no native "semester" truncation); {@code period} instead controls the lookback
+   * {@code school-progress?period=monthly|quarter} — bucketed by calendar month either way
+   * (Postgres has no native "quarter" truncation); {@code period} instead controls the lookback
    * window via {@code since} (judgment call, see AdminAnalyticsService).
    */
   @Query(
@@ -117,7 +117,7 @@ public interface GradeRepository extends JpaRepository<GradeEntity, UUID> {
     long getGradedCount();
   }
 
-  /** Semester report (STUDENT type) — per-subject breakdown for one student. */
+  /** Quarter report (STUDENT type) — per-subject breakdown for one student. */
   @Query(
       value =
           """
@@ -151,7 +151,7 @@ public interface GradeRepository extends JpaRepository<GradeEntity, UUID> {
     int getTotalXp();
   }
 
-  /** Semester report (CLASS type) — per-student breakdown for one class. */
+  /** Quarter report (CLASS type) — per-student breakdown for one class. */
   @Query(
       value =
           """

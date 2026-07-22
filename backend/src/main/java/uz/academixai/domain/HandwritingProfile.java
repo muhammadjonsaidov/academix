@@ -21,4 +21,4 @@ public record HandwritingProfile(
     UUID lastResetByTeacherId,
     ResetReason lastResetReason,
     LocalDateTime lastResetAt,
-    int resetCountThisSemester) {}
+    int resetCountThisQuarter) {}

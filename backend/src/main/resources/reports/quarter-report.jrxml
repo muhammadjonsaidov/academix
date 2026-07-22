@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport name="semester-report" pageWidth="595" pageHeight="842" columnWidth="535"
+<jasperReport name="quarter-report" pageWidth="595" pageHeight="842" columnWidth="535"
               leftMargin="30" rightMargin="30" topMargin="30" bottomMargin="30">
 
     <!-- JasperReports 7.x replaced Digester/XSD-based JRXML with Jackson XML binding — confirmed

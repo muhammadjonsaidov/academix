@@ -27,17 +27,18 @@ import uz.academixai.interfaces.web.ApiException;
 /**
  * academix_tz.md's {@code ReportService} pseudocode ({@code generateStudentReport}/{@code
  * generateClassReport}/{@code generateSchoolReport} + {@code generatePDF}) — no window definition
- * exists for {@code semester} anywhere in any spec doc, so it's treated as an opaque display label
- * (e.g. "2025-2026 kuz"), not parsed into a date range; the underlying grade query instead reuses
- * {@code AdminAnalyticsService}'s "semester" lookback window (~180 days), same judgment call. PDF
- * is generated synchronously in the request (no queue) — report generation is a single
- * admin-triggered action over an already-small dataset, not a per-student fan-out like homework
- * grading, so the async/queue machinery elsewhere in this codebase doesn't apply here.
+ * exists for {@code quarter} anywhere in any spec doc, so it's treated as an opaque display label
+ * (e.g. "2025-2026-1"), not parsed into a date range; the underlying grade query instead reuses
+ * {@code AdminAnalyticsService}'s "quarter" lookback window (~90 days — a quarter is 1/4 of the
+ * academic year, not a semester's 1/2), same judgment call. PDF is generated synchronously in the
+ * request (no queue) — report generation is a single admin-triggered action over an already-small
+ * dataset, not a per-student fan-out like homework grading, so the async/queue machinery elsewhere
+ * in this codebase doesn't apply here.
  */
 @Service
 public class ReportService {
 
-  private static final int SEMESTER_WINDOW_DAYS = 180;
+  private static final int QUARTER_WINDOW_DAYS = 90;
   private static final DateTimeFormatter DISPLAY_FORMAT =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -67,12 +68,12 @@ public class ReportService {
   }
 
   public Report generate(
-      UUID schoolId, ReportType type, String semester, UUID targetId, UUID generatedByUserId) {
+      UUID schoolId, ReportType type, String quarter, UUID targetId, UUID generatedByUserId) {
     byte[] pdf =
         switch (type) {
-          case SCHOOL -> generateSchoolReportPdf(schoolId, semester);
-          case CLASS -> generateClassReportPdf(schoolId, requireTargetId(targetId), semester);
-          case STUDENT -> generateStudentReportPdf(schoolId, requireTargetId(targetId), semester);
+          case SCHOOL -> generateSchoolReportPdf(schoolId, quarter);
+          case CLASS -> generateClassReportPdf(schoolId, requireTargetId(targetId), quarter);
+          case STUDENT -> generateStudentReportPdf(schoolId, requireTargetId(targetId), quarter);
         };
 
     String key = "reports/%s/%s.pdf".formatted(schoolId, UUID.randomUUID());
@@ -83,7 +84,7 @@ public class ReportService {
             UUID.randomUUID(),
             schoolId,
             type,
-            semester,
+            quarter,
             targetId,
             key,
             generatedByUserId,
@@ -112,11 +113,11 @@ public class ReportService {
                         "Hisobot topilmadi.",
                         "ID ni tekshiring yoki ro'yxatni yangilang."));
     byte[] content = fileStorageService.download(report.fileUrl());
-    String fileName = "%s-%s.pdf".formatted(report.type(), report.semester());
+    String fileName = "%s-%s.pdf".formatted(report.type(), report.quarter());
     return new ReportDownload(fileName, content);
   }
 
-  private byte[] generateSchoolReportPdf(UUID schoolId, String semester) {
+  private byte[] generateSchoolReportPdf(UUID schoolId, String quarter) {
     String schoolName =
         schoolRepository.findById(schoolId).map(s -> s.toDomain().name()).orElse("");
     List<ClassProgressRow> classes = gradeRepository.classProgress(schoolId, null, windowSince());
@@ -131,8 +132,8 @@ public class ReportService {
                         String.valueOf(c.getStudentCount())))
             .toList();
     return reportGenerator.generatePdf(
-        "Maktab semestr hisoboti",
-        schoolName + " — " + semester,
+        "Maktab chorak hisoboti",
+        schoolName + " — " + quarter,
         LocalDateTime.now().format(DISPLAY_FORMAT),
         "O'rtacha ball",
         "Baholangan soni",
@@ -140,7 +141,7 @@ public class ReportService {
         rows);
   }
 
-  private byte[] generateClassReportPdf(UUID schoolId, UUID classId, String semester) {
+  private byte[] generateClassReportPdf(UUID schoolId, UUID classId, String quarter) {
     SchoolClassEntity schoolClass =
         classRepository
             .findByIdAndSchoolId(classId, schoolId)
@@ -158,8 +159,8 @@ public class ReportService {
                         String.valueOf(s.getTotalXp())))
             .toList();
     return reportGenerator.generatePdf(
-        "Sinf semestr hisoboti",
-        schoolClass.toDomain().fullName() + " — " + semester,
+        "Sinf chorak hisoboti",
+        schoolClass.toDomain().fullName() + " — " + quarter,
         LocalDateTime.now().format(DISPLAY_FORMAT),
         "O'rtacha ball",
         "Baholangan soni",
@@ -167,7 +168,7 @@ public class ReportService {
         rows);
   }
 
-  private byte[] generateStudentReportPdf(UUID schoolId, UUID studentUserId, String semester) {
+  private byte[] generateStudentReportPdf(UUID schoolId, UUID studentUserId, String quarter) {
     UserEntity student =
         userRepository.findById(studentUserId).orElseThrow(ReportService::studentNotFound);
     List<SubjectProgressRow> subjects =
@@ -183,8 +184,8 @@ public class ReportService {
                         ""))
             .toList();
     return reportGenerator.generatePdf(
-        "O'quvchi semestr hisoboti",
-        student.toDomain().firstName() + " " + student.toDomain().lastName() + " — " + semester,
+        "O'quvchi chorak hisoboti",
+        student.toDomain().firstName() + " " + student.toDomain().lastName() + " — " + quarter,
         LocalDateTime.now().format(DISPLAY_FORMAT),
         "O'rtacha ball",
         "Baholangan soni",
@@ -193,7 +194,7 @@ public class ReportService {
   }
 
   private LocalDateTime windowSince() {
-    return LocalDateTime.now().minusDays(SEMESTER_WINDOW_DAYS);
+    return LocalDateTime.now().minusDays(QUARTER_WINDOW_DAYS);
   }
 
   private static UUID requireTargetId(UUID targetId) {

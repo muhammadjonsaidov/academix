@@ -31,7 +31,7 @@ export default function AdminReportsPage() {
   const downloadReport = useReportStore((state) => state.downloadReport);
 
   const [type, setType] = useState<ReportType>("SCHOOL");
-  const [semester, setSemester] = useState("");
+  const [quarter, setQuarter] = useState("");
   const [targetId, setTargetId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,8 +47,8 @@ export default function AdminReportsPage() {
 
   async function handleGenerate() {
     setError(null);
-    if (!semester.trim()) {
-      setError("Semestrni kiriting.");
+    if (!quarter.trim()) {
+      setError("Chorakni kiriting.");
       return;
     }
     if (type !== "SCHOOL" && !targetId) {
@@ -58,7 +58,7 @@ export default function AdminReportsPage() {
     try {
       await generateReport({
         type,
-        semester: semester.trim(),
+        quarter: quarter.trim(),
         targetId: type === "SCHOOL" ? undefined : targetId,
       });
     } catch {
@@ -146,13 +146,13 @@ export default function AdminReportsPage() {
                 </FormField>
               ) : null}
 
-              <FormField label="Semestr" htmlFor="semester">
+              <FormField label="Chorak" htmlFor="quarter">
                 <input
-                  id="semester"
+                  id="quarter"
                   className={fieldClass}
-                  placeholder="2025-2026 kuz"
-                  value={semester}
-                  onChange={(e) => setSemester(e.target.value)}
+                  placeholder="2025-2026-1"
+                  value={quarter}
+                  onChange={(e) => setQuarter(e.target.value)}
                 />
               </FormField>
 
@@ -189,7 +189,7 @@ export default function AdminReportsPage() {
                   >
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">{TYPE_LABEL[r.type]}</Badge>
-                      <span className="font-medium">{r.semester}</span>
+                      <span className="font-medium">{r.quarter}</span>
                       <span className="font-data text-xs text-muted-foreground">
                         {new Date(r.generatedAt).toLocaleString()}
                       </span>

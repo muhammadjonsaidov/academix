@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminAnalyticsStore } from "@/stores/useAdminAnalyticsStore";
 
-type Period = "monthly" | "semester";
+type Period = "monthly" | "quarter";
 
 export default function AdminAnalyticsPage() {
   const [period, setPeriod] = useState<Period>("monthly");
@@ -33,11 +33,11 @@ export default function AdminAnalyticsPage() {
               Oylik
             </Button>
             <Button
-              variant={period === "semester" ? "default" : "outline"}
+              variant={period === "quarter" ? "default" : "outline"}
               size="sm"
-              onClick={() => setPeriod("semester")}
+              onClick={() => setPeriod("quarter")}
             >
-              Semestrlik
+              Choraklik
             </Button>
           </div>
         </div>

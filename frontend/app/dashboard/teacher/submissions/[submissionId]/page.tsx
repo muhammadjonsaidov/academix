@@ -93,7 +93,7 @@ export default function TeacherSubmissionDetailPage() {
         notes: resetNotes || undefined,
       });
       setResetResult(
-        `Profil qayta tiklandi: ${result.newProfileVersion} (bu semestrda ${result.resetCountThisSemester}-marta)`,
+        `Profil qayta tiklandi: ${result.newProfileVersion} (bu chorakda ${result.resetCountThisQuarter}-marta)`,
       );
       setResetNotes("");
     } catch (err) {

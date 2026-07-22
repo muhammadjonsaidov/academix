@@ -150,7 +150,7 @@ class HandwritingAnomalyServiceTest {
         status ->
             entityManager
                 .createNativeQuery(
-                    "INSERT INTO handwriting_profiles (id, student_id, reset_count_this_semester)"
+                    "INSERT INTO handwriting_profiles (id, student_id, reset_count_this_quarter)"
                         + " VALUES (:id, :studentId, :count)")
                 .setParameter("id", UUID.randomUUID())
                 .setParameter("studentId", studentId)

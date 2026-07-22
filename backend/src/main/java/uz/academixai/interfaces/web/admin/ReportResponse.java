@@ -8,7 +8,7 @@ import uz.academixai.domain.ReportType;
 public record ReportResponse(
     UUID id,
     ReportType type,
-    String semester,
+    String quarter,
     UUID targetId,
     UUID generatedBy,
     LocalDateTime generatedAt) {
@@ -17,7 +17,7 @@ public record ReportResponse(
     return new ReportResponse(
         report.id(),
         report.type(),
-        report.semester(),
+        report.quarter(),
         report.targetId(),
         report.generatedBy(),
         report.generatedAt());

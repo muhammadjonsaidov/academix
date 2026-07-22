@@ -225,7 +225,7 @@ class HandwritingServiceIntegrationTest {
             schoolId, studentId, teacherId, ResetReason.ILLNESS, "notes");
 
     assertThat(resetResult.newProfileVersion()).isEqualTo("v2");
-    assertThat(resetResult.resetCountThisSemester()).isEqualTo(1);
+    assertThat(resetResult.resetCountThisQuarter()).isEqualTo(1);
 
     Object[] row = fetchProfileRow();
     assertThat((Integer) row[0]).isZero(); // samples_count reset
@@ -277,7 +277,7 @@ class HandwritingServiceIntegrationTest {
     handwritingService.unlockReset(studentId);
 
     Object[] row = fetchProfileRow();
-    assertThat((Integer) row[3]).isZero(); // reset_count_this_semester
+    assertThat((Integer) row[3]).isZero(); // reset_count_this_quarter
   }
 
   private Object[] fetchProfileRow() {
@@ -285,7 +285,7 @@ class HandwritingServiceIntegrationTest {
         entityManager
             .createNativeQuery(
                 "SELECT samples_count, is_reliable, feature_vector::text,"
-                    + " reset_count_this_semester FROM handwriting_profiles WHERE student_id = :id")
+                    + " reset_count_this_quarter FROM handwriting_profiles WHERE student_id = :id")
             .setParameter("id", studentId)
             .getSingleResult();
   }

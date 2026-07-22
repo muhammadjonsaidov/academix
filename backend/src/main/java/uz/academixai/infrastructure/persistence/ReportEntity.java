@@ -26,7 +26,7 @@ public class ReportEntity {
   private ReportType type;
 
   @Column(nullable = false)
-  private String semester;
+  private String quarter;
 
   @Column(name = "target_id")
   private UUID targetId;
@@ -46,7 +46,7 @@ public class ReportEntity {
       UUID id,
       UUID schoolId,
       ReportType type,
-      String semester,
+      String quarter,
       UUID targetId,
       String fileUrl,
       UUID generatedBy,
@@ -54,7 +54,7 @@ public class ReportEntity {
     this.id = id;
     this.schoolId = schoolId;
     this.type = type;
-    this.semester = semester;
+    this.quarter = quarter;
     this.targetId = targetId;
     this.fileUrl = fileUrl;
     this.generatedBy = generatedBy;
@@ -66,7 +66,7 @@ public class ReportEntity {
         domain.id(),
         domain.schoolId(),
         domain.type(),
-        domain.semester(),
+        domain.quarter(),
         domain.targetId(),
         domain.fileUrl(),
         domain.generatedBy(),
@@ -74,6 +74,6 @@ public class ReportEntity {
   }
 
   public Report toDomain() {
-    return new Report(id, schoolId, type, semester, targetId, fileUrl, generatedBy, generatedAt);
+    return new Report(id, schoolId, type, quarter, targetId, fileUrl, generatedBy, generatedAt);
   }
 }

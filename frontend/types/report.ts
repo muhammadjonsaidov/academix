@@ -4,7 +4,7 @@ export type ReportType = "SCHOOL" | "CLASS" | "STUDENT";
 export interface Report {
   id: string;
   type: ReportType;
-  semester: string;
+  quarter: string;
   targetId: string | null;
   generatedBy: string;
   generatedAt: string;
@@ -12,6 +12,6 @@ export interface Report {
 
 export interface GenerateReportRequest {
   type: ReportType;
-  semester: string;
+  quarter: string;
   targetId?: string;
 }

@@ -26,7 +26,7 @@ interface ParentState {
   fetchHomework: (studentId: string) => Promise<void>;
   fetchSubmissions: (studentId: string) => Promise<void>;
   fetchGrades: (studentId: string) => Promise<void>;
-  downloadSemesterReport: (studentId: string) => Promise<void>;
+  downloadQuarterReport: (studentId: string) => Promise<void>;
 }
 
 // One store for the parent dashboard area — dashboard/children/overview/progress/homework/
@@ -87,14 +87,14 @@ export const useParentStore = create<ParentState>((set) => ({
 
   // Authenticated blob fetch — a plain <a href> can't carry the Authorization header (same
   // pattern as admin reports' download).
-  downloadSemesterReport: async (studentId) => {
-    const response = await apiClient.get(`/parent/children/${studentId}/semester-report/download`, {
+  downloadQuarterReport: async (studentId) => {
+    const response = await apiClient.get(`/parent/children/${studentId}/quarter-report/download`, {
       responseType: "blob",
     });
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement("a");
     link.href = url;
-    link.download = `semester-report-${studentId}.pdf`;
+    link.download = `quarter-report-${studentId}.pdf`;
     document.body.appendChild(link);
     link.click();
     link.remove();

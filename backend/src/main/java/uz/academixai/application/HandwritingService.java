@@ -29,7 +29,7 @@ import uz.academixai.interfaces.web.ApiException;
 /**
  * academix_backend_tdd.md §6.2/§6.3 — handwriting fingerprint check/update/reset, implementing that
  * section's pseudocode exactly (100% on first sample, running average for the first 5 samples, then
- * 0.1-alpha interpolation once reliable, 70%/60% thresholds, versioned reset with a 3-per-semester
+ * 0.1-alpha interpolation once reliable, 70%/60% thresholds, versioned reset with a 3-per-quarter
  * limit).
  *
  * <p><b>Architecture deviation from TZ §4's literal {@code checkHandwriting(studentId, imageUrl)}
@@ -56,7 +56,7 @@ public class HandwritingService {
   private static final float RELIABLE_UPDATE_THRESHOLD = 70.0f;
   private static final float MISMATCH_THRESHOLD = 60.0f;
   private static final float INTERPOLATION_ALPHA = 0.1f;
-  private static final int MAX_RESETS_PER_SEMESTER = 3;
+  private static final int MAX_RESETS_PER_QUARTER = 3;
 
   private final HandwritingProfileRepository profileRepository;
   private final HandwritingResetLogRepository resetLogRepository;
@@ -106,7 +106,7 @@ public class HandwritingService {
               null,
               null,
               null,
-              existing.map(HandwritingProfileEntity::getResetCountThisSemester).orElse(0));
+              existing.map(HandwritingProfileEntity::getResetCountThisQuarter).orElse(0));
       profileRepository.save(HandwritingProfileEntity.fromDomain(created));
       entityManager.flush();
       writeFeatureVector(studentId, currentFeatures);
@@ -157,12 +157,12 @@ public class HandwritingService {
     requireClassTeacher(schoolId, studentId, teacherId);
     Optional<HandwritingProfileEntity> existing = profileRepository.findByStudentId(studentId);
     int currentResetCount =
-        existing.map(HandwritingProfileEntity::getResetCountThisSemester).orElse(0);
-    if (currentResetCount >= MAX_RESETS_PER_SEMESTER) {
+        existing.map(HandwritingProfileEntity::getResetCountThisQuarter).orElse(0);
+    if (currentResetCount >= MAX_RESETS_PER_QUARTER) {
       throw new ApiException(
           HttpStatus.FORBIDDEN,
           "ERR_RESET_LIMIT_EXCEEDED",
-          "Bu semestrda reset limiti tugagan.",
+          "Bu chorakda reset limiti tugagan.",
           "Faqat administrator blokdan chiqarishi mumkin.");
     }
 
@@ -202,7 +202,7 @@ public class HandwritingService {
   }
 
   /**
-   * academix_tz.md §2.2 admin unlock — resets the semester counter after the 3-reset limit hit.
+   * academix_tz.md §2.2 admin unlock — resets the quarter counter after the 3-reset limit hit.
    * {@code noRollbackFor}: same reasoning as {@link #resetProfile} — the {@code ERR_NOT_FOUND}
    * guard throws before any write.
    */
@@ -235,7 +235,7 @@ public class HandwritingService {
     profileRepository.save(HandwritingProfileEntity.fromDomain(unlocked));
   }
 
-  public record ResetResult(String newProfileVersion, int resetCountThisSemester) {}
+  public record ResetResult(String newProfileVersion, int resetCountThisQuarter) {}
 
   /**
    * academix_tz.md §2.2 "faqat sinf rahbari" (only the class/homeroom teacher) — resolved via
@@ -288,7 +288,7 @@ public class HandwritingService {
             domain.lastResetByTeacherId(),
             domain.lastResetReason(),
             domain.lastResetAt(),
-            domain.resetCountThisSemester());
+            domain.resetCountThisQuarter());
     profileRepository.save(HandwritingProfileEntity.fromDomain(updated));
     entityManager.flush();
     writeFeatureVector(domain.studentId(), vector);

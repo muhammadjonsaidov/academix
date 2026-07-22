@@ -11,7 +11,7 @@ public record Report(
     UUID id,
     UUID schoolId,
     ReportType type,
-    String semester,
+    String quarter,
     UUID targetId,
     String fileUrl,
     UUID generatedBy,

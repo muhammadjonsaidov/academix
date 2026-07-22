@@ -195,7 +195,7 @@ export interface HandwritingResetRequest {
 
 export interface HandwritingResetResponse {
   newProfileVersion: string;
-  resetCountThisSemester: number;
+  resetCountThisQuarter: number;
 }
 
 // Exams: academix_tz.md §2.3 "Nazorat ishi" — GET (list) is a gap-fill deviation, see

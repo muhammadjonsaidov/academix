@@ -43,7 +43,7 @@ export default function ParentChildDetailPage() {
   const fetchProgress = useParentStore((state) => state.fetchProgress);
   const fetchGrades = useParentStore((state) => state.fetchGrades);
   const fetchHomework = useParentStore((state) => state.fetchHomework);
-  const downloadSemesterReport = useParentStore((state) => state.downloadSemesterReport);
+  const downloadQuarterReport = useParentStore((state) => state.downloadQuarterReport);
   const requestDataDeletion = useConsentStore((state) => state.requestDataDeletion);
 
   const [error, setError] = useState<string | null>(null);
@@ -136,10 +136,10 @@ export default function ParentChildDetailPage() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => downloadSemesterReport(studentId)}
+            onClick={() => downloadQuarterReport(studentId)}
           >
             <Download className="size-3.5" strokeWidth={1.75} />
-            Semestr hisobotini yuklab olish
+            Chorak hisobotini yuklab olish
           </Button>
         </CardContent>
       </Card>

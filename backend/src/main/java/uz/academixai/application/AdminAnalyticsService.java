@@ -15,9 +15,9 @@ import uz.academixai.infrastructure.persistence.GradeRepository.TeacherRankingRo
 
 /**
  * academix_tz.md §2.2 {@code GET /admin/analytics/*} — "faqat admin ko'radi" (admin-only comparison
- * views). {@code period} (monthly|semester) has no exact window definition anywhere in the spec
+ * views). {@code period} (monthly|quarter) has no exact window definition anywhere in the spec
  * beyond the enum values — judgment call: it controls the lookback window each query scores over
- * (monthly = last 30 days, semester = last ~6 months / half academic year), not a distinct
+ * (monthly = last 30 days, quarter = last ~90 days / 1/4 academic year), not a distinct
  * aggregation granularity. {@code school-progress}'s month-bucketed trend is unaffected by this
  * choice — see {@link GradeRepository#schoolProgress}'s Javadoc.
  */
@@ -25,7 +25,7 @@ import uz.academixai.infrastructure.persistence.GradeRepository.TeacherRankingRo
 public class AdminAnalyticsService {
 
   private static final int MONTHLY_WINDOW_DAYS = 30;
-  private static final int SEMESTER_WINDOW_DAYS = 180;
+  private static final int QUARTER_WINDOW_DAYS = 90;
 
   private final GradeRepository gradeRepository;
   private final AiUsageLogRepository aiUsageLogRepository;
@@ -62,7 +62,7 @@ public class AdminAnalyticsService {
   }
 
   private LocalDateTime windowSince(String period) {
-    int days = "semester".equalsIgnoreCase(period) ? SEMESTER_WINDOW_DAYS : MONTHLY_WINDOW_DAYS;
+    int days = "quarter".equalsIgnoreCase(period) ? QUARTER_WINDOW_DAYS : MONTHLY_WINDOW_DAYS;
     return LocalDateTime.now().minusDays(days);
   }
 }

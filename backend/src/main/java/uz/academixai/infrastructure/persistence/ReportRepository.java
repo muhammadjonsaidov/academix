@@ -14,7 +14,7 @@ public interface ReportRepository extends JpaRepository<ReportEntity, UUID> {
   Optional<ReportEntity> findByIdAndSchoolId(UUID id, UUID schoolId);
 
   /**
-   * {@code GET /parent/children/{id}/semester-report} — reuse a recently-generated STUDENT report
+   * {@code GET /parent/children/{id}/quarter-report} — reuse a recently-generated STUDENT report
    * rather than regenerating on every call; {@code generatedAfter} bounds "recent".
    */
   Optional<ReportEntity> findFirstByTypeAndTargetIdAndGeneratedAtAfterOrderByGeneratedAtDesc(

@@ -49,8 +49,8 @@ public class HandwritingProfileEntity {
   @Column(name = "last_reset_at")
   private LocalDateTime lastResetAt;
 
-  @Column(name = "reset_count_this_semester")
-  private int resetCountThisSemester;
+  @Column(name = "reset_count_this_quarter")
+  private int resetCountThisQuarter;
 
   protected HandwritingProfileEntity() {}
 
@@ -64,7 +64,7 @@ public class HandwritingProfileEntity {
       UUID lastResetByTeacherId,
       ResetReason lastResetReason,
       LocalDateTime lastResetAt,
-      int resetCountThisSemester) {
+      int resetCountThisQuarter) {
     this.id = id;
     this.studentId = studentId;
     this.samplesCount = samplesCount;
@@ -74,7 +74,7 @@ public class HandwritingProfileEntity {
     this.lastResetByTeacherId = lastResetByTeacherId;
     this.lastResetReason = lastResetReason;
     this.lastResetAt = lastResetAt;
-    this.resetCountThisSemester = resetCountThisSemester;
+    this.resetCountThisQuarter = resetCountThisQuarter;
   }
 
   /** {@code featureVector} is intentionally dropped — see class doc. */
@@ -89,7 +89,7 @@ public class HandwritingProfileEntity {
         domain.lastResetByTeacherId(),
         domain.lastResetReason(),
         domain.lastResetAt(),
-        domain.resetCountThisSemester());
+        domain.resetCountThisQuarter());
   }
 
   /** {@code featureVector} is always null here — callers needing it must read it separately. */
@@ -105,7 +105,7 @@ public class HandwritingProfileEntity {
         lastResetByTeacherId,
         lastResetReason,
         lastResetAt,
-        resetCountThisSemester);
+        resetCountThisQuarter);
   }
 
   public UUID getId() {
@@ -128,7 +128,7 @@ public class HandwritingProfileEntity {
     return profileVersion;
   }
 
-  public int getResetCountThisSemester() {
-    return resetCountThisSemester;
+  public int getResetCountThisQuarter() {
+    return resetCountThisQuarter;
   }
 }

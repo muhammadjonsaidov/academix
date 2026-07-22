@@ -38,7 +38,7 @@ public class AdminReportController {
         reportService.generate(
             principal.schoolId(),
             request.type(),
-            request.semester(),
+            request.quarter(),
             request.targetId(),
             principal.userId()));
   }

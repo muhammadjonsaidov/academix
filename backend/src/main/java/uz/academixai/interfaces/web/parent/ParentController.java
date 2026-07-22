@@ -50,14 +50,14 @@ public class ParentController {
     this.parentReportService = parentReportService;
   }
 
-  @GetMapping("/children/{studentId}/semester-report")
-  public ReportResponse semesterReport(
+  @GetMapping("/children/{studentId}/quarter-report")
+  public ReportResponse quarterReport(
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID studentId) {
-    return ReportResponse.from(parentReportService.semesterReport(principal.userId(), studentId));
+    return ReportResponse.from(parentReportService.quarterReport(principal.userId(), studentId));
   }
 
-  @GetMapping("/children/{studentId}/semester-report/download")
-  public ResponseEntity<byte[]> downloadSemesterReport(
+  @GetMapping("/children/{studentId}/quarter-report/download")
+  public ResponseEntity<byte[]> downloadQuarterReport(
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID studentId) {
     ReportDownload download = parentReportService.download(principal.userId(), studentId);
     return ResponseEntity.ok()

@@ -18,9 +18,9 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 /**
- * Compiles {@code reports/semester-report.jrxml} once at startup (compilation is the expensive step
+ * Compiles {@code reports/quarter-report.jrxml} once at startup (compilation is the expensive step
  * — filling/exporting is cheap per call) and reuses the compiled {@link JasperReport} for every
- * generated PDF. See {@code semester-report.jrxml}'s own comment for why one generic template
+ * generated PDF. See {@code quarter-report.jrxml}'s own comment for why one generic template
  * covers all 3 report types (SCHOOL/CLASS/STUDENT).
  */
 @Component
@@ -31,12 +31,12 @@ public class JasperReportGenerator {
   @PostConstruct
   void compileTemplate() {
     try (InputStream jrxml =
-        new ClassPathResource("reports/semester-report.jrxml").getInputStream()) {
+        new ClassPathResource("reports/quarter-report.jrxml").getInputStream()) {
       compiledReport = JasperCompileManager.compileReport(jrxml);
     } catch (IOException e) {
-      throw new UncheckedIOException("Failed to read semester-report.jrxml", e);
+      throw new UncheckedIOException("Failed to read quarter-report.jrxml", e);
     } catch (JRException e) {
-      throw new IllegalStateException("Failed to compile semester-report.jrxml", e);
+      throw new IllegalStateException("Failed to compile quarter-report.jrxml", e);
     }
   }
 
