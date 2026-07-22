@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { StatTile, StatTileSkeleton } from "@/components/shared/StatTile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAdminAnalyticsStore } from "@/stores/useAdminAnalyticsStore";
@@ -30,10 +31,7 @@ export default function AdminDashboardPage() {
   return (
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
-        <div>
-          <h2 className="font-heading text-xl font-semibold">Bosh sahifa</h2>
-          <p className="text-sm text-muted-foreground">Maktab bo&apos;yicha umumiy holat.</p>
-        </div>
+        <PageHeader title="Bosh sahifa" description="Maktab bo'yicha umumiy holat." />
 
         {error ? (
           <p className="text-sm text-destructive">{error}</p>
@@ -48,64 +46,32 @@ export default function AdminDashboardPage() {
           </div>
         ) : dashboard ? (
           <>
+            {/* Role tiles: no accent prop — the data-role layer resolves the admin hue. */}
             <div className="stagger-rise grid grid-cols-2 gap-4 lg:grid-cols-4">
-              <StatTile
-                label="O'quvchilar"
-                value={dashboard.totalStudents}
-                icon={GraduationCap}
-                accentClassName="bg-role-admin-muted text-role-admin"
-              />
-              <StatTile
-                label="O'qituvchilar"
-                value={dashboard.totalTeachers}
-                icon={Users}
-                accentClassName="bg-role-admin-muted text-role-admin"
-              />
-              <StatTile
-                label="Bugun faol"
-                value={dashboard.activeToday}
-                icon={TrendingUp}
-                accentClassName="bg-role-admin-muted text-role-admin"
-              />
+              <StatTile label="O'quvchilar" value={dashboard.totalStudents} icon={GraduationCap} />
+              <StatTile label="O'qituvchilar" value={dashboard.totalTeachers} icon={Users} />
+              <StatTile label="Bugun faol" value={dashboard.activeToday} icon={TrendingUp} />
               <StatTile
                 label="Topshirish darajasi (30 kun)"
                 value={`${dashboard.homeworkSubmissionRate}%`}
                 icon={ClipboardList}
-                accentClassName="bg-role-admin-muted text-role-admin"
               />
             </div>
 
+            {/* Severity tiles keep their SEMANTIC accents — never the role hue. */}
             <div className="grid gap-4 sm:grid-cols-2">
-              <Card>
-                <CardContent className="flex items-center gap-3 py-5">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-severity-high-bg text-severity-high">
-                    <AlertTriangle className="size-5" strokeWidth={1.75} />
-                  </span>
-                  <div>
-                    <p className="font-data text-2xl leading-none font-semibold">
-                      {dashboard.psychologicalAlerts.high}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Yuqori psixologik signallar
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="flex items-center gap-3 py-5">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-severity-medium-bg text-severity-medium">
-                    <AlertTriangle className="size-5" strokeWidth={1.75} />
-                  </span>
-                  <div>
-                    <p className="font-data text-2xl leading-none font-semibold">
-                      {dashboard.psychologicalAlerts.medium}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      O&apos;rta psixologik signallar
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <StatTile
+                label="Yuqori psixologik signallar"
+                value={dashboard.psychologicalAlerts.high}
+                icon={AlertTriangle}
+                accentClassName="bg-severity-high-bg text-severity-high"
+              />
+              <StatTile
+                label="O'rta psixologik signallar"
+                value={dashboard.psychologicalAlerts.medium}
+                icon={AlertTriangle}
+                accentClassName="bg-severity-medium-bg text-severity-medium"
+              />
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">

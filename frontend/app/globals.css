@@ -295,6 +295,59 @@
   --success-foreground: oklch(0.15 0.02 155);
 }
 
+/*
+ * Role-adaptive accent layer
+ * -----------------------------------------------------------------------
+ * DashboardShell stamps `data-role="ADMIN|TEACHER|..."` on its root wrapper;
+ * these rules remap the generic --accent-role* vars to that role's own token
+ * family. Because the underlying --role-* tokens already flip in `.dark`,
+ * light/dark both work with zero extra rules here. Components inside the
+ * shell use the generic utilities below (text-accent-role etc.) and pick up
+ * the right hue automatically — no per-page hardcoded role classes.
+ *
+ * Scope discipline: this is ATMOSPHERE (header rules, stat icon chips, role
+ * badges) — primary buttons/links stay ink, and semantic color systems
+ * (severity, AI-pipeline status, grading rails, success) are never remapped
+ * through these vars.
+ */
+[data-role="ADMIN"] {
+  --accent-role: var(--role-admin);
+  --accent-role-muted: var(--role-admin-muted);
+  --accent-role-foreground: var(--role-admin-foreground);
+}
+[data-role="TEACHER"] {
+  --accent-role: var(--role-teacher);
+  --accent-role-muted: var(--role-teacher-muted);
+  --accent-role-foreground: var(--role-teacher-foreground);
+}
+[data-role="STUDENT"] {
+  --accent-role: var(--role-student);
+  --accent-role-muted: var(--role-student-muted);
+  --accent-role-foreground: var(--role-student-foreground);
+}
+[data-role="PARENT"] {
+  --accent-role: var(--role-parent);
+  --accent-role-muted: var(--role-parent-muted);
+  --accent-role-foreground: var(--role-parent-foreground);
+}
+[data-role="PSYCHOLOGIST"] {
+  --accent-role: var(--role-psychologist);
+  --accent-role-muted: var(--role-psychologist-muted);
+  --accent-role-foreground: var(--role-psychologist-foreground);
+}
+
+/* Generic role-accent utilities — fall back to the neutral brand tokens if
+   used outside a [data-role] scope, so nothing ever renders transparent. */
+@utility text-accent-role {
+  color: var(--accent-role, var(--primary));
+}
+@utility bg-accent-role {
+  background-color: var(--accent-role, var(--primary));
+}
+@utility bg-accent-role-muted {
+  background-color: var(--accent-role-muted, var(--muted));
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

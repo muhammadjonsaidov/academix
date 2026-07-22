@@ -91,7 +91,9 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
   const groups = NAV_CONFIG[role];
 
   return (
-    <div className="flex min-h-screen bg-background">
+    // data-role drives the CSS role-accent layer in globals.css — everything inside
+    // resolves var(--accent-role)/var(--accent-role-muted) to this role's tokens.
+    <div data-role={role} className="flex min-h-screen bg-background">
       {/* Desktop persistent sidebar */}
       <aside className="hidden lg:flex lg:w-sidebar lg:shrink-0 lg:flex-col lg:border-r lg:border-sidebar-border lg:bg-sidebar">
         <SidebarBrand role={role} />

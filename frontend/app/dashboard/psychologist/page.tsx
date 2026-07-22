@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, CheckCircle2, Eye, HeartPulse } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { StatTile, StatTileSkeleton } from "@/components/shared/StatTile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePsychologyStore } from "@/stores/usePsychologyStore";
@@ -24,12 +25,10 @@ export default function PsychologistDashboardPage() {
   return (
     <DashboardShell role="PSYCHOLOGIST">
       <div className="space-y-6">
-        <div>
-          <h2 className="font-heading text-xl font-semibold">Bosh sahifa</h2>
-          <p className="text-sm text-muted-foreground">
-            Psixologik signallar va kuzatuv ro&apos;yxati bo&apos;yicha umumiy holat.
-          </p>
-        </div>
+        <PageHeader
+          title="Bosh sahifa"
+          description="Psixologik signallar va kuzatuv ro'yxati bo'yicha umumiy holat."
+        />
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
