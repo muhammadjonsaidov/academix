@@ -29,16 +29,19 @@ public class PollingService {
   private final TelegramApiClient apiClient;
   private final LinkTokenService linkTokenService;
   private final TelegramConnectionRepository connectionRepository;
+  private final BotCommandService commandService;
   private final StringRedisTemplate redis;
 
   public PollingService(
       TelegramApiClient apiClient,
       LinkTokenService linkTokenService,
       TelegramConnectionRepository connectionRepository,
+      BotCommandService commandService,
       StringRedisTemplate redis) {
     this.apiClient = apiClient;
     this.linkTokenService = linkTokenService;
     this.connectionRepository = connectionRepository;
+    this.commandService = commandService;
     this.redis = redis;
   }
 
@@ -60,13 +63,26 @@ public class PollingService {
 
   private void handleUpdate(JsonNode update) {
     JsonNode message = update.path("message");
-    String text = message.path("text").asText("");
-    if (!text.startsWith(START_PREFIX)) {
+    String text = message.path("text").asText("").trim();
+    long chatId = message.path("chat").path("id").asLong();
+    if (chatId == 0 || text.isEmpty()) {
       return;
     }
-    String token = text.substring(START_PREFIX.length()).trim();
-    long chatId = message.path("chat").path("id").asLong();
 
+    if (text.startsWith(START_PREFIX)) {
+      handleLink(message, chatId, text.substring(START_PREFIX.length()).trim());
+      return;
+    }
+
+    // Any other text (commands or free text) gets a command-router response — a bare
+    // "/start" with no token lands on the help text too.
+    if (text.startsWith("/")) {
+      String command = text.split("\\s+")[0].toLowerCase();
+      apiClient.sendMessage(chatId, commandService.handle(chatId, command));
+    }
+  }
+
+  private void handleLink(JsonNode message, long chatId, String token) {
     linkTokenService
         .consumeLinkToken(token)
         .ifPresentOrElse(
@@ -74,7 +90,9 @@ public class PollingService {
               String username = message.path("chat").path("username").asText(null);
               connectionRepository.upsertConnection(userId, chatId, username);
               apiClient.sendMessage(
-                  chatId, "Ulanish muvaffaqiyatli! Endi bildirishnomalarni shu yerda olasiz.");
+                  chatId,
+                  "Ulanish muvaffaqiyatli! Endi bildirishnomalarni shu yerda olasiz.\n\n"
+                      + BotCommandService.HELP_TEXT);
               log.info("Telegram connection established for user {}", userId);
             },
             () -> {
