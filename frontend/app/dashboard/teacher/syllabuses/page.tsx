@@ -4,6 +4,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Library } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { FileField } from "@/components/shared/FileField";
+import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,17 +71,13 @@ export default function TeacherSyllabusesPage() {
           <CardTitle>Yangi darslik yuklash</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1">
-              <label htmlFor="classId" className="text-sm font-medium">
-                Sinf
-              </label>
-              <select
+          <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <FormField label="Sinf" htmlFor="classId">
+              <SelectField
                 id="classId"
                 value={classId}
                 onChange={(e) => setClassId(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="" disabled>
                   Tanlang
@@ -89,18 +87,14 @@ export default function TeacherSyllabusesPage() {
                     {c.fullName}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="subjectId" className="text-sm font-medium">
-                Fan
-              </label>
-              <select
+              </SelectField>
+            </FormField>
+            <FormField label="Fan" htmlFor="subjectId">
+              <SelectField
                 id="subjectId"
                 value={subjectId}
                 onChange={(e) => setSubjectId(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="" disabled>
                   Tanlang
@@ -110,36 +104,32 @@ export default function TeacherSyllabusesPage() {
                     {s.name}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="title" className="text-sm font-medium">
-                Sarlavha
-              </label>
+              </SelectField>
+            </FormField>
+            <FormField label="Sarlavha" htmlFor="title" className="sm:col-span-2">
               <input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="file" className="text-sm font-medium">
-                Fayl (PDF, DOCX, JPG, PNG)
-              </label>
-              <input
+            </FormField>
+            <FormField label="Fayl" htmlFor="file" className="sm:col-span-2 lg:col-span-3">
+              <FileField
                 id="file"
-                type="file"
                 accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                 required
-                className="text-sm"
+                fileName={file?.name}
+                hint="PDF, DOCX, JPG yoki PNG"
               />
+            </FormField>
+            <div className="flex items-end sm:col-span-2 lg:col-span-1">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Yuklanmoqda..." : "Yuklash"}
+              </Button>
             </div>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Yuklanmoqda..." : "Yuklash"}
-            </Button>
           </form>
         </CardContent>
       </Card>

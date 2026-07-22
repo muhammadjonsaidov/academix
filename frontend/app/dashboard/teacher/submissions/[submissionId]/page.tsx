@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
 import { RefreshCw, UserCheck } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
+import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { SubmissionStatusBadge, submissionRailClass } from "@/components/shared/submission-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -226,38 +227,33 @@ export default function TeacherSubmissionDetailPage() {
           <p className="text-sm text-muted-foreground">
             Faqat shu sinf rahbari o&apos;qituvchisi qayta tiklashi mumkin (chorakda 3 martagacha).
           </p>
-          <form onSubmit={handleReset} className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1">
-              <label htmlFor="resetReason" className="text-sm font-medium">
-                Sabab
-              </label>
-              <select
+          <form onSubmit={handleReset} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <FormField label="Sabab" htmlFor="resetReason">
+              <SelectField
                 id="resetReason"
                 value={resetReason}
                 onChange={(e) => setResetReason(e.target.value as ResetReason)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 {RESET_REASONS.map((r) => (
                   <option key={r.value} value={r.value}>
                     {r.label}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="resetNotes" className="text-sm font-medium">
-                Izoh (ixtiyoriy)
-              </label>
+              </SelectField>
+            </FormField>
+            <FormField label="Izoh (ixtiyoriy)" htmlFor="resetNotes">
               <input
                 id="resetNotes"
                 value={resetNotes}
                 onChange={(e) => setResetNotes(e.target.value)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
+            </FormField>
+            <div className="flex items-end sm:col-span-2 lg:col-span-1">
+              <Button type="submit" disabled={isResetting} variant="secondary">
+                {isResetting ? "Yuborilmoqda..." : "Qayta tiklash"}
+              </Button>
             </div>
-            <Button type="submit" disabled={isResetting} variant="secondary">
-              {isResetting ? "Yuborilmoqda..." : "Qayta tiklash"}
-            </Button>
           </form>
           {resetResult ? <p className="text-sm text-success">{resetResult}</p> : null}
           {resetError ? <p className="text-sm text-destructive">{resetError}</p> : null}
@@ -278,11 +274,8 @@ export default function TeacherSubmissionDetailPage() {
             </p>
           ) : null}
 
-          <form onSubmit={handleGrade} className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1">
-              <label htmlFor="score" className="text-sm font-medium">
-                Ball (0-100)
-              </label>
+          <form onSubmit={handleGrade} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <FormField label="Ball (0-100)" htmlFor="score">
               <input
                 key={submissionId}
                 ref={scoreRef}
@@ -292,13 +285,10 @@ export default function TeacherSubmissionDetailPage() {
                 max={100}
                 defaultValue={defaultScore}
                 required
-                className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="fivePointGrade" className="text-sm font-medium">
-                Baho (2-5)
-              </label>
+            </FormField>
+            <FormField label="Baho (2-5)" htmlFor="fivePointGrade">
               <input
                 id="fivePointGrade"
                 type="number"
@@ -307,23 +297,22 @@ export default function TeacherSubmissionDetailPage() {
                 value={fivePointGrade}
                 onChange={(e) => setFivePointGrade(e.target.value)}
                 required
-                className="w-20 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="teacherComment" className="text-sm font-medium">
-                Izoh
-              </label>
+            </FormField>
+            <FormField label="Izoh" htmlFor="teacherComment">
               <input
                 id="teacherComment"
                 value={teacherComment}
                 onChange={(e) => setTeacherComment(e.target.value)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
+            </FormField>
+            <div className="flex items-end">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saqlanmoqda..." : "Baholash"}
+              </Button>
             </div>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saqlanmoqda..." : "Baholash"}
-            </Button>
           </form>
         </CardContent>
       </Card>

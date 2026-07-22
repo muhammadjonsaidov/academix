@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
-import { Fraunces, Geist_Mono, Inter } from "next/font/google";
+import { Fraunces, Geist_Mono, Manrope } from "next/font/google";
 import "./globals.css";
 
-// Body/UI grotesk — replaces Geist Sans.
-const inter = Inter({
-  variable: "--font-inter",
+// Body/UI face — Manrope (variable font, covers the 400-700 weights the UI uses).
+// Warmer/rounder than Inter, which sits better against Fraunces' serif headings on
+// the warm paper palette. Var renamed --font-inter → --font-body to match reality;
+// globals.css's @theme references updated in step.
+const manrope = Manrope({
+  variable: "--font-body",
   subsets: ["latin"],
 });
 
@@ -38,7 +41,7 @@ export default function RootLayout({
       // The pre-paint theme script below adds `dark` to this element before hydration —
       // an expected, deliberate server/client difference (standard theming pattern).
       suppressHydrationWarning
-      className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${manrope.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {/* Apply the saved theme before first paint — avoids a light-mode flash for dark-mode

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { HeartPulse, MessageCircleWarning } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { FormField, SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -74,15 +75,11 @@ export default function TeacherPsychologicalSignalsPage() {
         Faqat sinf rahbari sifatida biriktirilgan sinfingiz o&apos;quvchilari ko&apos;rinadi.
       </p>
 
-      <div className="mb-4 space-y-1">
-        <label htmlFor="severity" className="text-sm font-medium">
-          Daraja bo&apos;yicha filter
-        </label>
-        <select
+      <FormField label="Daraja bo'yicha filter" htmlFor="severity" className="mb-4 max-w-xs">
+        <SelectField
           id="severity"
           value={severityFilter}
           onChange={(e) => setSeverityFilter(e.target.value as SignalSeverity | "")}
-          className="block rounded-md border border-input bg-background px-3 py-2 text-sm"
         >
           <option value="">Barchasi</option>
           {(Object.keys(SEVERITY_LABEL) as SignalSeverity[]).map((s) => (
@@ -90,8 +87,8 @@ export default function TeacherPsychologicalSignalsPage() {
               {SEVERITY_LABEL[s]}
             </option>
           ))}
-        </select>
-      </div>
+        </SelectField>
+      </FormField>
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 

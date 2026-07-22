@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { MessageSquareText, Send, ShieldAlert } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
+import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -55,10 +56,9 @@ export default function AiChatPage() {
     <DashboardShell role="STUDENT">
       <h2 className="mb-4 font-heading text-lg font-semibold">AI Tutor</h2>
 
-      <div className="mb-4">
-        <label className="mb-1 block text-xs font-medium text-muted-foreground">Fan</label>
-        <select
-          className="rounded-md border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      <FormField label="Fan" htmlFor="chat-subject" className="mb-4 max-w-xs">
+        <SelectField
+          id="chat-subject"
           value={subject}
           onChange={(e) => setSubject(e.target.value as SubjectType | "GENERAL")}
         >
@@ -67,8 +67,8 @@ export default function AiChatPage() {
               {s.label}
             </option>
           ))}
-        </select>
-      </div>
+        </SelectField>
+      </FormField>
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 
@@ -107,7 +107,8 @@ export default function AiChatPage() {
 
       <div className="flex gap-2">
         <input
-          className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className={cn(fieldClass, "min-w-0 flex-1")}
+          aria-label="Savolingiz"
           placeholder="Savolingizni yozing..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}

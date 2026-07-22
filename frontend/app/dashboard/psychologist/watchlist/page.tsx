@@ -80,7 +80,7 @@ export default function PsychologistWatchlistPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3">
+            <form onSubmit={handleAdd} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <FormField label="O'quvchi ID" htmlFor="studentId">
                 <input
                   id="studentId"
@@ -88,7 +88,7 @@ export default function PsychologistWatchlistPage() {
                   onChange={(e) => setStudentId(e.target.value)}
                   required
                   placeholder="uuid"
-                  className={`${fieldClass} w-full max-w-72`}
+                  className={`${fieldClass} w-full`}
                 />
               </FormField>
               <FormField label="Sabab" htmlFor="reason">
@@ -96,12 +96,14 @@ export default function PsychologistWatchlistPage() {
                   id="reason"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className={`${fieldClass} w-full max-w-72`}
+                  className={`${fieldClass} w-full`}
                 />
               </FormField>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Qo'shilmoqda..." : "Qo'shish"}
-              </Button>
+              <div className="flex items-end sm:col-span-2 lg:col-span-1">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Qo'shilmoqda..." : "Qo'shish"}
+                </Button>
+              </div>
             </form>
             {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
           </CardContent>

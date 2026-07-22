@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { fieldClass, FormField } from "@/components/shared/FormField";
+import { FormField, SelectField } from "@/components/shared/FormField";
 import { CriticalNotifyNote, SEVERITY_BADGE_VARIANT, SEVERITY_LABEL, TYPE_LABEL } from "@/components/psychologist/severity";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -80,31 +80,29 @@ export default function PsychologistSignalsPage() {
         </div>
 
         <div className="flex flex-wrap gap-4">
-          <FormField label="Daraja" htmlFor="severity">
-            <select
+          <FormField label="Daraja" htmlFor="severity" className="w-48">
+            <SelectField
               id="severity"
               value={severityFilter}
               onChange={(e) => handleSeverityChange(e.target.value as SeverityFilterValue)}
-              className={fieldClass}
             >
               {SEVERITY_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
-            </select>
+            </SelectField>
           </FormField>
-          <FormField label="Holati" htmlFor="resolved">
-            <select
+          <FormField label="Holati" htmlFor="resolved" className="w-48">
+            <SelectField
               id="resolved"
               value={resolvedFilter}
               onChange={(e) => handleResolvedChange(e.target.value as "" | "true" | "false")}
-              className={fieldClass}
             >
               <option value="false">Ochiq</option>
               <option value="true">Hal qilingan</option>
               <option value="">Barchasi</option>
-            </select>
+            </SelectField>
           </FormField>
         </div>
 

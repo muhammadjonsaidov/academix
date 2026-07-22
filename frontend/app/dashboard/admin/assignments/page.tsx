@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link2, Trash2 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { fieldClass, FormField } from "@/components/shared/FormField";
+import { FormField, SelectField } from "@/components/shared/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -100,14 +100,13 @@ export default function AdminAssignmentsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
+            <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <FormField label="O'qituvchi" htmlFor="teacherId">
-                <select
+                <SelectField
                   id="teacherId"
                   value={teacherId}
                   onChange={(e) => setTeacherId(e.target.value)}
                   required
-                  className={fieldClass}
                 >
                   <option value="" disabled>
                     Tanlang
@@ -117,15 +116,14 @@ export default function AdminAssignmentsPage() {
                       {teacher.firstName} {teacher.lastName}
                     </option>
                   ))}
-                </select>
+                </SelectField>
               </FormField>
               <FormField label="Sinf" htmlFor="classId">
-                <select
+                <SelectField
                   id="classId"
                   value={classId}
                   onChange={(e) => setClassId(e.target.value)}
                   required
-                  className={fieldClass}
                 >
                   <option value="" disabled>
                     Tanlang
@@ -135,15 +133,14 @@ export default function AdminAssignmentsPage() {
                       {schoolClass.fullName}
                     </option>
                   ))}
-                </select>
+                </SelectField>
               </FormField>
               <FormField label="Fan" htmlFor="subjectId">
-                <select
+                <SelectField
                   id="subjectId"
                   value={subjectId}
                   onChange={(e) => setSubjectId(e.target.value)}
                   required
-                  className={fieldClass}
                 >
                   <option value="" disabled>
                     Tanlang
@@ -153,11 +150,13 @@ export default function AdminAssignmentsPage() {
                       {subject.name}
                     </option>
                   ))}
-                </select>
+                </SelectField>
               </FormField>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Qo'shilmoqda..." : "Biriktirish"}
-              </Button>
+              <div className="flex items-end sm:col-span-2 lg:col-span-3">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Qo'shilmoqda..." : "Biriktirish"}
+                </Button>
+              </div>
             </form>
             {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
           </CardContent>

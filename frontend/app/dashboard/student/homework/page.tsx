@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { FileField } from "@/components/shared/FileField";
+import { fieldClass } from "@/components/shared/FormField";
 import { HOMEWORK_STATUS_META, StatusLabel } from "@/components/shared/submission-status";
 import { useStudentStore } from "@/stores/useStudentStore";
 import type { StudentHomework, SubmissionType, SubmitHomeworkResponse } from "@/types/student";
@@ -92,15 +94,17 @@ function SubmitForm({ assignmentId, onDone }: { assignmentId: string; onDone: ()
           value={textContent}
           onChange={(e) => setTextContent(e.target.value)}
           placeholder="Yechimingizni yozing..."
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className={cn(fieldClass, "h-auto w-full py-2")}
         />
       )}
       {(type === "IMAGE" || type === "MIXED") && (
-        <input
-          type="file"
+        <FileField
+          id={`submit-image-${assignmentId}`}
           accept="image/jpeg,image/png"
           onChange={(e) => setImage(e.target.files?.[0] ?? null)}
-          className="text-sm"
+          fileName={image?.name}
+          hint="JPG yoki PNG rasm"
+          buttonLabel="Rasm tanlang"
         />
       )}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

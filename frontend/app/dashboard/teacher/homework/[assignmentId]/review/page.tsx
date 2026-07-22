@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { fieldClass } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -75,7 +76,8 @@ function UniqueTaskRow({ assignmentId, task }: { assignmentId: string; task: Uni
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          aria-label="Topshiriq matni"
+          className={`${fieldClass} h-auto w-full py-2`}
           rows={2}
         />
         {error ? <p className="text-sm text-destructive">{error}</p> : null}

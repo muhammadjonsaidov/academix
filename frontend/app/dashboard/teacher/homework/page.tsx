@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { BookOpen, Sparkles } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -150,18 +151,14 @@ export default function TeacherHomeworkPage() {
           <CardTitle>{editingId ? "Vazifani tahrirlash" : "Yangi vazifa yaratish"}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1">
-              <label htmlFor="classId" className="text-sm font-medium">
-                Sinf
-              </label>
-              <select
+          <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <FormField label="Sinf" htmlFor="classId">
+              <SelectField
                 id="classId"
                 value={classId}
                 onChange={(e) => setClassId(e.target.value)}
                 required
                 disabled={!!editingId}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
               >
                 <option value="" disabled>
                   Tanlang
@@ -171,19 +168,15 @@ export default function TeacherHomeworkPage() {
                     {c.fullName}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="subjectId" className="text-sm font-medium">
-                Fan
-              </label>
-              <select
+              </SelectField>
+            </FormField>
+            <FormField label="Fan" htmlFor="subjectId">
+              <SelectField
                 id="subjectId"
                 value={subjectId}
                 onChange={(e) => setSubjectId(e.target.value)}
                 required
                 disabled={!!editingId}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
               >
                 <option value="" disabled>
                   Tanlang
@@ -193,48 +186,36 @@ export default function TeacherHomeworkPage() {
                     {s.name}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="title" className="text-sm font-medium">
-                Sarlavha
-              </label>
+              </SelectField>
+            </FormField>
+            <FormField label="Sarlavha" htmlFor="title" className="sm:col-span-2">
               <input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="description" className="text-sm font-medium">
-                Tavsif
-              </label>
+            </FormField>
+            <FormField label="Tavsif" htmlFor="description" className="sm:col-span-2">
               <input
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="deadlineAt" className="text-sm font-medium">
-                Muddat
-              </label>
+            </FormField>
+            <FormField label="Muddat" htmlFor="deadlineAt">
               <input
                 id="deadlineAt"
                 type="datetime-local"
                 value={deadlineAt}
                 onChange={(e) => setDeadlineAt(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="maxScore" className="text-sm font-medium">
-                Maksimal ball
-              </label>
+            </FormField>
+            <FormField label="Maksimal ball" htmlFor="maxScore">
               <input
                 id="maxScore"
                 type="number"
@@ -242,26 +223,28 @@ export default function TeacherHomeworkPage() {
                 value={maxScore}
                 onChange={(e) => setMaxScore(e.target.value)}
                 required
-                className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
-            </div>
-            <div className="space-y-1">
-              <span className="block text-sm font-medium">Turi</span>
-              <div className="flex gap-3 py-2">
-                <label className="flex items-center gap-1 text-sm">
+            </FormField>
+            <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
+              <span className="text-sm font-medium">Turi</span>
+              <div className="flex h-9 items-center gap-4">
+                <label className="flex items-center gap-1.5 text-sm">
                   <input
                     type="radio"
                     name="type"
+                    className="accent-[var(--ink)]"
                     checked={type === "STANDARD"}
                     disabled={!!editingId}
                     onChange={() => setType("STANDARD")}
                   />
                   Standart
                 </label>
-                <label className="flex items-center gap-1 text-sm">
+                <label className="flex items-center gap-1.5 text-sm">
                   <input
                     type="radio"
                     name="type"
+                    className="accent-[var(--ink)]"
                     checked={type === "UNIQUE_GENERATED"}
                     disabled={!!editingId}
                     onChange={() => setType("UNIQUE_GENERATED")}
@@ -270,20 +253,22 @@ export default function TeacherHomeworkPage() {
                 </label>
               </div>
             </div>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting
-                ? editingId
-                  ? "Saqlanmoqda..."
-                  : "Yaratilmoqda..."
-                : editingId
-                  ? "Saqlash"
-                  : "Vazifa yaratish"}
-            </Button>
-            {editingId ? (
-              <Button type="button" variant="ghost" onClick={resetForm} disabled={isSubmitting}>
-                Bekor qilish
+            <div className="flex flex-wrap items-end gap-3 sm:col-span-2 lg:col-span-4">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting
+                  ? editingId
+                    ? "Saqlanmoqda..."
+                    : "Yaratilmoqda..."
+                  : editingId
+                    ? "Saqlash"
+                    : "Vazifa yaratish"}
               </Button>
-            ) : null}
+              {editingId ? (
+                <Button type="button" variant="ghost" onClick={resetForm} disabled={isSubmitting}>
+                  Bekor qilish
+                </Button>
+              ) : null}
+            </div>
           </form>
         </CardContent>
       </Card>

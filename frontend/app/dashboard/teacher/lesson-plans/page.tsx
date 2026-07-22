@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { NotebookPen, Sparkles } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -91,12 +92,13 @@ function LessonPlanCard({ plan }: { plan: LessonPlan }) {
             id={`edit-${plan.lessonPlanId}`}
             value={teacherEditedPlan}
             onChange={(e) => setTeacherEditedPlan(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            className={`${fieldClass} h-auto w-full py-2`}
             rows={3}
           />
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
+              className="accent-[var(--ink)]"
               checked={isApproved}
               onChange={(e) => setIsApproved(e.target.checked)}
             />
@@ -164,17 +166,13 @@ export default function TeacherLessonPlansPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleGenerate} className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1">
-              <label htmlFor="syllabusId" className="text-sm font-medium">
-                Darslik
-              </label>
-              <select
+          <form onSubmit={handleGenerate} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <FormField label="Darslik" htmlFor="syllabusId">
+              <SelectField
                 id="syllabusId"
                 value={syllabusId}
                 onChange={(e) => setSyllabusId(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="" disabled>
                   Tanlang
@@ -184,18 +182,14 @@ export default function TeacherLessonPlansPage() {
                     {s.title}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="classId" className="text-sm font-medium">
-                Sinf
-              </label>
-              <select
+              </SelectField>
+            </FormField>
+            <FormField label="Sinf" htmlFor="classId">
+              <SelectField
                 id="classId"
                 value={classId}
                 onChange={(e) => setClassId(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="" disabled>
                   Tanlang
@@ -205,36 +199,32 @@ export default function TeacherLessonPlansPage() {
                     {c.fullName}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="topic" className="text-sm font-medium">
-                Mavzu
-              </label>
+              </SelectField>
+            </FormField>
+            <FormField label="Mavzu" htmlFor="topic">
               <input
                 id="topic"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="lessonDate" className="text-sm font-medium">
-                Dars sanasi
-              </label>
+            </FormField>
+            <FormField label="Dars sanasi" htmlFor="lessonDate">
               <input
                 id="lessonDate"
                 type="date"
                 value={lessonDate}
                 onChange={(e) => setLessonDate(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
+            </FormField>
+            <div className="flex items-end sm:col-span-2 lg:col-span-4">
+              <Button type="submit" disabled={isGenerating}>
+                {isGenerating ? "Generatsiya qilinmoqda..." : "Reja generatsiya qilish"}
+              </Button>
             </div>
-            <Button type="submit" disabled={isGenerating}>
-              {isGenerating ? "Generatsiya qilinmoqda..." : "Reja generatsiya qilish"}
-            </Button>
           </form>
         </CardContent>
       </Card>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useExamStore } from "@/stores/useExamStore";
@@ -74,17 +75,13 @@ export default function TeacherExamsPage() {
           <CardTitle>Yangi imtihon yaratish</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1">
-              <label htmlFor="classId" className="text-sm font-medium">
-                Sinf
-              </label>
-              <select
+          <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <FormField label="Sinf" htmlFor="classId">
+              <SelectField
                 id="classId"
                 value={classId}
                 onChange={(e) => setClassId(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="" disabled>
                   Tanlang
@@ -94,18 +91,14 @@ export default function TeacherExamsPage() {
                     {c.fullName}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="subjectId" className="text-sm font-medium">
-                Fan
-              </label>
-              <select
+              </SelectField>
+            </FormField>
+            <FormField label="Fan" htmlFor="subjectId">
+              <SelectField
                 id="subjectId"
                 value={subjectId}
                 onChange={(e) => setSubjectId(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="" disabled>
                   Tanlang
@@ -115,37 +108,28 @@ export default function TeacherExamsPage() {
                     {s.name}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="title" className="text-sm font-medium">
-                Sarlavha
-              </label>
+              </SelectField>
+            </FormField>
+            <FormField label="Sarlavha" htmlFor="title" className="sm:col-span-2">
               <input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="examDate" className="text-sm font-medium">
-                Sana
-              </label>
+            </FormField>
+            <FormField label="Sana" htmlFor="examDate">
               <input
                 id="examDate"
                 type="date"
                 value={examDate}
                 onChange={(e) => setExamDate(e.target.value)}
                 required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
-            </div>
-            <div className="space-y-1">
-              <label htmlFor="maxScore" className="text-sm font-medium">
-                Maksimal ball
-              </label>
+            </FormField>
+            <FormField label="Maksimal ball" htmlFor="maxScore">
               <input
                 id="maxScore"
                 type="number"
@@ -153,12 +137,14 @@ export default function TeacherExamsPage() {
                 value={maxScore}
                 onChange={(e) => setMaxScore(e.target.value)}
                 required
-                className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={`${fieldClass} w-full`}
               />
+            </FormField>
+            <div className="flex items-end sm:col-span-2">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Yaratilmoqda..." : "Imtihon yaratish"}
+              </Button>
             </div>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Yaratilmoqda..." : "Imtihon yaratish"}
-            </Button>
           </form>
         </CardContent>
       </Card>

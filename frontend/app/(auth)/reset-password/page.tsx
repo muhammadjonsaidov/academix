@@ -4,6 +4,7 @@ import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GraduationCap, KeyRound } from "lucide-react";
+import { fieldClass } from "@/components/shared/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -93,7 +94,7 @@ function ResetPasswordForm() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    className={`${fieldClass} w-full`}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -107,7 +108,7 @@ function ResetPasswordForm() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    className={`${fieldClass} w-full`}
                   />
                 </div>
                 {error ? (

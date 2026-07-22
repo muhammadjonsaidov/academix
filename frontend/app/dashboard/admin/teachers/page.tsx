@@ -79,14 +79,14 @@ export default function AdminTeachersPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
+            <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <FormField label="Ism" htmlFor="firstName">
                 <input
                   id="firstName"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
-                  className={fieldClass}
+                  className={`${fieldClass} w-full`}
                 />
               </FormField>
               <FormField label="Familiya" htmlFor="lastName">
@@ -95,7 +95,7 @@ export default function AdminTeachersPage() {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   required
-                  className={fieldClass}
+                  className={`${fieldClass} w-full`}
                 />
               </FormField>
               <FormField label="Telefon raqam" htmlFor="phone">
@@ -106,12 +106,14 @@ export default function AdminTeachersPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
-                  className={fieldClass}
+                  className={`${fieldClass} w-full`}
                 />
               </FormField>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Taklif qilinmoqda..." : "Taklif qilish"}
-              </Button>
+              <div className="flex items-end sm:col-span-2 lg:col-span-3">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Taklif qilinmoqda..." : "Taklif qilish"}
+                </Button>
+              </div>
             </form>
             {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
           </CardContent>

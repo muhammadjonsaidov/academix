@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { AlertTriangle, Upload } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { FileField } from "@/components/shared/FileField";
+import { fieldClass, SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,7 +72,7 @@ function ExamSubmissionRow({ examId, submission }: { examId: string; submission:
             {submission.score} ({submission.fivePointGrade})
           </span>
         ) : (
-          <form onSubmit={handleGrade} className="flex flex-wrap items-end gap-2">
+          <form onSubmit={handleGrade} className="flex flex-wrap items-center gap-2">
             <input
               key={submission.submissionId}
               ref={scoreRef}
@@ -80,7 +82,8 @@ function ExamSubmissionRow({ examId, submission }: { examId: string; submission:
               defaultValue={defaultScore}
               required
               placeholder="Ball"
-              className="w-20 rounded-md border border-input bg-background px-2 py-1 text-sm"
+              aria-label="Ball (0-100)"
+              className={`${fieldClass} w-20`}
             />
             <input
               type="number"
@@ -89,15 +92,17 @@ function ExamSubmissionRow({ examId, submission }: { examId: string; submission:
               value={fivePointGrade}
               onChange={(e) => setFivePointGrade(e.target.value)}
               required
-              className="w-16 rounded-md border border-input bg-background px-2 py-1 text-sm"
+              aria-label="Baho (2-5)"
+              className={`${fieldClass} w-16`}
             />
             <input
               value={teacherComment}
               onChange={(e) => setTeacherComment(e.target.value)}
               placeholder="Izoh"
-              className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+              aria-label="Izoh"
+              className={`${fieldClass} w-40`}
             />
-            <Button type="submit" size="sm" disabled={isGrading}>
+            <Button type="submit" size="lg" disabled={isGrading}>
               {isGrading ? "..." : "Baholash"}
             </Button>
           </form>
@@ -203,22 +208,27 @@ export default function TeacherExamDetailPage() {
             Qog&apos;ozlarni ommaviy yuklash
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <input
-            type="file"
+        <CardContent className="space-y-4">
+          <FileField
+            id="bulk-upload-files"
             multiple
             accept="image/*"
             onChange={(e) => handleFilesChange(Array.from(e.target.files ?? []))}
+            fileName={files.length > 0 ? `${files.length} ta rasm tanlandi` : null}
+            hint="JPG yoki PNG rasmlar — bir nechta tanlash mumkin"
+            buttonLabel="Rasmlarni tanlang"
+            className="max-w-xl"
           />
           {files.length > 0 ? (
             <ul className="space-y-2 text-sm">
               {files.map((file, index) => (
                 <li key={`${file.name}-${index}`} className="flex flex-wrap items-center gap-2">
                   <span className="w-48 truncate">{file.name}</span>
-                  <select
+                  <SelectField
                     value={studentIds[index] ?? ""}
                     onChange={(e) => handleStudentIdChange(index, e.target.value)}
-                    className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+                    aria-label={`${file.name} uchun o'quvchi`}
+                    className="w-56"
                   >
                     <option value="" disabled>
                       O&apos;quvchini tanlang
@@ -228,7 +238,7 @@ export default function TeacherExamDetailPage() {
                         {s.firstName} {s.lastName}
                       </option>
                     ))}
-                  </select>
+                  </SelectField>
                 </li>
               ))}
             </ul>

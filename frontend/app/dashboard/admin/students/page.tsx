@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { fieldClass, FormField } from "@/components/shared/FormField";
+import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -205,14 +205,14 @@ export default function AdminStudentsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
+            <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <FormField label="Ism" htmlFor="firstName">
                 <input
                   id="firstName"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
-                  className={fieldClass}
+                  className={`${fieldClass} w-full`}
                 />
               </FormField>
               <FormField label="Familiya" htmlFor="lastName">
@@ -221,7 +221,7 @@ export default function AdminStudentsPage() {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   required
-                  className={fieldClass}
+                  className={`${fieldClass} w-full`}
                 />
               </FormField>
               <FormField label="Telefon raqam" htmlFor="phone">
@@ -232,16 +232,15 @@ export default function AdminStudentsPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
-                  className={fieldClass}
+                  className={`${fieldClass} w-full`}
                 />
               </FormField>
               <FormField label="Sinf" htmlFor="classId">
-                <select
+                <SelectField
                   id="classId"
                   value={classId}
                   onChange={(e) => setClassId(e.target.value)}
                   required
-                  className={fieldClass}
                 >
                   <option value="" disabled>
                     Tanlang
@@ -251,11 +250,13 @@ export default function AdminStudentsPage() {
                       {schoolClass.fullName}
                     </option>
                   ))}
-                </select>
+                </SelectField>
               </FormField>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Qo'shilmoqda..." : "O'quvchi qo'shish"}
-              </Button>
+              <div className="flex items-end sm:col-span-2 lg:col-span-4">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Qo'shilmoqda..." : "O'quvchi qo'shish"}
+                </Button>
+              </div>
             </form>
             {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
           </CardContent>
@@ -271,7 +272,7 @@ export default function AdminStudentsPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Ism yoki familiya"
-                  className={fieldClass}
+                  className={`${fieldClass} w-full`}
                 />
               </FormField>
               <Button type="submit" variant="outline" size="sm">
@@ -381,11 +382,10 @@ export default function AdminStudentsPage() {
                                   htmlFor={`transfer-class-${student.id}`}
                                   className="w-48"
                                 >
-                                  <select
+                                  <SelectField
                                     id={`transfer-class-${student.id}`}
                                     value={transferClassId}
                                     onChange={(e) => setTransferClassId(e.target.value)}
-                                    className={fieldClass}
                                   >
                                     <option value="" disabled>
                                       Tanlang
@@ -395,7 +395,7 @@ export default function AdminStudentsPage() {
                                         {schoolClass.fullName}
                                       </option>
                                     ))}
-                                  </select>
+                                  </SelectField>
                                 </FormField>
                                 <Button
                                   type="button"
@@ -440,7 +440,7 @@ export default function AdminStudentsPage() {
                                     placeholder="+998901234567"
                                     value={linkPhone}
                                     onChange={(e) => setLinkPhone(e.target.value)}
-                                    className={fieldClass}
+                                    className={`${fieldClass} w-full`}
                                   />
                                 </FormField>
                                 <FormField
@@ -448,13 +448,12 @@ export default function AdminStudentsPage() {
                                   htmlFor={`link-relation-${student.id}`}
                                   className="w-36"
                                 >
-                                  <select
+                                  <SelectField
                                     id={`link-relation-${student.id}`}
                                     value={linkRelation}
                                     onChange={(e) =>
                                       setLinkRelation(e.target.value as ParentRelation)
                                     }
-                                    className={fieldClass}
                                   >
                                     {(Object.keys(RELATION_LABELS) as ParentRelation[]).map(
                                       (relation) => (
@@ -463,7 +462,7 @@ export default function AdminStudentsPage() {
                                         </option>
                                       ),
                                     )}
-                                  </select>
+                                  </SelectField>
                                 </FormField>
                                 <Button
                                   type="button"

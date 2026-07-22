@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, FileBarChart, FileText } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { fieldClass, FormField } from "@/components/shared/FormField";
+import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,11 +93,10 @@ export default function AdminReportsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap items-end gap-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <FormField label="Turi" htmlFor="type">
-                <select
+                <SelectField
                   id="type"
-                  className={fieldClass}
                   value={type}
                   onChange={(e) => {
                     setType(e.target.value as ReportType);
@@ -107,14 +106,13 @@ export default function AdminReportsPage() {
                   <option value="SCHOOL">Maktab</option>
                   <option value="CLASS">Sinf</option>
                   <option value="STUDENT">O&apos;quvchi</option>
-                </select>
+                </SelectField>
               </FormField>
 
               {type === "CLASS" ? (
                 <FormField label="Sinf" htmlFor="targetClass">
-                  <select
+                  <SelectField
                     id="targetClass"
-                    className={fieldClass}
                     value={targetId}
                     onChange={(e) => setTargetId(e.target.value)}
                   >
@@ -124,15 +122,14 @@ export default function AdminReportsPage() {
                         {c.fullName}
                       </option>
                     ))}
-                  </select>
+                  </SelectField>
                 </FormField>
               ) : null}
 
               {type === "STUDENT" ? (
                 <FormField label="O'quvchi" htmlFor="targetStudent">
-                  <select
+                  <SelectField
                     id="targetStudent"
-                    className={fieldClass}
                     value={targetId}
                     onChange={(e) => setTargetId(e.target.value)}
                   >
@@ -142,23 +139,29 @@ export default function AdminReportsPage() {
                         {s.firstName} {s.lastName}
                       </option>
                     ))}
-                  </select>
+                  </SelectField>
                 </FormField>
               ) : null}
 
-              <FormField label="Chorak" htmlFor="quarter">
+              <FormField
+                label="Chorak"
+                htmlFor="quarter"
+                hint="O'quv yili va chorak, masalan: 2025-2026-1"
+              >
                 <input
                   id="quarter"
-                  className={fieldClass}
+                  className={`${fieldClass} w-full`}
                   placeholder="2025-2026-1"
                   value={quarter}
                   onChange={(e) => setQuarter(e.target.value)}
                 />
               </FormField>
 
-              <Button onClick={handleGenerate} disabled={isGenerating}>
-                {isGenerating ? "Yaratilmoqda..." : "Hisobot yaratish"}
-              </Button>
+              <div className="flex items-end sm:col-span-2 lg:col-span-4">
+                <Button onClick={handleGenerate} disabled={isGenerating}>
+                  {isGenerating ? "Yaratilmoqda..." : "Hisobot yaratish"}
+                </Button>
+              </div>
             </div>
             {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
           </CardContent>

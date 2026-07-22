@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ListChecks, Plus, Trash2 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
+import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTeacherStore } from "@/stores/useTeacherStore";
@@ -94,15 +95,11 @@ export default function TeacherGradingCriteriaPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-1">
-            <label htmlFor="subjectId" className="text-sm font-medium">
-              Fan
-            </label>
-            <select
+          <FormField label="Fan" htmlFor="subjectId" className="max-w-xs">
+            <SelectField
               id="subjectId"
               value={subjectId}
               onChange={(e) => setSubjectId(e.target.value)}
-              className="block rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="" disabled>
                 Tanlang
@@ -112,8 +109,8 @@ export default function TeacherGradingCriteriaPage() {
                   {s.name}
                 </option>
               ))}
-            </select>
-          </div>
+            </SelectField>
+          </FormField>
 
           {subjectId ? (
             <div className="space-y-3">
@@ -134,7 +131,8 @@ export default function TeacherGradingCriteriaPage() {
                         <input
                           value={row.name}
                           onChange={(e) => updateRow(i, { name: e.target.value })}
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          aria-label="Mezon nomi"
+                          className={`${fieldClass} w-full`}
                         />
                       </td>
                       <td className="py-2 pr-2">
@@ -144,14 +142,16 @@ export default function TeacherGradingCriteriaPage() {
                           max={100}
                           value={row.weightPercent}
                           onChange={(e) => updateRow(i, { weightPercent: Number(e.target.value) })}
-                          className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm font-data"
+                          aria-label="Og'irlik (%)"
+                          className={`${fieldClass} w-24 font-data`}
                         />
                       </td>
                       <td className="py-2 pr-2">
                         <input
                           value={row.description}
                           onChange={(e) => updateRow(i, { description: e.target.value })}
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          aria-label="Tavsif"
+                          className={`${fieldClass} w-full`}
                         />
                       </td>
                       <td className="py-2">

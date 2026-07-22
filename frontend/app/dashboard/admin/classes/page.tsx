@@ -108,8 +108,8 @@ export default function AdminClassesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
-              <FormField label="Sinf raqami" htmlFor="grade" className="w-24">
+            <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <FormField label="Sinf raqami" htmlFor="grade">
                 <input
                   id="grade"
                   type="number"
@@ -121,7 +121,7 @@ export default function AdminClassesPage() {
                   className={`${fieldClass} w-full`}
                 />
               </FormField>
-              <FormField label="Harfi" htmlFor="letter" className="w-24">
+              <FormField label="Harfi" htmlFor="letter">
                 <input
                   id="letter"
                   type="text"
@@ -132,9 +132,11 @@ export default function AdminClassesPage() {
                   className={`${fieldClass} w-full`}
                 />
               </FormField>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Qo'shilmoqda..." : "Sinf qo'shish"}
-              </Button>
+              <div className="flex items-end sm:col-span-2">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Qo'shilmoqda..." : "Sinf qo'shish"}
+                </Button>
+              </div>
             </form>
             {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
           </CardContent>

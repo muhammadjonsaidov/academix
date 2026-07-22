@@ -4,7 +4,8 @@ import { useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, FileSpreadsheet, ListChecks, Table2, Upload } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
-import { fieldClass } from "@/components/shared/FormField";
+import { FileField } from "@/components/shared/FileField";
+import { SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -113,13 +114,14 @@ export default function AdminStudentsImportPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <input
+              <FileField
+                id="import-file"
                 ref={fileInputRef}
-                type="file"
                 accept=".xlsx"
                 onChange={handleFileChange}
                 disabled={isLoading}
-                className="text-sm file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                hint="Excel fayl (.xlsx)"
+                className="max-w-xl"
               />
               {isLoading ? <Spinner label="Tahlil qilinmoqda" className="text-sm text-muted-foreground gap-2" /> : null}
             </CardContent>
@@ -146,10 +148,11 @@ export default function AdminStudentsImportPage() {
                     <tr key={field} className="border-b border-border last:border-0">
                       <td className="py-2 pr-4 font-medium">{FIELD_LABEL[field]}</td>
                       <td className="py-2">
-                        <select
+                        <SelectField
                           value={columnMapping[field] ?? ""}
                           onChange={(e) => setMapping(field, e.target.value)}
-                          className={fieldClass}
+                          aria-label={`${FIELD_LABEL[field]} ustuni`}
+                          className="w-64 max-w-full"
                         >
                           <option value="">— tanlanmagan —</option>
                           {detectedColumns.map((column) => (
@@ -157,7 +160,7 @@ export default function AdminStudentsImportPage() {
                               {column}
                             </option>
                           ))}
-                        </select>
+                        </SelectField>
                       </td>
                     </tr>
                   ))}
@@ -211,6 +214,7 @@ export default function AdminStudentsImportPage() {
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
+                  className="accent-[var(--ink)]"
                   checked={saveMappingAsTemplate}
                   onChange={(e) => setSaveMappingAsTemplate(e.target.checked)}
                 />
