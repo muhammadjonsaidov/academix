@@ -45,7 +45,7 @@ export default function StudentDashboardPage() {
         Salom, {dashboard.profile.firstName}! 👋
       </h2>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="stagger-rise mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard icon={Star} value={dashboard.profile.totalXp} label="Jami XP" />
         <StatCard icon={Flame} value={dashboard.profile.currentStreak} label="Joriy seriya (kun)" />
         <StatCard icon={Trophy} value={dashboard.profile.maxStreak} label="Eng uzun seriya" />

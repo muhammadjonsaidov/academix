@@ -56,14 +56,14 @@ export default function ParentDashboardPage() {
       ) : null}
 
       {dashboard && dashboard.children.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="stagger-rise grid gap-4 md:grid-cols-2">
           {dashboard.children.map((child) => (
             <Link
               key={child.studentId}
               href={`/dashboard/parent/children/${child.studentId}`}
               className="group block"
             >
-              <Card className="h-full transition-colors group-hover:border-role-parent">
+              <Card className="card-lift h-full transition-colors group-hover:border-role-parent">
                 <CardContent className="flex flex-col gap-3 pt-6">
                   <div className="flex items-start justify-between gap-2">
                     <div>

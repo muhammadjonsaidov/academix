@@ -63,7 +63,7 @@ export default function TeacherClassAnalyticsPage() {
                   <Link
                     key={s.studentId}
                     href={`/dashboard/teacher/students/${s.studentId}/progress`}
-                    className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/60"
+                    className="card-lift flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/60"
                   >
                     <span>
                       {s.firstName} {s.lastName}
@@ -88,7 +88,7 @@ export default function TeacherClassAnalyticsPage() {
                   <Link
                     key={s.studentId}
                     href={`/dashboard/teacher/students/${s.studentId}/progress`}
-                    className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/60"
+                    className="card-lift flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/60"
                   >
                     <span>
                       {s.firstName} {s.lastName}

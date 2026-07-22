@@ -37,8 +37,8 @@
   --color-graphite: var(--graphite);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
-  /* Falls back to body sans until a display face is wired in layout.tsx —
-     see the design-tokens reference for the exact follow-up snippet. */
+  /* Display face: Fraunces, wired via --font-heading-override in layout.tsx;
+     the var() fallback keeps headings legible if the font ever fails to load. */
   --font-heading: var(--font-heading-override, var(--font-inter));
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -382,4 +382,156 @@
 @utility font-data {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Motion system: "ink settles onto paper"
+ * -----------------------------------------------------------------------
+ * One vocabulary, three moves, all opt-in and all killed by the global
+ * prefers-reduced-motion rule above:
+ *   rise       content settles up-and-in on mount (page/route transitions)
+ *   ink-draw   an InkMark stroke draws itself — the signature moment,
+ *              reserved for "the AI just marked this" reveals
+ *   stamp-in   a grade/badge stamps down onto the sheet
+ * Durations stay under 400ms; easing is a single shared "settle" curve so
+ * every animated element in the app decelerates the same way.
+ */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ink-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: scale(1.35) rotate(-12deg);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(-6deg);
+  }
+}
+
+@utility animate-rise {
+  animation: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Per-child staggered rise for card grids / list pages: apply to the parent,
+   children animate in reading order. Delay caps at the 12th child so a long
+   table doesn't keep the user waiting — everything later lands together. */
+@utility stagger-rise {
+  > * {
+    animation: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  > :nth-child(2) {
+    animation-delay: 40ms;
+  }
+  > :nth-child(3) {
+    animation-delay: 80ms;
+  }
+  > :nth-child(4) {
+    animation-delay: 120ms;
+  }
+  > :nth-child(5) {
+    animation-delay: 160ms;
+  }
+  > :nth-child(6) {
+    animation-delay: 200ms;
+  }
+  > :nth-child(7) {
+    animation-delay: 240ms;
+  }
+  > :nth-child(8) {
+    animation-delay: 280ms;
+  }
+  > :nth-child(9) {
+    animation-delay: 320ms;
+  }
+  > :nth-child(10) {
+    animation-delay: 360ms;
+  }
+  > :nth-child(11) {
+    animation-delay: 400ms;
+  }
+  > :nth-child(n + 12) {
+    animation-delay: 440ms;
+  }
+}
+
+/* Draws an InkMark's strokes (see ink-mark.tsx — paths carry pathLength=1).
+   Two strokes of a cross draw in sequence, like a real pen lifting between
+   them. Opt-in via <InkMark draw />. */
+.ink-draw path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: ink-draw 0.4s ease-out forwards;
+  animation-delay: var(--ink-draw-delay, 0s);
+}
+.ink-draw path:nth-child(2) {
+  animation-delay: calc(var(--ink-draw-delay, 0s) + 0.28s);
+}
+
+@utility animate-stamp-in {
+  animation: stamp-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Hover treatment for clickable cards/rows: the sheet lifts a hair off the
+   desk and its edge sharpens toward ink — transform/shadow only, no color
+   flood, so the grading rail and status tints stay legible. */
+@utility card-lift {
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.18s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 1px 2px oklch(0 0 0 / 0.04),
+      0 4px 12px oklch(0 0 0 / 0.07);
+    border-color: color-mix(in oklch, var(--ink) 28%, var(--border));
+  }
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px oklch(0 0 0 / 0.05);
+  }
+}
+
+/*
+ * Exercise-book sheet — landing/hero prop (see app/page.tsx). Ruled lines +
+ * the red margin rule of a real daftar page, drawn with gradients so it
+ * scales to any size. --sheet-rule spacing matches the hero's line-height.
+ */
+@utility notebook-sheet {
+  --sheet-rule: 2rem;
+  background-color: var(--card);
+  background-image:
+    linear-gradient(
+      to right,
+      transparent calc(2.75rem - 1px),
+      color-mix(in oklch, var(--pen-red) 45%, transparent) calc(2.75rem - 1px),
+      color-mix(in oklch, var(--pen-red) 45%, transparent) 2.75rem,
+      transparent 2.75rem
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(var(--sheet-rule) - 1px),
+      color-mix(in oklch, var(--ink) 12%, transparent) calc(var(--sheet-rule) - 1px),
+      color-mix(in oklch, var(--ink) 12%, transparent) var(--sheet-rule)
+    );
 }

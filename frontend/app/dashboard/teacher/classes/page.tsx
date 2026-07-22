@@ -48,7 +48,7 @@ export default function TeacherClassesPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {classes.map((c) => (
             <Link key={c.id} href={`/dashboard/teacher/classes/${c.id}/analytics`}>
-              <Card className="h-full transition-colors hover:bg-muted/40">
+              <Card className="card-lift h-full transition-colors hover:bg-muted/40">
                 <CardContent className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-role-teacher-muted text-role-teacher">

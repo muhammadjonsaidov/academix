@@ -161,7 +161,11 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
             </Button>
           </div>
         </header>
-        <main className="flex-1 p-6">{children}</main>
+        {/* Keyed by pathname so client-side route changes re-run the rise
+            animation — the new page settles in instead of hard-swapping. */}
+        <main key={pathname} className="animate-rise flex-1 p-6">
+          {children}
+        </main>
       </div>
     </div>
   );

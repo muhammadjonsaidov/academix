@@ -46,7 +46,7 @@ export default function StudentExamsPage() {
           {studentExams.map((exam) => (
             <Link key={exam.examId} href={`/dashboard/student/exams/${exam.examId}`}>
               <Card
-                className={cn("transition-colors hover:bg-muted/40", exam.myGrade && "rail-verified")}
+                className={cn("card-lift transition-colors hover:bg-muted/40", exam.myGrade && "rail-verified")}
               >
                 <CardContent className="flex items-center justify-between gap-3">
                   <div className="min-w-0">

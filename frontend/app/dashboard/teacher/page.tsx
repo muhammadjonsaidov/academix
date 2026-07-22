@@ -34,7 +34,7 @@ export default function TeacherDashboardPage() {
 
       {dashboard ? (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="stagger-rise mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard
               icon={ClipboardCheck}
               value={dashboard.pendingSubmissions}
@@ -61,7 +61,7 @@ export default function TeacherDashboardPage() {
                 <Link
                   key={c.classId}
                   href={`/dashboard/teacher/classes/${c.classId}/analytics`}
-                  className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/60"
+                  className="card-lift flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm transition-colors hover:bg-muted/60"
                 >
                   <span className="font-medium">{c.className}</span>
                   <span className="font-data text-muted-foreground">

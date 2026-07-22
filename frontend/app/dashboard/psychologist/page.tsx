@@ -42,7 +42,7 @@ export default function PsychologistDashboardPage() {
           </div>
         ) : dashboard ? (
           <>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="stagger-rise grid grid-cols-2 gap-4 lg:grid-cols-4">
               <StatTile
                 label="Kritik"
                 value={dashboard.criticalSignals}

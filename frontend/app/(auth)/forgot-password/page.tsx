@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <main className="flex min-h-screen flex-1 items-center justify-center bg-background p-4">
-      <div className="w-full max-w-sm">
+      <div className="animate-rise w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
           <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <GraduationCap className="size-6" strokeWidth={1.75} />

@@ -48,7 +48,7 @@ export default function AdminDashboardPage() {
           </div>
         ) : dashboard ? (
           <>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="stagger-rise grid grid-cols-2 gap-4 lg:grid-cols-4">
               <StatTile
                 label="O'quvchilar"
                 value={dashboard.totalStudents}

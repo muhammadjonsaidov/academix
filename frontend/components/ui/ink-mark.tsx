@@ -5,6 +5,12 @@ interface InkMarkProps extends React.ComponentProps<"svg"> {
   /** Accessible label. Omit for a purely decorative mark (e.g. sitting next
    *  to text that already says "to'g'ri"/"xato") — it's then aria-hidden. */
   label?: string
+  /** Animate the stroke drawing itself on mount (the "AI just marked this"
+   *  reveal — see .ink-draw in globals.css). Off by default: a list of
+   *  twenty marks all drawing at once is noise, one mark appearing after a
+   *  grade loads is the signature. Respects prefers-reduced-motion via the
+   *  global rule. */
+  draw?: boolean
 }
 
 /**
@@ -21,7 +27,7 @@ interface InkMarkProps extends React.ComponentProps<"svg"> {
  * utilities added alongside the shared --success/--destructive tokens —
  * override via className only if a call site has a specific reason to.
  */
-function InkMark({ variant, label, className, ...props }: InkMarkProps) {
+function InkMark({ variant, label, draw, className, ...props }: InkMarkProps) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -32,13 +38,17 @@ function InkMark({ variant, label, className, ...props }: InkMarkProps) {
       className={cn(
         "inline-block size-[1.1em] shrink-0 align-[-0.15em]",
         variant === "check" ? "text-chalk-green" : "text-pen-red",
+        draw && "ink-draw",
         className
       )}
       {...props}
     >
+      {/* pathLength=1 normalizes stroke-dasharray for the .ink-draw
+          animation regardless of each path's true geometric length. */}
       {variant === "check" ? (
         <path
           d="M4 13c1.8 2.2 3.6 4.4 5.7 6.3C13.6 14 17.1 8.6 20.5 4.2"
+          pathLength={1}
           stroke="currentColor"
           strokeWidth={2.5}
           strokeLinecap="round"
@@ -48,12 +58,14 @@ function InkMark({ variant, label, className, ...props }: InkMarkProps) {
         <>
           <path
             d="M5 5.3c4.6 4.7 9.2 9.4 14.2 13.5"
+            pathLength={1}
             stroke="currentColor"
             strokeWidth={2.5}
             strokeLinecap="round"
           />
           <path
             d="M19.2 5.6c-4.8 4.5-9.6 9-14.5 12.9"
+            pathLength={1}
             stroke="currentColor"
             strokeWidth={2.5}
             strokeLinecap="round"

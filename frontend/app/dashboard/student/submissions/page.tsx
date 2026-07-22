@@ -48,7 +48,7 @@ export default function StudentSubmissionsPage() {
             const meta = FULL_STATUS_META[s.status];
             return (
               <Link key={s.submissionId} href={`/dashboard/student/submissions/${s.submissionId}`}>
-                <Card className={cn("transition-colors hover:bg-muted/40", meta.rail || undefined)}>
+                <Card className={cn("card-lift transition-colors hover:bg-muted/40", meta.rail || undefined)}>
                   <CardContent className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <span className="font-data text-sm text-muted-foreground">
