@@ -94,17 +94,17 @@ public class ParentDashboardService {
             .map(ParentStudentLink::biometricConsentGiven)
             .orElse(false);
     ChildSummary summary = buildSummary(studentId, consentGiven);
-    UUID schoolId =
+    // Same class-less-student guard as buildSummary — filter on classId, not just schoolId.
+    List<StudentHomeworkItem> pendingHomework =
         studentProfileRepository
             .findByUserId(studentId)
-            .map(StudentProfileEntity::getSchoolId)
-            .orElse(null);
-    List<StudentHomeworkItem> pendingHomework =
-        schoolId == null
-            ? List.of()
-            : studentSubmissionService.listHomework(schoolId, studentId).stream()
-                .filter(h -> "PENDING".equals(h.submissionStatus()))
-                .toList();
+            .filter(p -> p.getClassId() != null)
+            .map(
+                p ->
+                    studentSubmissionService.listHomework(p.getSchoolId(), studentId).stream()
+                        .filter(h -> "PENDING".equals(h.submissionStatus()))
+                        .toList())
+            .orElse(List.of());
     List<RecentGrade> recentGrades =
         submissionRepository.findByStudentIdOrderBySubmittedAtDesc(studentId).stream()
             .filter(s -> s.toDomain().status() == SubmissionStatus.GRADED)
@@ -124,9 +124,9 @@ public class ParentDashboardService {
             .findById(studentId)
             .map(u -> u.getFirstName() + " " + u.getLastName())
             .orElse("");
+    Optional<StudentProfileEntity> profile = studentProfileRepository.findByUserId(studentId);
     String className =
-        studentProfileRepository
-            .findByUserId(studentId)
+        profile
             .map(StudentProfileEntity::getClassId)
             .flatMap(classRepository::findById)
             .map(SchoolClassEntity::getFullName)
@@ -137,11 +137,13 @@ public class ParentDashboardService {
             .findFirst()
             .map(s -> s.toDomain().submittedAt().toLocalDate().equals(today))
             .orElse(false);
+    // A student with no class assignment yet (classId null) legitimately has no homework —
+    // listHomework's requireStudentClassId would 403 the parent's whole children list otherwise,
+    // confirmed by a real request against seeded class-less students.
     int pendingHomeworkCount =
-        studentProfileRepository
-            .findByUserId(studentId)
-            .map(StudentProfileEntity::getSchoolId)
-            .map(schoolId -> studentSubmissionService.listHomework(schoolId, studentId))
+        profile
+            .filter(p -> p.getClassId() != null)
+            .map(p -> studentSubmissionService.listHomework(p.getSchoolId(), studentId))
             .map(
                 list ->
                     (int) list.stream().filter(h -> "PENDING".equals(h.submissionStatus())).count())
