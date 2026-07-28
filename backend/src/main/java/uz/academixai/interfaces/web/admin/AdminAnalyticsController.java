@@ -43,8 +43,7 @@ public class AdminAnalyticsController {
       @AuthenticationPrincipal AcademixPrincipal principal,
       @RequestParam(required = false) UUID subjectId,
       @RequestParam(required = false) String period) {
-    String key =
-        "analytics:classes:%s:%s:%s".formatted(principal.schoolId(), subjectId, period);
+    String key = "analytics:classes:%s:%s:%s".formatted(principal.schoolId(), subjectId, period);
     return cache.getOrLoad(
         key,
         CACHE_TTL,

@@ -1,5 +1,6 @@
 package uz.academixai.application;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -22,6 +23,7 @@ import uz.academixai.infrastructure.persistence.AiChatMessageEntity;
 import uz.academixai.infrastructure.persistence.AiChatMessageRepository;
 import uz.academixai.infrastructure.persistence.HomeworkAssignmentRepository;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
+import uz.academixai.infrastructure.ratelimit.RedisRateLimiter;
 import uz.academixai.interfaces.web.ApiException;
 
 /**
@@ -40,29 +42,53 @@ public class AiChatService {
 
   private static final int HISTORY_WINDOW = 50;
 
+  // academix_tz.md §5.3 — "AI chat: 30 ta so'rov/daqiqa/foydalanuvchi". Distinct from, and not
+  // replaced by, the monthly AI budget: the budget caps the SCHOOL's spend per month, so without
+  // a per-user limit one student in a loop can drain the whole 20% chat sub-budget in minutes and
+  // block every other student for the rest of the month. The budget's documented degradation
+  // order assumes traffic is spread across users; this is what makes that true.
+  private static final int MAX_CHATS_PER_MINUTE = 30;
+  private static final Duration CHAT_RATE_WINDOW = Duration.ofMinutes(1);
+
   private final AiChatMessageRepository chatRepository;
   private final HomeworkAssignmentRepository assignmentRepository;
   private final SubjectRepository subjectRepository;
   private final AiBudgetService budgetService;
   private final QwenAIClient qwenClient;
+  private final RedisRateLimiter rateLimiter;
 
   public AiChatService(
       AiChatMessageRepository chatRepository,
       HomeworkAssignmentRepository assignmentRepository,
       SubjectRepository subjectRepository,
       AiBudgetService budgetService,
-      QwenAIClient qwenClient) {
+      QwenAIClient qwenClient,
+      RedisRateLimiter rateLimiter) {
     this.chatRepository = chatRepository;
     this.assignmentRepository = assignmentRepository;
     this.subjectRepository = subjectRepository;
     this.budgetService = budgetService;
     this.qwenClient = qwenClient;
+    this.rateLimiter = rateLimiter;
   }
 
   public record ChatResult(String response, boolean isBlocked, ChatBlockReason blockReason) {}
 
   public ChatResult chat(
       UUID schoolId, UUID studentId, String subjectRaw, String message, UUID assignmentId) {
+    // First check in the method, before any DB read or budget accounting — the cheapest possible
+    // rejection, and it must precede the budget check so spam can't consume the school's quota.
+    // Throws ERR_RATE_LIMIT (429) rather than returning a blocked ChatResult like the budget and
+    // relevance paths do: those are conversational outcomes worth persisting to the student's
+    // history, whereas flooding is a client fault, and writing 30+ spam turns into chat history
+    // would be its own storage-abuse vector.
+    rateLimiter.enforce(
+        "ai_chat_rate:" + studentId,
+        MAX_CHATS_PER_MINUTE,
+        CHAT_RATE_WINDOW,
+        "Juda ko'p savol yubordingiz. Bir daqiqadan keyin qayta urinib ko'ring.",
+        "Daqiqasiga " + MAX_CHATS_PER_MINUTE + " tagacha savol berish mumkin.");
+
     SubjectType subject = parseSubject(subjectRaw);
 
     if (assignmentId != null && !isRelevant(schoolId, assignmentId, subject)) {

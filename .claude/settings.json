@@ -1,4 +1,5 @@
 {
+  "//": "Hook commands are prefixed with $CLAUDE_PROJECT_DIR (set by Claude Code to the project root) because a bare relative path only resolves when the session's working directory happens to BE the repo root. Working from frontend/ or backend/ instead, `bash .claude/hooks/...` silently fails to launch and every hook here becomes a no-op. The `:-.` fallback preserves the old behavior if the variable is ever absent. The scripts themselves also resolve the repo root from their own location, so both halves are CWD-independent.",
   "hooks": {
     "PreToolUse": [
       {
@@ -6,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/shared/spec-guard.sh"
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/shared/spec-guard.sh\""
           }
         ]
       },
@@ -15,23 +16,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/shared/secrets-guard.sh"
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/shared/secrets-guard.sh\""
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/backend/destructive-migration-guard.sh"
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/backend/destructive-migration-guard.sh\""
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/frontend/i18n-scope-guard.sh"
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/frontend/i18n-scope-guard.sh\""
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/backend/new-tenant-table-guard.sh"
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/backend/new-tenant-table-guard.sh\""
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/backend/role-leak-guard.sh"
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/backend/role-leak-guard.sh\""
           }
         ]
       }
@@ -42,11 +43,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/backend/build-gate.sh"
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/backend/build-gate.sh\""
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/frontend/lint-gate.sh"
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/frontend/lint-gate.sh\""
           }
         ]
       }

@@ -13,6 +13,7 @@ import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.StudentUniqueTask;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.domain.SubmissionType;
+import uz.academixai.infrastructure.antivirus.ClamAvScanner;
 import uz.academixai.infrastructure.persistence.AIFeedbackEntity;
 import uz.academixai.infrastructure.persistence.AIFeedbackRepository;
 import uz.academixai.infrastructure.persistence.GradeEntity;
@@ -28,6 +29,7 @@ import uz.academixai.infrastructure.persistence.StudentUniqueTaskRepository;
 import uz.academixai.infrastructure.persistence.SubjectEntity;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.infrastructure.queue.HomeworkSubmissionQueueProducer;
+import uz.academixai.infrastructure.ratelimit.UploadRateLimiter;
 import uz.academixai.infrastructure.storage.FileStorageService;
 import uz.academixai.interfaces.web.ApiException;
 
@@ -53,6 +55,8 @@ public class StudentSubmissionService {
   private final FileStorageService fileStorageService;
   private final HomeworkSubmissionQueueProducer queueProducer;
   private final StudentUniqueTaskRepository uniqueTaskRepository;
+  private final UploadRateLimiter uploadRateLimiter;
+  private final ClamAvScanner clamAvScanner;
 
   public StudentSubmissionService(
       HomeworkAssignmentRepository assignmentRepository,
@@ -63,7 +67,11 @@ public class StudentSubmissionService {
       GradeRepository gradeRepository,
       FileStorageService fileStorageService,
       HomeworkSubmissionQueueProducer queueProducer,
-      StudentUniqueTaskRepository uniqueTaskRepository) {
+      StudentUniqueTaskRepository uniqueTaskRepository,
+      UploadRateLimiter uploadRateLimiter,
+      ClamAvScanner clamAvScanner) {
+    this.uploadRateLimiter = uploadRateLimiter;
+    this.clamAvScanner = clamAvScanner;
     this.assignmentRepository = assignmentRepository;
     this.submissionRepository = submissionRepository;
     this.studentProfileRepository = studentProfileRepository;
@@ -222,10 +230,14 @@ public class StudentSubmissionService {
                 .orElse(null)
             : null;
 
-    String imageUrl =
-        image == null || image.isEmpty()
-            ? null
-            : uploadImage(schoolId, assignmentId, studentId, image);
+    boolean hasFile = image != null && !image.isEmpty();
+    if (hasFile) {
+      // Charged before the upload, and only when a file is really present — a TEXT-only
+      // submission moves no bytes and shouldn't consume the allowance (academix_tz.md §5.3).
+      uploadRateLimiter.enforce(studentId);
+    }
+
+    String imageUrl = hasFile ? uploadImage(schoolId, assignmentId, studentId, image) : null;
 
     HomeworkSubmission submission =
         new HomeworkSubmission(
@@ -334,8 +346,10 @@ public class StudentSubmissionService {
 
   private String uploadImage(
       UUID schoolId, UUID assignmentId, UUID studentId, MultipartFile image) {
-    // ClamAV virus scanning (academix_tz.md §5.2) is not wired into this codebase yet — known
-    // gap, flagged rather than silently skipped. See CLAUDE.md "Reality checks".
+    // academix_tz.md §5.2 — scan before a single byte reaches SeaweedFS, so an infected file is
+    // never persisted even briefly. No-op unless academix.clamav.enabled=true (see ClamAvScanner).
+    clamAvScanner.scan(image);
+
     String extension = image.getContentType().equals("image/png") ? "png" : "jpg";
     String key =
         "homeworks/%s/%s/%s/%s.%s"

@@ -12,6 +12,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
+    // vitest.config.ts sets globals:true, so test/expect/describe exist at runtime but were
+    // compile errors under `tsc --noEmit`. "node" must stay listed: naming any package here
+    // disables automatic @types inclusion, and vitest.config.ts itself uses node:path/__dirname.
+    "types": ["node", "vitest/globals"],
     "incremental": true,
     "plugins": [
       {

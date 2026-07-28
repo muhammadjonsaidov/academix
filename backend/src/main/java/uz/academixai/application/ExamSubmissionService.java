@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import uz.academixai.domain.ExamGrade;
 import uz.academixai.domain.ExamSubmission;
 import uz.academixai.domain.SubmissionStatus;
+import uz.academixai.infrastructure.antivirus.ClamAvScanner;
 import uz.academixai.infrastructure.persistence.ExamAIFeedbackEntity;
 import uz.academixai.infrastructure.persistence.ExamAIFeedbackRepository;
 import uz.academixai.infrastructure.persistence.ExamEntity;
@@ -20,6 +21,7 @@ import uz.academixai.infrastructure.persistence.ExamRepository;
 import uz.academixai.infrastructure.persistence.ExamSubmissionEntity;
 import uz.academixai.infrastructure.persistence.ExamSubmissionRepository;
 import uz.academixai.infrastructure.persistence.UserRepository;
+import uz.academixai.infrastructure.ratelimit.UploadRateLimiter;
 import uz.academixai.infrastructure.storage.FileStorageService;
 import uz.academixai.interfaces.web.ApiException;
 
@@ -41,6 +43,8 @@ public class ExamSubmissionService {
   private final UserRepository userRepository;
   private final FileStorageService fileStorageService;
   private final ExamSubmissionWriter submissionWriter;
+  private final UploadRateLimiter uploadRateLimiter;
+  private final ClamAvScanner clamAvScanner;
 
   public ExamSubmissionService(
       ExamRepository examRepository,
@@ -49,7 +53,11 @@ public class ExamSubmissionService {
       ExamGradeRepository gradeRepository,
       UserRepository userRepository,
       FileStorageService fileStorageService,
-      ExamSubmissionWriter submissionWriter) {
+      ExamSubmissionWriter submissionWriter,
+      UploadRateLimiter uploadRateLimiter,
+      ClamAvScanner clamAvScanner) {
+    this.uploadRateLimiter = uploadRateLimiter;
+    this.clamAvScanner = clamAvScanner;
     this.examRepository = examRepository;
     this.submissionRepository = submissionRepository;
     this.feedbackRepository = feedbackRepository;
@@ -77,6 +85,9 @@ public class ExamSubmissionService {
       List<MultipartFile> images,
       List<UUID> studentIds) {
     requireOwnedExam(schoolId, teacherId, examId);
+    // One charge for the whole batch, not one per image — see UploadRateLimiter's Javadoc for
+    // why per-image counting would break this endpoint's own documented purpose.
+    uploadRateLimiter.enforce(teacherId);
     if (images.size() != studentIds.size()) {
       throw new ApiException(
           HttpStatus.BAD_REQUEST,
@@ -221,8 +232,10 @@ public class ExamSubmissionService {
   }
 
   private String uploadImage(UUID schoolId, UUID examId, UUID studentId, MultipartFile image) {
-    // ClamAV virus scanning (academix_tz.md §5.2) is not wired into this codebase yet — known
-    // gap, flagged rather than silently skipped, same as StudentSubmissionService.
+    // academix_tz.md §5.2 — scanned per file (not per batch, unlike the rate limit above): every
+    // image in a bulk upload is an independent file and each one has to be clean.
+    clamAvScanner.scan(image);
+
     String extension = "image/png".equals(image.getContentType()) ? "png" : "jpg";
     String key =
         "exams/%s/%s/%s/%s.%s".formatted(schoolId, examId, studentId, UUID.randomUUID(), extension);

@@ -83,6 +83,15 @@ academix:
     secret: ${JWT_SECRET:local-dev-only-placeholder-not-for-production-use}
     access-token-ttl-minutes: 15
     refresh-token-ttl-days: 7
+  # academix_tz.md §5.2 — upload virus scanning. OFF by default: the clamav image is ~1GB and
+  # loads signature DBs for minutes on first boot, so requiring it would make the documented
+  # local stack far heavier. Production must set ACADEMIX_CLAMAV_ENABLED=true; ClamAvScanner
+  # logs a WARN on every startup while it's off so this can't be silently forgotten.
+  clamav:
+    enabled: ${ACADEMIX_CLAMAV_ENABLED:false}
+    host: ${CLAMAV_HOST:localhost}
+    port: ${CLAMAV_PORT:3310}
+    timeout-ms: ${CLAMAV_TIMEOUT_MS:30000}
   ai:
     qwen:
       api-key: ${QWEN_API_KEY:}

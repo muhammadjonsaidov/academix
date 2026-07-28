@@ -10,9 +10,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * Tiny read-through JSON cache over Redis for expensive, staleness-tolerant reads (admin
- * analytics aggregations). Deliberately manual (StringRedisTemplate + the legacy Jackson-2
- * {@code ObjectMapper} bean from {@code infrastructure/ai/JacksonConfig} — see CLAUDE.md's
+ * Tiny read-through JSON cache over Redis for expensive, staleness-tolerant reads (admin analytics
+ * aggregations). Deliberately manual (StringRedisTemplate + the legacy Jackson-2 {@code
+ * ObjectMapper} bean from {@code infrastructure/ai/JacksonConfig} — see CLAUDE.md's
  * Jackson-3-default finding) rather than Spring Cache abstraction: two small methods beat a new
  * cache-manager configuration surface, and every failure mode degrades to "just run the query."
  */

@@ -17,9 +17,9 @@ import uz.academixai.infrastructure.persistence.GradeRepository.TeacherRankingRo
  * academix_tz.md §2.2 {@code GET /admin/analytics/*} — "faqat admin ko'radi" (admin-only comparison
  * views). {@code period} (monthly|quarter) has no exact window definition anywhere in the spec
  * beyond the enum values — judgment call: it controls the lookback window each query scores over
- * (monthly = last 30 days, quarter = last ~90 days / 1/4 academic year), not a distinct
- * aggregation granularity. {@code school-progress}'s month-bucketed trend is unaffected by this
- * choice — see {@link GradeRepository#schoolProgress}'s Javadoc.
+ * (monthly = last 30 days, quarter = last ~90 days / 1/4 academic year), not a distinct aggregation
+ * granularity. {@code school-progress}'s month-bucketed trend is unaffected by this choice — see
+ * {@link GradeRepository#schoolProgress}'s Javadoc.
  */
 @Service
 public class AdminAnalyticsService {

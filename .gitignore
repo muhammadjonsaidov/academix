@@ -49,8 +49,17 @@ infra/backups/
 # Claude Code personal overrides (project-scoped, not team-shared)
 .claude/settings.local.json
 
-# CI/CD workflow — kept locally, skipped on GitHub for now
-.github/workflows/
+# NOTE: .github/workflows/ used to be ignored here ("kept locally, skipped on GitHub for now").
+# It is tracked again as of the CI addition — a workflow that is never committed never runs, and
+# until now literally nothing verified a commit automatically (both PostToolUse gates were also
+# silently dead, see .claude/hooks). Re-ignore this only if you deliberately want no CI.
+
+# Playwright run artifacts (reports, traces, .last-run.json). Written under frontend/ normally,
+# but at the repo root too if playwright is ever invoked from the wrong directory.
+playwright-report/
+test-results/
+/blob-report/
+/playwright/.cache/
 
 # Internal/spec docs — kept locally, not on GitHub (private→public repo prep)
 /CLAUDE.md

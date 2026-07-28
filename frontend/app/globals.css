@@ -218,10 +218,12 @@
 }
 
 .dark {
-  /* "Night notebook" — ink becomes the page, paper becomes the ink. Not
-     currently wired to a theme toggle anywhere in the app, kept in step
-     with the light palette on the same color-mix() principle regardless,
-     so it doesn't silently rot out of sync with the five named anchors. */
+  /* "Night notebook" — ink becomes the page, paper becomes the ink. Wired to
+     ThemeToggle (components/shared/ThemeToggle.tsx), which flips the `.dark`
+     class on <html>, persists the choice, and adds `.theme-transition` for
+     ~400ms around the flip (see the cross-fade rule near the bottom of this
+     file). Kept in step with the light palette on the same color-mix()
+     principle, so it can't silently rot out of sync with the five anchors. */
   --background: color-mix(in oklch, var(--ink) 92%, black);
   --foreground: color-mix(in oklch, var(--paper) 92%, white);
   --card: color-mix(in oklch, var(--ink) 80%, black);

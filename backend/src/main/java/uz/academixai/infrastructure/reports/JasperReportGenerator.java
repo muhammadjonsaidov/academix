@@ -20,8 +20,8 @@ import org.springframework.stereotype.Component;
 /**
  * Compiles {@code reports/quarter-report.jrxml} once at startup (compilation is the expensive step
  * — filling/exporting is cheap per call) and reuses the compiled {@link JasperReport} for every
- * generated PDF. See {@code quarter-report.jrxml}'s own comment for why one generic template
- * covers all 3 report types (SCHOOL/CLASS/STUDENT).
+ * generated PDF. See {@code quarter-report.jrxml}'s own comment for why one generic template covers
+ * all 3 report types (SCHOOL/CLASS/STUDENT).
  */
 @Component
 public class JasperReportGenerator {

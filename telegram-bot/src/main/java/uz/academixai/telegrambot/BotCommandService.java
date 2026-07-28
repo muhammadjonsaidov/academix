@@ -19,8 +19,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  * class_subject_teachers}) run inside an explicit transaction that first executes {@code SET LOCAL
  * app.current_school_id} — the same manual pattern the backend's own background consumers use (see
  * CLAUDE.md). The school id is always a UUID read from our own database — never raw user input —
- * which is the documented precondition for inlining it into the {@code SET LOCAL} statement
- * ({@code SET} can't take bind parameters).
+ * which is the documented precondition for inlining it into the {@code SET LOCAL} statement ({@code
+ * SET} can't take bind parameters).
  */
 @Service
 public class BotCommandService {
@@ -202,7 +202,9 @@ public class BotCommandService {
                 Eng uzun streak: %d kun
                 """
                     .formatted(
-                        rs.getInt("total_xp"), rs.getInt("current_streak"), rs.getInt("max_streak")),
+                        rs.getInt("total_xp"),
+                        rs.getInt("current_streak"),
+                        rs.getInt("max_streak")),
             user.id())
         .stream()
         .findFirst()
@@ -245,9 +247,7 @@ public class BotCommandService {
                           "%s — muddat: %s"
                               .formatted(
                                   rs.getString("title"),
-                                  rs.getTimestamp("deadline_at")
-                                      .toLocalDateTime()
-                                      .toLocalDate()),
+                                  rs.getTimestamp("deadline_at").toLocalDateTime().toLocalDate()),
                       classId,
                       user.id()));
       return lines.isEmpty()
@@ -408,7 +408,8 @@ public class BotCommandService {
                   O'qituvchilar: %d
                   Sinflar: %d
                   """
-                      .formatted(rs.getInt("students"), rs.getInt("teachers"), rs.getInt("classes")),
+                      .formatted(
+                          rs.getInt("students"), rs.getInt("teachers"), rs.getInt("classes")),
               user.schoolId(),
               user.schoolId(),
               user.schoolId())

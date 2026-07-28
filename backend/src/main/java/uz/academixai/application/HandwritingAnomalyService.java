@@ -27,9 +27,9 @@ import uz.academixai.infrastructure.persistence.HandwritingResetLogRepository;
  * dashboard) — no such dashboard/table exists yet (admin analytics is explicitly deferred to Sprint
  * 6+ in ROADMAP.md). This logs flagged patterns at WARN and returns them, rather than inventing a
  * new persisted-flags table for a UI that doesn't exist to consume it yet. Also: {@code
- * reset_count_this_quarter} has no quarter-boundary reset job anywhere in this codebase (a
- * separate real gap, not built here) — "this quarter" is read as "all-time" until that job exists,
- * which only makes this detector more conservative (never under-flags), not less correct.
+ * reset_count_this_quarter} has no quarter-boundary reset job anywhere in this codebase (a separate
+ * real gap, not built here) — "this quarter" is read as "all-time" until that job exists, which
+ * only makes this detector more conservative (never under-flags), not less correct.
  */
 @Service
 public class HandwritingAnomalyService {

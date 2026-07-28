@@ -61,6 +61,29 @@ services:
       - seaweedfs-data:/data
       - ./seaweedfs-config/s3-config.json:/etc/seaweedfs/s3-config.json:ro
 
+  # academix_tz.md §5.2 upload virus scanning. Behind the "antivirus" profile so it does NOT
+  # start with a plain `docker-compose up -d`: the image is ~1GB and spends several minutes
+  # loading signature databases before clamd accepts its first connection, which is a heavy
+  # default for local dev. Start it explicitly and flip the backend flag together:
+  #   docker-compose --profile antivirus up -d clamav
+  #   ACADEMIX_CLAMAV_ENABLED=true in backend/.env
+  # The backend fails uploads closed when the flag is on and clamd is unreachable, so turn
+  # both on together — and give clamd time to finish loading before the first upload.
+  clamav:
+    image: clamav/clamav:1.5.3
+    ports:
+      - "3310:3310" # clamd TCP (INSTREAM) — what ClamAvScanner connects to
+    volumes:
+      - clamav-db:/var/lib/clamav # persist signature DBs so restarts don't re-download ~1GB
+    healthcheck:
+      # clamd answers PING with PONG only once signature loading is complete.
+      test: ["CMD-SHELL", "clamdcheck.sh || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 300s
+    profiles: ["antivirus"]
+
   postgres-backup:
     image: prodrigestivill/postgres-backup-local:latest
     depends_on:
@@ -172,6 +195,7 @@ services:
 volumes:
   postgres-data:
   seaweedfs-data:
+  clamav-db: # only used by the profile-gated clamav service above
   # certbot-www / certbot-certs only used by the commented-out nginx/certbot
   # services above — uncomment alongside them.
   # certbot-www:

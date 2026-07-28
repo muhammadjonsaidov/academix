@@ -3,9 +3,9 @@ package uz.academixai.interfaces.web;
 import java.util.List;
 
 /**
- * Shared paged-list envelope (deviation — academix_tz.md's list endpoints are all unpaged
- * arrays; pagination added as a performance layer, size menu 10/20/50/100 on the frontend).
- * {@code totalItems} is the post-filter count so the client can render page controls.
+ * Shared paged-list envelope (deviation — academix_tz.md's list endpoints are all unpaged arrays;
+ * pagination added as a performance layer, size menu 10/20/50/100 on the frontend). {@code
+ * totalItems} is the post-filter count so the client can render page controls.
  */
 public record PageResponse<T>(List<T> items, long totalItems, int page, int size) {
 

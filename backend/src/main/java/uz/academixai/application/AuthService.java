@@ -2,6 +2,7 @@ package uz.academixai.application;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import uz.academixai.domain.User;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
+import uz.academixai.infrastructure.ratelimit.RedisRateLimiter;
 import uz.academixai.infrastructure.security.JwtService;
 import uz.academixai.infrastructure.security.RefreshTokenStore;
 import uz.academixai.interfaces.web.ApiException;
@@ -16,37 +18,50 @@ import uz.academixai.interfaces.web.ApiException;
 @Service
 public class AuthService {
 
+  // academix_tz.md §5.3: "Login urinish: 5 marta/daqiqa, keyin 15 daqiqa bloklash".
+  private static final int MAX_LOGIN_ATTEMPTS = 5;
+  private static final Duration LOGIN_ATTEMPT_WINDOW = Duration.ofMinutes(1);
+  private static final Duration LOGIN_BLOCK_DURATION = Duration.ofMinutes(15);
+
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final RefreshTokenStore refreshTokenStore;
   private final SchoolContextResolver schoolContextResolver;
+  private final RedisRateLimiter rateLimiter;
 
   public AuthService(
       UserRepository userRepository,
       PasswordEncoder passwordEncoder,
       JwtService jwtService,
       RefreshTokenStore refreshTokenStore,
-      SchoolContextResolver schoolContextResolver) {
+      SchoolContextResolver schoolContextResolver,
+      RedisRateLimiter rateLimiter) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
     this.refreshTokenStore = refreshTokenStore;
     this.schoolContextResolver = schoolContextResolver;
+    this.rateLimiter = rateLimiter;
   }
 
   public record LoginResult(String accessToken, String refreshToken, User user) {}
 
   public LoginResult login(String phone, String rawPassword) {
-    UserEntity entity =
-        userRepository
-            .findByPhone(phone)
-            .filter(UserEntity::isActive)
-            .orElseThrow(AuthService::invalidCredentials);
+    enforceNotBlocked(phone);
 
-    if (!passwordEncoder.matches(rawPassword, entity.getPasswordHash())) {
+    // Both failure branches are folded into one so a wrong password and an unknown phone are
+    // indistinguishable to the caller AND count identically toward the block: incrementing only
+    // for real accounts would turn the limiter itself into an account-enumeration oracle
+    // (unknown phone -> unlimited attempts, real phone -> blocked after 5).
+    Optional<UserEntity> found = userRepository.findByPhone(phone).filter(UserEntity::isActive);
+    if (found.isEmpty() || !passwordEncoder.matches(rawPassword, found.get().getPasswordHash())) {
+      recordFailedAttempt(phone);
       throw invalidCredentials();
     }
+    UserEntity entity = found.get();
+    // Honest user got in — clear the counter so yesterday's typos can't accumulate into a block.
+    rateLimiter.reset(loginAttemptsKey(phone));
 
     entity.setLastLoginAt(LocalDateTime.now());
     userRepository.save(entity);
@@ -100,8 +115,8 @@ public class AuthService {
 
   /**
    * Self-service profile edit (name/email only — phone is the login identifier and stays
-   * immutable). Deviation, same flag as {@link #profile}. Preserves {@code schoolId} via the
-   * 11-arg constructor — the 10-arg one silently nulls it (see the RLS-wipe fix in git history).
+   * immutable). Deviation, same flag as {@link #profile}. Preserves {@code schoolId} via the 11-arg
+   * constructor — the 10-arg one silently nulls it (see the RLS-wipe fix in git history).
    */
   public User updateProfile(UUID userId, String firstName, String lastName, String email) {
     UserEntity entity =
@@ -176,6 +191,32 @@ public class AuthService {
     } catch (Exception e) {
       throw expiredToken();
     }
+  }
+
+  private void enforceNotBlocked(String phone) {
+    if (rateLimiter.isBlocked(loginBlockKey(phone))) {
+      throw rateLimiter.rateLimitExceeded(
+          "Juda ko'p muvaffaqiyatsiz urinish. Hisobingiz vaqtincha bloklandi.",
+          "15 daqiqadan keyin qayta urinib ko'ring yoki parolni tiklang.");
+    }
+  }
+
+  private void recordFailedAttempt(String phone) {
+    String attemptsKey = loginAttemptsKey(phone);
+    if (rateLimiter.record(attemptsKey, LOGIN_ATTEMPT_WINDOW) >= MAX_LOGIN_ATTEMPTS) {
+      // The block is a separate key with its own longer TTL: the counter's 1-minute window would
+      // otherwise expire the block along with it, capping the lockout at a minute instead of 15.
+      rateLimiter.block(loginBlockKey(phone), LOGIN_BLOCK_DURATION);
+      rateLimiter.reset(attemptsKey);
+    }
+  }
+
+  private static String loginAttemptsKey(String phone) {
+    return "login_attempts:" + phone;
+  }
+
+  private static String loginBlockKey(String phone) {
+    return "login_block:" + phone;
   }
 
   private static ApiException invalidCredentials() {

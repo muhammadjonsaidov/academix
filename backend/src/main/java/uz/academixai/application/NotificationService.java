@@ -93,8 +93,8 @@ public class NotificationService {
 
   /**
    * Deviation: no inbox endpoint is documented anywhere in academix_tz.md — flagged, not spec.
-   * Server-side capped: an inbox that only ever grows was returning every row on every bell
-   * render — the popover only shows the latest anyway.
+   * Server-side capped: an inbox that only ever grows was returning every row on every bell render
+   * — the popover only shows the latest anyway.
    */
   public List<Notification> listForUser(UUID userId, int limit) {
     int pageSize = Math.max(1, Math.min(limit, MAX_INBOX_PAGE));
@@ -141,8 +141,8 @@ public class NotificationService {
   }
 
   /**
-   * Own-notification delete. {@code noRollbackFor} per the CLAUDE.md rule: this participates in
-   * the request's transaction and throws a business ApiException before any write.
+   * Own-notification delete. {@code noRollbackFor} per the CLAUDE.md rule: this participates in the
+   * request's transaction and throws a business ApiException before any write.
    */
   @Transactional(noRollbackFor = ApiException.class)
   public void delete(UUID userId, UUID notificationId) {

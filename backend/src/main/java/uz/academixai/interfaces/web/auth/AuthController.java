@@ -21,12 +21,12 @@ import uz.academixai.infrastructure.security.JwtService;
  * academix_tz.md §2.1 — exact contract, don't drift path/shape from the spec.
  *
  * <p>Deviation on top of the spec (documented, judgment call): the refresh token is additionally
- * set as its own httpOnly cookie ({@code academix_refresh}, path-scoped to /api/v1/auth) and
- * {@code POST /refresh} falls back to that cookie when the body carries no token. This exists so
- * the frontend can bootstrap a session after a hard page reload — its access token lives only in
- * memory (frontend_tdd.md §5.5, deliberately not localStorage), so without this every F5 forced a
- * fresh login. Same security posture as the existing {@code academix_auth} cookie: httpOnly,
- * Secure, SameSite=Strict — JS never sees either token.
+ * set as its own httpOnly cookie ({@code academix_refresh}, path-scoped to /api/v1/auth) and {@code
+ * POST /refresh} falls back to that cookie when the body carries no token. This exists so the
+ * frontend can bootstrap a session after a hard page reload — its access token lives only in memory
+ * (frontend_tdd.md §5.5, deliberately not localStorage), so without this every F5 forced a fresh
+ * login. Same security posture as the existing {@code academix_auth} cookie: httpOnly, Secure,
+ * SameSite=Strict — JS never sees either token.
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -120,15 +120,26 @@ public class AuthController {
     return ResponseEntity.ok().build();
   }
 
-  // Signed httpOnly cookie for the frontend's proxy.ts route-guard (jose jwtVerify) — same JWT,
-  // same TTL as the access token, per academix_tz.md §2.1 / academix_frontend_tdd.md §5.5.
+  // Signed httpOnly cookie for the frontend's proxy.ts route-guard (jose jwtVerify) — same JWT as
+  // the access token, per academix_tz.md §2.1 / academix_frontend_tdd.md §5.5.
+  //
+  // DEVIATION from those sections' "same 15-min TTL as the access token": the cookie now lives as
+  // long as the refresh token. With a 15-minute maxAge the browser DROPPED this cookie after 15
+  // idle minutes, and because academix_refresh is path-scoped to /api/v1/auth it is never sent on
+  // a /dashboard/* navigation — so proxy.ts saw no cookie at all, could not know a valid 7-day
+  // refresh token still existed, and hard-redirected to /login. The client-side session bootstrap
+  // that exists precisely to recover this case never got to run. The JWT inside is unchanged and
+  // still expires in 15 minutes: it is worthless against the API either way
+  // (JwtAuthenticationFilter
+  // rejects it), and proxy.ts treats an expired-but-validly-signed cookie as "let through, the
+  // client will refresh" — the guard is UX-only route-flash prevention, never authorization.
   private ResponseCookie authCookie(String accessToken) {
     return ResponseCookie.from(COOKIE_NAME, accessToken)
         .httpOnly(true)
         .secure(true)
         .sameSite("Strict")
         .path("/")
-        .maxAge(Duration.ofSeconds(jwtService.accessTokenTtlSeconds()))
+        .maxAge(Duration.ofSeconds(jwtService.refreshTokenTtlSeconds()))
         .build();
   }
 

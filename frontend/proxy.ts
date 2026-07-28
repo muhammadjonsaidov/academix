@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { jwtVerify } from "jose";
+import { decodeJwt, jwtVerify } from "jose";
 
 // Next.js 16 renamed middleware.ts -> proxy.ts (function middleware() -> proxy()); edge
 // runtime dropped, proxy always runs on nodejs. See CLAUDE.md "Reality checks" — this
@@ -13,7 +13,25 @@ import { jwtVerify } from "jose";
 //
 // Signing key: raw JWT_SECRET bytes, matching JwtService.java exactly — both sides must
 // derive the same key from the same secret, or signature verification always fails.
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+//
+// Resolved lazily, per request, rather than at module scope: this file is bundled at build
+// time, when JWT_SECRET (a runtime-only var) may legitimately not be set yet — a top-level
+// throw would fail `npm run build` in Docker. Failing here instead means a misconfigured
+// deploy surfaces as a loud, named error in the server log, not as the silent symptom it
+// used to produce: TextEncoder().encode(undefined) yields an empty key, every jwtVerify
+// fails, and every dashboard request redirects to /login with a valid session and no clue
+// why. See CLAUDE.md — a mismatched JWT_SECRET has this same signature.
+function signingKey(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error(
+      "JWT_SECRET is not set for the frontend. proxy.ts cannot verify the academix_auth " +
+        "cookie without it, and every /dashboard request would redirect to /login. Set it in " +
+        "frontend/.env.local, byte-for-byte identical to the backend's.",
+    );
+  }
+  return new TextEncoder().encode(secret);
+}
 
 const ROLE_PATH_PREFIXES: Record<string, string> = {
   "/dashboard/admin": "ADMIN",
@@ -33,12 +51,29 @@ export async function proxy(request: NextRequest) {
 
   let userRole: string | undefined;
   if (authCookie) {
+    // Deliberately resolved OUTSIDE the try: a missing JWT_SECRET is a deployment fault, not a
+    // bad cookie, and must not be swallowed into the same "redirect to /login" path that would
+    // hide it (which is exactly what made the original symptom so hard to diagnose).
+    const key = signingKey();
     try {
-      const { payload } = await jwtVerify(authCookie, JWT_SECRET);
+      const { payload } = await jwtVerify(authCookie, key);
       userRole = payload.role as string;
-    } catch {
-      // Invalid signature or expired — same handling either way.
-      return NextResponse.redirect(new URL("/login", request.url));
+    } catch (error) {
+      // Expired is NOT treated like a bad signature any more. The access token inside this
+      // cookie lasts 15 minutes, but the refresh token behind it lasts 7 days — and because
+      // academix_refresh is path-scoped to /api/v1/auth, it is never sent here, so this guard
+      // cannot see that a recoverable session exists. Redirecting on expiry therefore logged
+      // people out after 15 idle minutes with a perfectly valid session, before the client-side
+      // bootstrap that exists to restore it could run.
+      //
+      // Reading the role off an expired token is safe specifically because jose verifies the
+      // SIGNATURE before it validates claims: getting ERR_JWT_EXPIRED (rather than a signature
+      // error) is itself proof the cookie was issued by us and hasn't been tampered with. A
+      // forged or edited cookie fails earlier and still redirects below.
+      if ((error as { code?: string }).code !== "ERR_JWT_EXPIRED") {
+        return NextResponse.redirect(new URL("/login", request.url));
+      }
+      userRole = decodeJwt(authCookie).role as string;
     }
   }
 

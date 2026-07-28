@@ -43,7 +43,11 @@ public class NotificationPreferenceEntity {
 
   public static NotificationPreferenceEntity fromDomain(NotificationPreference domain) {
     return new NotificationPreferenceEntity(
-        domain.id(), domain.userId(), domain.type(), domain.inAppEnabled(), domain.telegramEnabled());
+        domain.id(),
+        domain.userId(),
+        domain.type(),
+        domain.inAppEnabled(),
+        domain.telegramEnabled());
   }
 
   public NotificationPreference toDomain() {
