@@ -9,7 +9,12 @@ RUN ./gradlew --no-daemon dependencies || true
 COPY src src
 RUN ./gradlew --no-daemon bootJar
 
-FROM eclipse-temurin:21-jre-alpine AS run
+# JDK (not JRE) in the runtime stage, deliberately: JasperReportGenerator's @PostConstruct
+# compiles quarter-report JRXML → .java → javac at startup, and a JRE has no javac — confirmed
+# by a real deploy crash-loop ("Cannot run program \"javac\"") that local `bootRun` (full JDK)
+# never surfaced. Costs ~190MB of image size; alternative (jasperreports-jdt in-process
+# compiler) avoids that but adds a dependency — revisit if image size ever matters.
+FROM eclipse-temurin:21-jdk-alpine AS run
 WORKDIR /app
 RUN addgroup -S academix && adduser -S academix -G academix
 COPY --from=build /app/build/libs/*.jar app.jar
