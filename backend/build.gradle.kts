@@ -77,6 +77,12 @@ dependencies {
 	// when only the core jar was on the classpath.
 	implementation("net.sf.jasperreports:jasperreports:7.0.7")
 	implementation("net.sf.jasperreports:jasperreports-pdf:7.0.7")
+	// In-process JRXML→bytecode compiler (Eclipse JDT). REQUIRED when running from the Spring Boot
+	// fat jar: without it Jasper shells out to javac, whose -classpath cannot reference the nested
+	// BOOT-INF/lib jars — confirmed by a real Railway deploy crash-loop ("package
+	// net.sf.jasperreports.engine does not exist" from javac) that local `bootRun` (exploded
+	// classpath) never surfaced. Presence of this module makes JR 7 use JDT automatically.
+	implementation("net.sf.jasperreports:jasperreports-jdt:7.0.7")
 
 	// SeaweedFS is S3-compatible — plain AWS SDK v2 S3 client pointed at its endpoint, no
 	// SeaweedFS-specific SDK needed (see CLAUDE.md "Reality checks" for why SeaweedFS over MinIO)
