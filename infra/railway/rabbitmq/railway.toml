@@ -8,8 +8,7 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 watchPatterns = ["infra/railway/rabbitmq/**"]
 
+# (no sleepApplication/numReplicas keys — see postgres/railway.toml for why)
 [deploy]
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-numReplicas = 1
-sleepApplication = false

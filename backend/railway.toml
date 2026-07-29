@@ -18,9 +18,6 @@ healthcheckPath = "/actuator/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
-numReplicas = 1
-# App Sleeping: scale to zero after ~10min of no traffic, wake on the next request
-# (~20-30s Spring Boot cold start — acceptable for demo, big trial-credit saver).
-# Caveat: RabbitMQ client heartbeats + DB keepalives count as activity, so the backend may
-# in practice never sleep — verify in the Railway metrics panel; the frontend sleeps regardless.
-sleepApplication = true
+# App Sleeping is enabled via the dashboard/API, not here (numReplicas/sleepApplication aren't
+# reliable config-as-code keys — see infra/railway/postgres/railway.toml). The trial plan
+# REQUIRES sleeping enabled on every service or deploys are silently rejected.

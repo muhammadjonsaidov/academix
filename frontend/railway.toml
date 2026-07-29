@@ -21,6 +21,6 @@ healthcheckPath = "/"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
-numReplicas = 1
-# Safe to sleep: purely request-driven, no background connections. Wakes in ~2-3s.
-sleepApplication = true
+# Sleeping is set via dashboard/API, not here — see infra/railway/postgres/railway.toml.
+# (Note: the frontend currently deploys on Vercel, not Railway — this file is kept for a
+# future move back; the trial's 5-service limit forced the split.)
