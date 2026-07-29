@@ -50,10 +50,7 @@ public class AdminSubjectController {
       @RequestBody CreateSubjectRequest request) {
     if (request.name() == null || request.name().isBlank()) {
       throw new ApiException(
-          HttpStatus.BAD_REQUEST,
-          "ERR_VALIDATION",
-          "Fan nomi majburiy.",
-          "Fan nomini kiriting.");
+          HttpStatus.BAD_REQUEST, "ERR_VALIDATION", "Fan nomi majburiy.", "Fan nomini kiriting.");
     }
     SubjectType type;
     try {

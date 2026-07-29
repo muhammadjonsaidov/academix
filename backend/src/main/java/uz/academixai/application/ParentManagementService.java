@@ -27,10 +27,10 @@ import uz.academixai.interfaces.web.ApiException;
  * ever list them again. This service adds the missing lifecycle:
  *
  * <ul>
- *   <li>{@code create} requires phone AND email together (email is what password reset uses —
- *       a parent with phone but no email can never recover their account) and takes the initial
- *       password from the admin, who hands it to the parent; the parent may change it later via
- *       the normal {@code PUT /auth/change-password}. This deliberately differs from the
+ *   <li>{@code create} requires phone AND email together (email is what password reset uses — a
+ *       parent with phone but no email can never recover their account) and takes the initial
+ *       password from the admin, who hands it to the parent; the parent may change it later via the
+ *       normal {@code PUT /auth/change-password}. This deliberately differs from the
  *       teacher/psychologist invite pattern (server-generated temp password, inactive until
  *       /activate) because no credential-delivery channel exists — the admin IS the delivery
  *       channel here, so the account is active immediately.
