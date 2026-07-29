@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu, Settings, X } from "lucide-react";
@@ -270,9 +271,14 @@ function SidebarBrand({
         compact ? "" : "border-b border-sidebar-border py-4",
       )}
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-        A
-      </span>
+      <Image
+        src="/logo-mark.svg"
+        alt=""
+        width={32}
+        height={29}
+        className="shrink-0"
+        priority
+      />
       <span className="flex flex-col leading-tight">
         <span className="font-heading text-sm font-semibold text-sidebar-foreground">
           AcademiX AI

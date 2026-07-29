@@ -1,9 +1,10 @@
 "use client";
 
 import { Suspense, useState, type FormEvent } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { GraduationCap, KeyRound } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { fieldClass } from "@/components/shared/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -50,9 +51,7 @@ function ResetPasswordForm() {
     <main className="flex min-h-screen flex-1 items-center justify-center bg-background p-4">
       <div className="animate-rise w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <GraduationCap className="size-6" strokeWidth={1.75} />
-          </span>
+          <Image src="/logo-mark.svg" alt="AcademiX AI" width={64} height={59} priority />
           <h1 className="font-heading text-xl font-semibold">AcademiX AI</h1>
         </div>
 
