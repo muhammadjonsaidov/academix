@@ -24,7 +24,3 @@ restartPolicyMaxRetries = 5
 # App Sleeping is enabled via the dashboard/API, not here (numReplicas/sleepApplication aren't
 # reliable config-as-code keys — see infra/railway/postgres/railway.toml). The trial plan
 # REQUIRES sleeping enabled on every service or deploys are silently rejected.
-
-# (deploy retrigger marker — harmless comment)
-
-# redeploy marker: 2026-07-29 fresh-start after deployment queue reset

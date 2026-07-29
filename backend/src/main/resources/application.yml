@@ -91,6 +91,14 @@ management:
     web:
       exposure:
         include: health,info
+  health:
+    mail:
+      # The mail health contributor opens a real SMTP connection to smtp.gmail.com on every
+      # /actuator/health call. Providers that block outbound SMTP (Railway does) make that hang
+      # ~130s until socket timeout, which fails the platform healthcheck and marks an otherwise
+      # healthy deploy dead — confirmed by a real Railway deploy. Email is graceful-degradation
+      # in this app (see PasswordResetService) and must never gate liveness.
+      enabled: false
 
 academix:
   # CORS — frontend and backend are different origins in local dev (see CLAUDE.md
@@ -102,6 +110,8 @@ academix:
   # domain (www.academixai.uz + api.academixai.uz), set COOKIE_DOMAIN=.academixai.uz so proxy.ts
   # on the frontend origin can see the auth cookie. See AuthController.
   cookie-domain: ${COOKIE_DOMAIN:}
+  # Expose Swagger UI + OpenAPI docs without auth (see SecurityConfig). Off by default.
+  swagger-public: ${SWAGGER_PUBLIC:false}
   jwt:
     # dev-only placeholder — real deploys must set JWT_SECRET, never rely on this
     secret: ${JWT_SECRET:local-dev-only-placeholder-not-for-production-use}

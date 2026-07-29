@@ -27,6 +27,12 @@ public class SecurityConfig {
   @Value("${academix.frontend-url:http://localhost:3000}")
   private String frontendUrl;
 
+  // Off by default: Swagger UI enumerates the full API surface, which a public production API
+  // shouldn't hand out unauthenticated. Flip SWAGGER_PUBLIC=true per environment (e.g. for a
+  // demo) to expose /swagger-ui/** and /v3/api-docs/** without a JWT.
+  @Value("${academix.swagger-public:false}")
+  private boolean swaggerPublic;
+
   public SecurityConfig(
       JwtAuthenticationFilter jwtAuthenticationFilter,
       RlsTransactionFilter rlsTransactionFilter,
@@ -67,11 +73,14 @@ public class SecurityConfig {
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .exceptionHandling(handling -> handling.authenticationEntryPoint(authenticationEntryPoint))
         .authorizeHttpRequests(
-            auth ->
-                auth.requestMatchers("/api/v1/auth/**", "/actuator/health")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated())
+            auth -> {
+              auth.requestMatchers("/api/v1/auth/**", "/actuator/health").permitAll();
+              if (swaggerPublic) {
+                auth.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**")
+                    .permitAll();
+              }
+              auth.anyRequest().authenticated();
+            })
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterAfter(rlsTransactionFilter, JwtAuthenticationFilter.class);
     return http.build();
