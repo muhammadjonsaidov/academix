@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -118,9 +119,7 @@ export default function HomePage() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="flex items-center justify-between px-6 py-4 lg:px-12">
         <span className="flex items-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-            A
-          </span>
+          <Image src="/logo-mark.svg" alt="" width={32} height={29} priority />
           <span className="font-heading text-base font-semibold">AcademiX AI</span>
         </span>
         <Link href="/login" className={cn(buttonVariants({ variant: "outline" }))}>
