@@ -55,6 +55,7 @@ public interface StudentProfileRepository extends JpaRepository<StudentProfileEn
           FROM student_profiles sp
           JOIN users u ON u.id = sp.user_id
           WHERE sp.school_id = :schoolId
+            AND u.role = 'STUDENT'
             AND (:classId IS NULL OR sp.class_id = :classId)
             AND (:search IS NULL
                  OR u.first_name ILIKE CONCAT('%', :search, '%')

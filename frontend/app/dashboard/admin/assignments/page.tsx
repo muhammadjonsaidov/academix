@@ -1,15 +1,30 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { Link2, Trash2 } from "lucide-react";
+import { BookPlus, Link2, Trash2, X } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { FormField, SelectField } from "@/components/shared/FormField";
+import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminStore } from "@/stores/useAdminStore";
+import { SUBJECT_TYPES, type SubjectTypeName } from "@/types/admin";
 import type { ApiErrorResponse } from "@/types/auth";
+
+const SUBJECT_TYPE_LABELS: Record<SubjectTypeName, string> = {
+  MATH: "Matematika",
+  LANGUAGE_UZ: "O'zbek tili",
+  LANGUAGE_RU: "Rus tili",
+  LANGUAGE_EN: "Ingliz tili",
+  PHYSICS: "Fizika",
+  CHEMISTRY: "Kimyo",
+  BIOLOGY: "Biologiya",
+  HISTORY: "Tarix",
+  GEOGRAPHY: "Geografiya",
+  OTHER: "Boshqa",
+};
 
 export default function AdminAssignmentsPage() {
   const assignments = useAdminStore((state) => state.assignments);
@@ -22,6 +37,8 @@ export default function AdminAssignmentsPage() {
   const fetchSubjects = useAdminStore((state) => state.fetchSubjects);
   const createAssignment = useAdminStore((state) => state.createAssignment);
   const deleteAssignment = useAdminStore((state) => state.deleteAssignment);
+  const createSubject = useAdminStore((state) => state.createSubject);
+  const deleteSubject = useAdminStore((state) => state.deleteSubject);
 
   const [teacherId, setTeacherId] = useState("");
   const [classId, setClassId] = useState("");
@@ -30,6 +47,12 @@ export default function AdminAssignmentsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [newSubjectName, setNewSubjectName] = useState("");
+  const [newSubjectType, setNewSubjectType] = useState<SubjectTypeName>("OTHER");
+  const [subjectError, setSubjectError] = useState<string | null>(null);
+  const [isAddingSubject, setIsAddingSubject] = useState(false);
+  const [removingSubjectId, setRemovingSubjectId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTeachers().catch(() => {});
@@ -66,6 +89,34 @@ export default function AdminAssignmentsPage() {
     }
   }
 
+  async function handleAddSubject(event: FormEvent) {
+    event.preventDefault();
+    setSubjectError(null);
+    setIsAddingSubject(true);
+    try {
+      await createSubject({ name: newSubjectName, type: newSubjectType });
+      setNewSubjectName("");
+    } catch (err) {
+      const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
+      setSubjectError(apiError?.message ?? "Fanni qo'shib bo'lmadi.");
+    } finally {
+      setIsAddingSubject(false);
+    }
+  }
+
+  async function handleRemoveSubject(id: string) {
+    setSubjectError(null);
+    setRemovingSubjectId(id);
+    try {
+      await deleteSubject(id);
+    } catch (err) {
+      const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
+      setSubjectError(apiError?.message ?? "Fanni o'chirib bo'lmadi.");
+    } finally {
+      setRemovingSubjectId(null);
+    }
+  }
+
   function teacherName(id: string) {
     const teacher = teachers.find((t) => t.id === id);
     return teacher ? `${teacher.firstName} ${teacher.lastName}` : id;
@@ -88,6 +139,72 @@ export default function AdminAssignmentsPage() {
             O&apos;qituvchini sinf va fanga biriktiring.
           </p>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookPlus className="size-4" strokeWidth={1.75} />
+              Fanlar
+            </CardTitle>
+            <CardDescription>
+              Biriktirishdan oldin maktab fanlarini shu yerda yarating. Ishlatilayotgan fanni
+              o&apos;chirib bo&apos;lmaydi.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form onSubmit={handleAddSubject} className="flex flex-wrap items-end gap-3">
+              <FormField label="Fan nomi" htmlFor="newSubjectName">
+                <input
+                  id="newSubjectName"
+                  value={newSubjectName}
+                  onChange={(e) => setNewSubjectName(e.target.value)}
+                  placeholder="Masalan: Matematika"
+                  required
+                  className={`${fieldClass} min-w-52`}
+                />
+              </FormField>
+              <FormField label="Turi" htmlFor="newSubjectType">
+                <SelectField
+                  id="newSubjectType"
+                  value={newSubjectType}
+                  onChange={(e) => setNewSubjectType(e.target.value as SubjectTypeName)}
+                >
+                  {SUBJECT_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {SUBJECT_TYPE_LABELS[type]}
+                    </option>
+                  ))}
+                </SelectField>
+              </FormField>
+              <Button type="submit" disabled={isAddingSubject}>
+                {isAddingSubject ? "Qo'shilmoqda..." : "Fan qo'shish"}
+              </Button>
+            </form>
+            {subjects.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Hozircha fanlar yo&apos;q — birinchi fanni qo&apos;shing.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {subjects.map((subject) => (
+                  <Badge key={subject.id} variant="secondary" className="gap-1.5">
+                    {subject.name}
+                    <button
+                      type="button"
+                      aria-label={`${subject.name} fanini o'chirish`}
+                      disabled={removingSubjectId === subject.id}
+                      onClick={() => handleRemoveSubject(subject.id)}
+                      className="text-muted-foreground transition-colors hover:text-destructive"
+                    >
+                      <X className="size-3" strokeWidth={2} />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {subjectError ? <p className="text-sm text-destructive">{subjectError}</p> : null}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

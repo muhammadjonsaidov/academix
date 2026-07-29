@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminStore } from "@/stores/useAdminStore";
 import type { ApiErrorResponse } from "@/types/auth";
-import type { ParentRelation } from "@/types/admin";
+import type { ParentCheck, ParentRelation } from "@/types/admin";
 
 const RELATION_LABELS: Record<ParentRelation, string> = {
   MOTHER: "Ona",
@@ -42,6 +42,7 @@ export default function AdminStudentsPage() {
   const unlockHandwritingReset = useAdminStore((state) => state.unlockHandwritingReset);
   const transferStudentClass = useAdminStore((state) => state.transferStudentClass);
   const linkParentToStudent = useAdminStore((state) => state.linkParentToStudent);
+  const checkParentPhone = useAdminStore((state) => state.checkParentPhone);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -72,6 +73,7 @@ export default function AdminStudentsPage() {
   } | null>(null);
 
   const [linkPhone, setLinkPhone] = useState("");
+  const [linkCheck, setLinkCheck] = useState<ParentCheck | null>(null);
   const [linkRelation, setLinkRelation] = useState<ParentRelation>("MOTHER");
   const [isLinking, setIsLinking] = useState(false);
   const [linkMessage, setLinkMessage] = useState<{
@@ -168,13 +170,32 @@ export default function AdminStudentsPage() {
     }
   }
 
+  // Pre-link lookup so the admin sees who this phone belongs to (and which children are
+  // already linked) BEFORE pressing Bog'lash — previously the flow was completely opaque.
+  async function handleCheckPhone() {
+    if (!linkPhone) {
+      setLinkCheck(null);
+      return;
+    }
+    try {
+      setLinkCheck(await checkParentPhone(linkPhone));
+    } catch {
+      setLinkCheck(null);
+    }
+  }
+
   async function handleLinkParent(studentId: string) {
     setIsLinking(true);
     setLinkMessage(null);
     try {
       await linkParentToStudent({ parentPhone: linkPhone, studentId, relation: linkRelation });
-      setLinkMessage({ studentId, text: "Ota-ona muvaffaqiyatli bog'landi.", isError: false });
+      setLinkMessage({
+        studentId,
+        text: "Ota-ona muvaffaqiyatli bog'landi. To'liq ro'yxat: Ota-onalar sahifasida.",
+        isError: false,
+      });
       setLinkPhone("");
+      setLinkCheck(null);
     } catch (err) {
       const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
       setLinkMessage({
@@ -445,7 +466,11 @@ export default function AdminStudentsPage() {
                                     type="tel"
                                     placeholder="+998901234567"
                                     value={linkPhone}
-                                    onChange={(e) => setLinkPhone(e.target.value)}
+                                    onChange={(e) => {
+                                      setLinkPhone(e.target.value);
+                                      setLinkCheck(null);
+                                    }}
+                                    onBlur={handleCheckPhone}
                                     className={`${fieldClass} w-full`}
                                   />
                                 </FormField>
@@ -495,6 +520,17 @@ export default function AdminStudentsPage() {
                                   </span>
                                 ) : null}
                               </div>
+                              {linkCheck ? (
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                  {!linkCheck.exists
+                                    ? "Bu raqamda hisob yo'q — bog'lashda avtomatik yaratiladi (ism/parolsiz). Yaxshisi, avval Ota-onalar sahifasida to'liq hisob yarating."
+                                    : linkCheck.role !== "PARENT"
+                                      ? "Diqqat: bu raqam boshqa turdagi foydalanuvchiga tegishli — bog'lab bo'lmaydi."
+                                      : linkCheck.children.length === 0
+                                        ? `Mavjud ota-ona: ${linkCheck.firstName} ${linkCheck.lastName ?? ""} — hali hech kimga bog'lanmagan.`
+                                        : `Mavjud ota-ona: ${linkCheck.firstName} ${linkCheck.lastName ?? ""} — bog'langan: ${linkCheck.children.map((c) => `${c.firstName} ${c.lastName}`).join(", ")}.`}
+                                </p>
+                              ) : null}
                             </td>
                           </tr>
                         ) : null}

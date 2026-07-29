@@ -80,6 +80,48 @@ export interface ParentLink {
   biometricConsentGiven: boolean;
 }
 
+// --- Admin parent lifecycle (deviation beyond §2.2, see backend ParentManagementService) ---
+
+export interface LinkedChild {
+  studentId: string;
+  firstName: string;
+  lastName: string;
+  className: string | null;
+  relation: ParentRelation;
+}
+
+// GET /admin/parents — school-scoped parents with their actively-linked children.
+export interface Parent {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string | null;
+  isActive: boolean;
+  children: LinkedChild[];
+}
+
+// POST /admin/parents — phone AND email both required (email is the password-reset channel);
+// password is the admin-chosen initial password handed to the parent.
+export interface CreateParentRequest {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  password: string;
+}
+
+// GET /admin/parents/check?phone=... — pre-link lookup: does this phone already belong to
+// someone, and (if a parent) which children are already linked.
+export interface ParentCheck {
+  exists: boolean;
+  role: string | null;
+  userId: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  children: LinkedChild[];
+}
+
 // academix_tz.md §2.2 "Maktab" — GET/PUT /admin/school.
 export interface School {
   id: string;
@@ -123,15 +165,34 @@ export interface InvitePsychologistRequest {
   email?: string;
 }
 
-// GET /admin/subjects — added to close the gap AdminAssignmentController's own doc-comment used
-// to flag: no admin-facing subjects catalog existed, so the assignment form had to use a raw
-// UUID text input instead of a dropdown. Subjects themselves have no admin-facing create
-// endpoint (seed/fixture data per CLAUDE.md known gaps) — this is read-only.
+// GET/POST/DELETE /admin/subjects — originally read-only (subjects were assumed seed/fixture
+// data), now full admin CRUD: a fresh school must be manageable entirely from the UI, no seeds.
 export interface Subject {
   id: string;
   name: string;
   type: string;
   icon: string | null;
+}
+
+// Mirrors backend domain.SubjectType exactly.
+export const SUBJECT_TYPES = [
+  "MATH",
+  "LANGUAGE_UZ",
+  "LANGUAGE_RU",
+  "LANGUAGE_EN",
+  "PHYSICS",
+  "CHEMISTRY",
+  "BIOLOGY",
+  "HISTORY",
+  "GEOGRAPHY",
+  "OTHER",
+] as const;
+export type SubjectTypeName = (typeof SUBJECT_TYPES)[number];
+
+export interface CreateSubjectRequest {
+  name: string;
+  type: SubjectTypeName;
+  icon?: string;
 }
 
 // academix_tz.md §2.2 "O'qituvchi-Sinf-Fan biriktirish" — AdminAssignmentController's exact shape.

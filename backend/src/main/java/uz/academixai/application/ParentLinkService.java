@@ -50,13 +50,34 @@ public class ParentLinkService {
     requireStudentInSchool(schoolId, studentId);
 
     UserEntity parent =
-        userRepository.findByPhone(parentPhone).orElseGet(() -> createParent(parentPhone));
+        userRepository
+            .findByPhone(parentPhone)
+            .orElseGet(() -> createParent(parentPhone, schoolId));
     if (parent.getRole() != Role.PARENT) {
       throw new ApiException(
           HttpStatus.CONFLICT,
           "ERR_DUPLICATE_PHONE",
           "Bu telefon raqam boshqa turdagi foydalanuvchiga tegishli.",
           "Boshqa telefon raqam kiriting.");
+    }
+    // Backfill users.school_id for parents created before it was set (they were invisible to the
+    // school-scoped GET /admin/parents list — the reported "parent disappears after linking" bug).
+    // 11-arg rebuild, NEVER the 10-arg constructor (it silently nulls school_id — CLAUDE.md).
+    if (parent.getSchoolId() == null) {
+      parent =
+          userRepository.save(
+              new UserEntity(
+                  parent.getId(),
+                  parent.getFirstName(),
+                  parent.getLastName(),
+                  parent.getPhone(),
+                  parent.getEmail(),
+                  parent.getPasswordHash(),
+                  parent.getRole(),
+                  parent.isActive(),
+                  parent.getCreatedAt(),
+                  parent.getLastLoginAt(),
+                  schoolId));
     }
 
     ParentStudentLinkEntity existing =
@@ -73,7 +94,11 @@ public class ParentLinkService {
     return linkRepository.save(ParentStudentLinkEntity.fromDomain(linkDomain)).toDomain();
   }
 
-  private UserEntity createParent(String phone) {
+  // Legacy find-or-create path (spec's POST /admin/parents/link with an unknown phone). Prefer
+  // creating parents explicitly via POST /admin/parents (ParentManagementService) — that flow has
+  // a real name/email/password. Kept for spec conformance; now at least school-scoped so the
+  // created parent shows up in GET /admin/parents instead of vanishing.
+  private UserEntity createParent(String phone, UUID schoolId) {
     UserEntity entity =
         new UserEntity(
             UUID.randomUUID(),
@@ -86,7 +111,7 @@ public class ParentLinkService {
             true,
             LocalDateTime.now(),
             null,
-            null);
+            schoolId);
     return userRepository.save(entity);
   }
 

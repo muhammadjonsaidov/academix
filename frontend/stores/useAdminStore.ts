@@ -6,10 +6,14 @@ import type {
   Assignment,
   CreateAssignmentRequest,
   CreateClassRequest,
+  CreateParentRequest,
   CreateStudentRequest,
+  CreateSubjectRequest,
   InvitePsychologistRequest,
   InviteTeacherRequest,
   LinkParentRequest,
+  Parent,
+  ParentCheck,
   ParentLink,
   Psychologist,
   School,
@@ -42,6 +46,7 @@ interface AdminState {
   psychologists: Psychologist[];
   assignments: Assignment[];
   subjects: Subject[];
+  parents: Parent[];
   dataDeletionRequests: AdminDataDeletionRequest[];
 
   fetchClasses: () => Promise<void>;
@@ -62,6 +67,10 @@ interface AdminState {
   unlockHandwritingReset: (studentId: string) => Promise<void>;
   linkParentToStudent: (request: LinkParentRequest) => Promise<ParentLink>;
 
+  fetchParents: () => Promise<void>;
+  createParent: (request: CreateParentRequest) => Promise<void>;
+  checkParentPhone: (phone: string) => Promise<ParentCheck>;
+
   fetchSchool: () => Promise<void>;
   updateSchool: (request: UpdateSchoolRequest) => Promise<void>;
 
@@ -74,6 +83,8 @@ interface AdminState {
   deleteAssignment: (assignmentId: string) => Promise<void>;
 
   fetchSubjects: () => Promise<void>;
+  createSubject: (request: CreateSubjectRequest) => Promise<void>;
+  deleteSubject: (subjectId: string) => Promise<void>;
 
   fetchDataDeletionRequests: () => Promise<void>;
   approveDataDeletionRequest: (id: string) => Promise<void>;
@@ -95,6 +106,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   psychologists: [],
   assignments: [],
   subjects: [],
+  parents: [],
   dataDeletionRequests: [],
 
   fetchClasses: async () => {
@@ -202,8 +214,28 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     await apiClient.put(`/admin/students/${studentId}/handwriting/unlock-reset`);
   },
 
+  // Refreshes the parents list afterwards — a link can create/backfill a parent server-side,
+  // and the old fire-and-forget version was exactly the reported "parent vanished" experience.
   linkParentToStudent: async (request) => {
     const { data } = await apiClient.post<ParentLink>("/admin/parents/link", request);
+    await get().fetchParents();
+    return data;
+  },
+
+  fetchParents: async () => {
+    const { data } = await apiClient.get<Parent[]>("/admin/parents");
+    set({ parents: data });
+  },
+
+  createParent: async (request) => {
+    await apiClient.post("/admin/parents", request);
+    await get().fetchParents();
+  },
+
+  checkParentPhone: async (phone) => {
+    const { data } = await apiClient.get<ParentCheck>("/admin/parents/check", {
+      params: { phone },
+    });
     return data;
   },
 
@@ -252,6 +284,16 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   fetchSubjects: async () => {
     const { data } = await apiClient.get<Subject[]>("/admin/subjects");
     set({ subjects: data });
+  },
+
+  createSubject: async (request) => {
+    await apiClient.post("/admin/subjects", request);
+    await get().fetchSubjects();
+  },
+
+  deleteSubject: async (subjectId) => {
+    await apiClient.delete(`/admin/subjects/${subjectId}`);
+    await get().fetchSubjects();
   },
 
   fetchDataDeletionRequests: async () => {
