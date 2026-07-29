@@ -1,6 +1,7 @@
 package uz.academixai.interfaces.web.auth;
 
 import java.time.Duration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -39,11 +40,24 @@ public class AuthController {
   private final JwtService jwtService;
   private final PasswordResetService passwordResetService;
 
+  // Cookie Domain attribute. Empty (the default) = host-only cookie, correct for local dev where
+  // everything is localhost. In a deploy where frontend and backend live on sibling subdomains of
+  // one registrable domain (www.academixai.uz + api.academixai.uz), this must be set to the parent
+  // domain (".academixai.uz") — otherwise the academix_auth cookie is host-only to the API origin
+  // and proxy.ts (running on the frontend origin) never sees it, breaking the route guard and the
+  // F5 session restore. SameSite=Strict still works across sibling subdomains: "site" is the
+  // registrable domain, so www→api requests are same-site.
+  private final String cookieDomain;
+
   public AuthController(
-      AuthService authService, JwtService jwtService, PasswordResetService passwordResetService) {
+      AuthService authService,
+      JwtService jwtService,
+      PasswordResetService passwordResetService,
+      @Value("${academix.cookie-domain:}") String cookieDomain) {
     this.authService = authService;
     this.jwtService = jwtService;
     this.passwordResetService = passwordResetService;
+    this.cookieDomain = cookieDomain == null || cookieDomain.isBlank() ? null : cookieDomain;
   }
 
   @PostMapping("/login")
@@ -138,6 +152,7 @@ public class AuthController {
         .httpOnly(true)
         .secure(true)
         .sameSite("Strict")
+        .domain(cookieDomain)
         .path("/")
         .maxAge(Duration.ofSeconds(jwtService.refreshTokenTtlSeconds()))
         .build();
@@ -148,6 +163,7 @@ public class AuthController {
         .httpOnly(true)
         .secure(true)
         .sameSite("Strict")
+        .domain(cookieDomain)
         .path("/")
         .maxAge(0)
         .build();
@@ -160,6 +176,7 @@ public class AuthController {
         .httpOnly(true)
         .secure(true)
         .sameSite("Strict")
+        .domain(cookieDomain)
         .path("/api/v1/auth")
         .maxAge(Duration.ofSeconds(jwtService.refreshTokenTtlSeconds()))
         .build();
@@ -170,6 +187,7 @@ public class AuthController {
         .httpOnly(true)
         .secure(true)
         .sameSite("Strict")
+        .domain(cookieDomain)
         .path("/api/v1/auth")
         .maxAge(0)
         .build();

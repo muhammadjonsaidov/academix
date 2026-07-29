@@ -16,6 +16,10 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/academix}
     username: ${DATABASE_APP_USERNAME:academix_app}
     password: ${DATABASE_APP_PASSWORD:academix_app_local_dev_only}
+    hikari:
+      # Default is 10; small deploys (Railway trial: Postgres tuned to max_connections=30 shared
+      # with Flyway + telegram-bot) want this lower. Local dev keeps the Hikari default.
+      maximum-pool-size: ${DB_POOL_SIZE:10}
 
   flyway:
     enabled: true
@@ -28,10 +32,19 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      # Empty = no AUTH (local dev). Any networked deploy (e.g. Railway private networking)
+      # must set REDIS_PASSWORD and start redis-server with --requirepass.
+      password: ${REDIS_PASSWORD:}
 
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
+    # RabbitMQ's built-in guest/guest only accepts connections from localhost (loopback) — it
+    # works in local dev and silently CANNOT work the moment the broker is reached over a real
+    # network (Docker service name, Railway private networking, ...). Any networked deploy must
+    # create its own user (RABBITMQ_DEFAULT_USER/PASS on the broker) and set these to match.
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
   # Spring Boot's defaults (1MB file / 10MB request) are too low for real homework-photo
   # uploads — a real phone-camera photo of an exercise book (11.5MB) tripped the default
@@ -78,6 +91,11 @@ academix:
   # "Reality checks": a real browser test silently failed with zero requests reaching
   # the backend before this existed; curl doesn't enforce CORS so it went undetected).
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  # Cookie Domain attribute for academix_auth/academix_refresh. Empty (default) = host-only,
+  # correct for localhost dev. When frontend+backend are sibling subdomains of one registrable
+  # domain (www.academixai.uz + api.academixai.uz), set COOKIE_DOMAIN=.academixai.uz so proxy.ts
+  # on the frontend origin can see the auth cookie. See AuthController.
+  cookie-domain: ${COOKIE_DOMAIN:}
   jwt:
     # dev-only placeholder — real deploys must set JWT_SECRET, never rely on this
     secret: ${JWT_SECRET:local-dev-only-placeholder-not-for-production-use}

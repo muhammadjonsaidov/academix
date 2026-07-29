@@ -1,0 +1,26 @@
+# Railway config-as-code for the backend service.
+# Service settings in the Railway dashboard: Root Directory = backend
+# (Railway then picks this file up automatically from backend/railway.toml).
+#
+# watchPatterns: only a commit touching backend/** triggers a rebuild of this service —
+# frontend/infra-only commits don't burn build minutes or restart the API.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+watchPatterns = ["backend/**"]
+
+[deploy]
+# /actuator/health is exposed and permitAll() (see SecurityConfig) — Railway only routes
+# traffic to a deploy once this returns 200. Generous timeout: Flyway runs all migrations
+# on first boot of a fresh database before the app is healthy.
+healthcheckPath = "/actuator/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+numReplicas = 1
+# App Sleeping: scale to zero after ~10min of no traffic, wake on the next request
+# (~20-30s Spring Boot cold start — acceptable for demo, big trial-credit saver).
+# Caveat: RabbitMQ client heartbeats + DB keepalives count as activity, so the backend may
+# in practice never sleep — verify in the Railway metrics panel; the frontend sleeps regardless.
+sleepApplication = true

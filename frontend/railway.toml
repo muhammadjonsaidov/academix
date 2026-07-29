@@ -1,0 +1,26 @@
+# Railway config-as-code for the frontend service.
+# Service settings in the Railway dashboard: Root Directory = frontend
+#
+# IMPORTANT — build-time vs runtime env on this service:
+#   * NEXT_PUBLIC_API_URL (and the other NEXT_PUBLIC_* vars) are inlined by `next build`,
+#     so they must be set as Railway service variables BEFORE the first build — the Dockerfile
+#     declares them as ARGs and Railway passes service variables into Docker builds as build args.
+#     Changing them later requires a redeploy (rebuild), not just a restart.
+#   * JWT_SECRET is runtime-only (proxy.ts reads it lazily per request) but REQUIRED, and must be
+#     byte-for-byte identical to the backend's — use a Railway shared variable for both services.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+watchPatterns = ["frontend/**"]
+
+[deploy]
+# Next.js standalone server answers / immediately once booted (login redirect is fine — any
+# 2xx/3xx counts as healthy for Railway).
+healthcheckPath = "/"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+numReplicas = 1
+# Safe to sleep: purely request-driven, no background connections. Wakes in ~2-3s.
+sleepApplication = true
