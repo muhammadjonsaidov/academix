@@ -11,3 +11,5 @@ watchPatterns = ["infra/railway/redis/**"]
 [deploy]
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
+
+# redeploy marker: 2026-07-29 fresh-start after deployment queue reset

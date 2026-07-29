@@ -26,3 +26,5 @@ restartPolicyMaxRetries = 5
 # REQUIRES sleeping enabled on every service or deploys are silently rejected.
 
 # (deploy retrigger marker — harmless comment)
+
+# redeploy marker: 2026-07-29 fresh-start after deployment queue reset
