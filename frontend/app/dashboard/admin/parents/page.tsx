@@ -54,7 +54,7 @@ export default function AdminParentsPage() {
     setFormError(null);
     setIsSubmitting(true);
     try {
-      await createParent({ firstName, lastName, phone, email, password });
+      await createParent({ firstName, lastName, phone, email: email || undefined, password });
       setFirstName("");
       setLastName("");
       setPhone("");
@@ -109,8 +109,8 @@ export default function AdminParentsPage() {
               Yangi ota-ona / vasiy qo&apos;shish
             </CardTitle>
             <CardDescription>
-              Telefon va email ikkalasi ham majburiy — parolni tiklash email orqali ishlaydi.
-              Boshlang&apos;ich parolni ota-onaga o&apos;zingiz yetkazasiz.
+              Telefon va boshlang&apos;ich parol majburiy, email ixtiyoriy (lekin parolni tiklash
+              email orqali ishlaydi). Parolni ota-onaga o&apos;zingiz yetkazasiz.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -143,14 +143,13 @@ export default function AdminParentsPage() {
                   className={`${fieldClass} w-full`}
                 />
               </FormField>
-              <FormField label="Email" htmlFor="parentEmail">
+              <FormField label="Email (ixtiyoriy)" htmlFor="parentEmail">
                 <input
                   id="parentEmail"
                   type="email"
                   placeholder="ota-ona@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
                   className={`${fieldClass} w-full`}
                 />
               </FormField>

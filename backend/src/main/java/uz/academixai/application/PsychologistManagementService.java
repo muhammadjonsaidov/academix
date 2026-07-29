@@ -40,7 +40,23 @@ public class PsychologistManagementService {
         .toList();
   }
 
-  public User invite(UUID schoolId, String phone, String firstName, String lastName, String email) {
+  // Same two-mode behavior as TeacherManagementService.invite: admin-supplied password =>
+  // active immediately (admin is the delivery channel); no password => temp + inactive.
+  public User invite(
+      UUID schoolId,
+      String phone,
+      String firstName,
+      String lastName,
+      String email,
+      String password) {
+    boolean hasPassword = password != null && !password.isBlank();
+    if (hasPassword && password.length() < 8) {
+      throw new ApiException(
+          HttpStatus.BAD_REQUEST,
+          "ERR_VALIDATION",
+          "Parol kamida 8 belgidan iborat bo'lishi kerak.",
+          "Uzunroq parol kiriting.");
+    }
     if (userRepository.existsByPhone(phone)) {
       throw new ApiException(
           HttpStatus.CONFLICT,
@@ -56,9 +72,9 @@ public class PsychologistManagementService {
             lastName,
             phone,
             email,
-            passwordEncoder.encode(TempPasswordGenerator.generate()),
+            passwordEncoder.encode(hasPassword ? password : TempPasswordGenerator.generate()),
             Role.PSYCHOLOGIST,
-            false,
+            hasPassword,
             LocalDateTime.now(),
             null,
             schoolId);

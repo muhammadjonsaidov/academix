@@ -55,6 +55,7 @@ public class StudentManagementService {
   // success — one bad row doesn't reject the file" (academix_tz.md §2.2) actually requires. Safe
   // RLS-wise: neither users nor student_profiles is RLS-enabled (see CLAUDE.md "Backend
   // architecture"), so running this on a separate connection from the outer SET LOCAL is fine.
+  /** Back-compat entry (bulk import rows carry no email/password — temp password, as before). */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public StudentProfile create(
       UUID schoolId,
@@ -64,6 +65,31 @@ public class StudentManagementService {
       UUID classId,
       String studentNumber,
       LocalDate birthDate) {
+    return create(schoolId, firstName, lastName, phone, null, null, classId, studentNumber,
+        birthDate);
+  }
+
+  // Admin supplies the initial password directly (and optionally an email) — the admin IS the
+  // credential-delivery channel, same policy as ParentManagementService. Blank/null password
+  // falls back to the old server-generated temp password (bulk import path).
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public StudentProfile create(
+      UUID schoolId,
+      String firstName,
+      String lastName,
+      String phone,
+      String email,
+      String password,
+      UUID classId,
+      String studentNumber,
+      LocalDate birthDate) {
+    if (password != null && !password.isBlank() && password.length() < 8) {
+      throw new ApiException(
+          HttpStatus.BAD_REQUEST,
+          "ERR_VALIDATION",
+          "Parol kamida 8 belgidan iborat bo'lishi kerak.",
+          "Uzunroq parol kiriting.");
+    }
     if (userRepository.existsByPhone(phone)) {
       throw new ApiException(
           HttpStatus.CONFLICT,
@@ -79,8 +105,11 @@ public class StudentManagementService {
             firstName,
             lastName,
             phone,
-            null,
-            passwordEncoder.encode(TempPasswordGenerator.generate()),
+            email == null || email.isBlank() ? null : email,
+            passwordEncoder.encode(
+                password == null || password.isBlank()
+                    ? TempPasswordGenerator.generate()
+                    : password),
             Role.STUDENT,
             true,
             LocalDateTime.now(),

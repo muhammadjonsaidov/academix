@@ -22,6 +22,7 @@ export default function AdminPsychologistsPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,11 +39,18 @@ export default function AdminPsychologistsPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await invitePsychologist({ phone, firstName, lastName, email: email || undefined });
+      await invitePsychologist({
+        phone,
+        firstName,
+        lastName,
+        email: email || undefined,
+        password,
+      });
       setPhone("");
       setFirstName("");
       setLastName("");
       setEmail("");
+      setPassword("");
     } catch (err) {
       const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
       setError(apiError?.message ?? "Psixolog taklif qilib bo'lmadi.");
@@ -77,7 +85,8 @@ export default function AdminPsychologistsPage() {
               Yangi psixolog taklif qilish
             </CardTitle>
             <CardDescription>
-              Taklif SMS orqali yuboriladi, psixolog birinchi kirishda parolini o&apos;rnatadi.
+              Telefon, email (ixtiyoriy) va boshlang&apos;ich parol bilan yaratiladi — parolni
+              psixologga o&apos;zingiz yetkazasiz, keyin o&apos;zi almashtirishi mumkin.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -117,6 +126,18 @@ export default function AdminPsychologistsPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className={`${fieldClass} w-full`}
+                />
+              </FormField>
+              <FormField label="Boshlang'ich parol" htmlFor="password">
+                <input
+                  id="password"
+                  type="text"
+                  minLength={8}
+                  placeholder="Kamida 8 belgi"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   className={`${fieldClass} w-full`}
                 />
               </FormField>

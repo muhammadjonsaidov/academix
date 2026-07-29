@@ -63,9 +63,9 @@ public class ParentManagementService {
       String password) {
     requireNotBlank(firstName, "Ism majburiy.");
     requireNotBlank(phone, "Telefon raqam majburiy.");
-    // Email is deliberately REQUIRED for parents (unlike the teacher invite's optional email):
-    // password reset is email-based, and a phone-only parent account is unrecoverable.
-    requireNotBlank(email, "Email majburiy — parolni tiklash email orqali ishlaydi.");
+    // Email is OPTIONAL (product decision: phone + email(optional) + password for every role) —
+    // but note password reset is email-based, so a parent without an email can only recover
+    // their account through the admin re-setting a password.
     requireNotBlank(password, "Boshlang'ich parol majburiy.");
     if (password.length() < 8) {
       throw new ApiException(
@@ -88,7 +88,7 @@ public class ParentManagementService {
             firstName,
             lastName == null ? "" : lastName,
             phone,
-            email,
+            email == null || email.isBlank() ? null : email,
             passwordEncoder.encode(password),
             Role.PARENT,
             true,

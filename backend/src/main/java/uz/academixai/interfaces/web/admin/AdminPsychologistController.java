@@ -44,7 +44,8 @@ public class AdminPsychologistController {
             request.phone(),
             request.firstName(),
             request.lastName(),
-            request.email());
+            request.email(),
+            request.password());
     return ResponseEntity.ok(PsychologistResponse.from(invited));
   }
 

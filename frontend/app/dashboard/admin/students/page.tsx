@@ -47,6 +47,8 @@ export default function AdminStudentsPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [classId, setClassId] = useState("");
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -94,10 +96,19 @@ export default function AdminStudentsPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await createStudent({ firstName, lastName, phone, classId });
+      await createStudent({
+        firstName,
+        lastName,
+        phone,
+        email: email || undefined,
+        password,
+        classId,
+      });
       setFirstName("");
       setLastName("");
       setPhone("");
+      setEmail("");
+      setPassword("");
       setClassId("");
     } catch (err) {
       const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
@@ -278,6 +289,27 @@ export default function AdminStudentsPage() {
                     </option>
                   ))}
                 </SelectField>
+              </FormField>
+              <FormField label="Email (ixtiyoriy)" htmlFor="studentEmail">
+                <input
+                  id="studentEmail"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`${fieldClass} w-full`}
+                />
+              </FormField>
+              <FormField label="Boshlang'ich parol" htmlFor="studentPassword">
+                <input
+                  id="studentPassword"
+                  type="text"
+                  minLength={8}
+                  placeholder="Kamida 8 belgi"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className={`${fieldClass} w-full`}
+                />
               </FormField>
               <div className="flex items-end sm:col-span-2 lg:col-span-4">
                 <Button type="submit" disabled={isSubmitting}>

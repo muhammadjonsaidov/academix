@@ -35,6 +35,8 @@ export interface InviteTeacherRequest {
   firstName: string;
   lastName: string;
   email?: string;
+  /** Admin-chosen initial password; when present the account is active immediately. */
+  password?: string;
 }
 
 export interface Student {
@@ -52,6 +54,9 @@ export interface CreateStudentRequest {
   firstName: string;
   lastName: string;
   phone: string;
+  email?: string;
+  /** Admin-chosen initial password (bulk import omits it → server temp password). */
+  password?: string;
   classId: string;
   studentNumber?: string;
   birthDate?: string;
@@ -101,13 +106,13 @@ export interface Parent {
   children: LinkedChild[];
 }
 
-// POST /admin/parents — phone AND email both required (email is the password-reset channel);
-// password is the admin-chosen initial password handed to the parent.
+// POST /admin/parents — phone + password required, email optional (product decision: every
+// role is phone + email(optional) + admin-chosen password; note password reset needs email).
 export interface CreateParentRequest {
   firstName: string;
   lastName: string;
   phone: string;
-  email: string;
+  email?: string;
   password: string;
 }
 
@@ -163,6 +168,8 @@ export interface InvitePsychologistRequest {
   firstName: string;
   lastName: string;
   email?: string;
+  /** Admin-chosen initial password; when present the account is active immediately. */
+  password?: string;
 }
 
 // GET/POST/DELETE /admin/subjects — originally read-only (subjects were assumed seed/fixture

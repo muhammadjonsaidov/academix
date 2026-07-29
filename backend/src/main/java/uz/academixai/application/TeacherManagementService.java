@@ -35,10 +35,26 @@ public class TeacherManagementService {
         .toList();
   }
 
-  // Invited inactive (see TempPasswordGenerator) — /activate is the deliberate second step that
-  // gives the endpoint a real purpose distinct from invite itself; no credential-delivery channel
-  // is wired yet (known gap).
-  public User invite(UUID schoolId, String phone, String firstName, String lastName, String email) {
+  // Two modes (DEVIATION on top of §2.2's password-less invite): when the admin supplies a
+  // password, the account is created ACTIVE immediately — the admin is the credential-delivery
+  // channel and hands the password to the teacher, who can change it later via
+  // /auth/change-password. Without a password, the old behavior stands: server-generated temp
+  // password + inactive until /activate (no delivery channel — known gap).
+  public User invite(
+      UUID schoolId,
+      String phone,
+      String firstName,
+      String lastName,
+      String email,
+      String password) {
+    boolean hasPassword = password != null && !password.isBlank();
+    if (hasPassword && password.length() < 8) {
+      throw new ApiException(
+          HttpStatus.BAD_REQUEST,
+          "ERR_VALIDATION",
+          "Parol kamida 8 belgidan iborat bo'lishi kerak.",
+          "Uzunroq parol kiriting.");
+    }
     if (userRepository.existsByPhone(phone)) {
       throw new ApiException(
           HttpStatus.CONFLICT,
@@ -54,9 +70,9 @@ public class TeacherManagementService {
             lastName,
             phone,
             email,
-            passwordEncoder.encode(TempPasswordGenerator.generate()),
+            passwordEncoder.encode(hasPassword ? password : TempPasswordGenerator.generate()),
             Role.TEACHER,
-            false,
+            hasPassword,
             LocalDateTime.now(),
             null,
             schoolId);

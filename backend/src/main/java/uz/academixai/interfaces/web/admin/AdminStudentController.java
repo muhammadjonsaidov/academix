@@ -58,6 +58,8 @@ public class AdminStudentController {
             request.firstName(),
             request.lastName(),
             request.phone(),
+            request.email(),
+            request.password(),
             request.classId(),
             request.studentNumber(),
             request.birthDate());

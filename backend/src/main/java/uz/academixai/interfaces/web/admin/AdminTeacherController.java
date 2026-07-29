@@ -42,7 +42,8 @@ public class AdminTeacherController {
             request.phone(),
             request.firstName(),
             request.lastName(),
-            request.email());
+            request.email(),
+            request.password());
     return ResponseEntity.ok(TeacherResponse.from(invited));
   }
 
