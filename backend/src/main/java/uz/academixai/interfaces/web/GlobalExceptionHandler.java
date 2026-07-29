@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -54,6 +55,22 @@ public class GlobalExceptionHandler {
                 "ERR_INVALID_FILE",
                 "Fayl hajmi juda katta.",
                 "Faylni siqib yoki kichikroq o'lchamda qayta yuklang (maksimal 20MB)."));
+  }
+
+  // Without this, a GET typed into a browser's address bar against a POST-only endpoint (e.g.
+  // /api/v1/auth/login) fell through to the generic handler below as a logged-with-stack-trace
+  // 500 ERR_INTERNAL — confirmed by a real production log. Wrong HTTP method is a client
+  // mistake, not a server failure; same category as the AccessDeniedException handler above.
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ResponseEntity<ApiErrorResponse> handleMethodNotSupported(
+      HttpRequestMethodNotSupportedException e) {
+    return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+        .body(
+            new ApiErrorResponse(
+                405,
+                "ERR_METHOD_NOT_ALLOWED",
+                "Bu manzil uchun so'rov turi noto'g'ri.",
+                "API hujjatlaridagi to'g'ri HTTP metodini ishlating."));
   }
 
   @ExceptionHandler(Exception.class)
