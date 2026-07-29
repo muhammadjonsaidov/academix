@@ -20,9 +20,12 @@ RUN addgroup -S academix && adduser -S academix -G academix
 COPY --from=build /app/build/libs/*.jar app.jar
 USER academix
 EXPOSE 8080
-# Small-container default (Railway trial caps 0.5GB RAM/service): tight heap, SerialGC (right
-# choice for sub-512MB heaps — throughput GCs just add overhead here), capped metaspace/code
-# cache/thread stacks. Realistic RSS ~380-450MB. Override by setting JAVA_TOOL_OPTIONS on the
-# container env (the JVM picks it up automatically; an env-provided value replaces this one).
-ENV JAVA_TOOL_OPTIONS="-Xmx224m -Xms128m -XX:MaxMetaspaceSize=160m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=64m -Xss512k -XX:+UseSerialGC"
+# Small-container default (Railway trial allows 1GB/replica): modest heap, SerialGC (right
+# choice for small heaps — throughput GCs just add overhead here), capped metaspace/code
+# cache/thread stacks. Realistic RSS ~500-650MB. Metaspace is 256m, NOT lower — a real Railway
+# deploy OOM'd ("OutOfMemoryError: Metaspace") at 160m under live traffic: Jackson 3's generated
+# (de)serializers, the JDT in-process JRXML compiler, and Spring Security observation classes
+# together need well over 160m. Override by setting JAVA_TOOL_OPTIONS on the container env
+# (the JVM picks it up automatically; an env-provided value replaces this one).
+ENV JAVA_TOOL_OPTIONS="-Xmx288m -Xms128m -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m -XX:MaxDirectMemorySize=64m -Xss512k -XX:+UseSerialGC"
 ENTRYPOINT ["java", "-jar", "app.jar"]
