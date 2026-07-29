@@ -65,8 +65,8 @@ public class StudentManagementService {
       UUID classId,
       String studentNumber,
       LocalDate birthDate) {
-    return create(schoolId, firstName, lastName, phone, null, null, classId, studentNumber,
-        birthDate);
+    return create(
+        schoolId, firstName, lastName, phone, null, null, classId, studentNumber, birthDate);
   }
 
   // Admin supplies the initial password directly (and optionally an email) — the admin IS the
