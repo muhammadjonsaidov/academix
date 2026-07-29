@@ -27,6 +27,12 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/academix}
     user: ${DATABASE_USERNAME:academix}
     password: ${DATABASE_PASSWORD:academix}
+    # Scale-to-zero deploys (Railway trial) have Postgres asleep at backend boot; the first
+    # connection attempt wakes it but takes seconds. Without retries, Flyway's single fail-fast
+    # attempt killed the whole boot (confirmed by real deploy logs). No effect on local dev
+    # (pg already up → zero retries used).
+    connect-retries: 12
+    connect-retries-interval: 5
 
   data:
     redis:

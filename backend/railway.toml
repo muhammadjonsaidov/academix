@@ -15,7 +15,10 @@ watchPatterns = ["backend/**"]
 # traffic to a deploy once this returns 200. Generous timeout: Flyway runs all migrations
 # on first boot of a fresh database before the app is healthy.
 healthcheckPath = "/actuator/health"
-healthcheckTimeout = 300
+# 600, not 300: on the trial every dependency sleeps, and a cold-start backend may spend 1-2
+# boot cycles waking postgres/seaweedfs before it can come healthy (confirmed: a real deploy
+# was serving traffic at ~t+360s but the 300s window had already marked it FAILED).
+healthcheckTimeout = 600
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
 # App Sleeping is enabled via the dashboard/API, not here (numReplicas/sleepApplication aren't
