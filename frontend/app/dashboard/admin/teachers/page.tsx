@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { validatePassword } from "@/lib/password-policy";
 import { useAdminStore } from "@/stores/useAdminStore";
 import type { ApiErrorResponse } from "@/types/auth";
 
@@ -37,6 +38,13 @@ export default function AdminTeachersPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+
+    const policy = validatePassword(password);
+    if (!policy.valid) {
+      setError(policy.error);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await inviteTeacher({

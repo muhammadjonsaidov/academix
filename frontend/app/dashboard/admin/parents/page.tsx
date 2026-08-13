@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { validatePassword } from "@/lib/password-policy";
 import { useAdminStore } from "@/stores/useAdminStore";
 import type { ParentRelation } from "@/types/admin";
 import type { ApiErrorResponse } from "@/types/auth";
@@ -52,6 +53,13 @@ export default function AdminParentsPage() {
   async function handleCreate(event: FormEvent) {
     event.preventDefault();
     setFormError(null);
+
+    const policy = validatePassword(password);
+    if (!policy.valid) {
+      setFormError(policy.error);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await createParent({ firstName, lastName, phone, email: email || undefined, password });

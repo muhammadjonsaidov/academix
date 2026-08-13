@@ -24,6 +24,54 @@ const nextConfig: NextConfig = {
     const upstream = process.env.BACKEND_INTERNAL_URL || "http://localhost:8080";
     return [{ source: "/api/:path*", destination: `${upstream}/api/:path*` }];
   },
+
+  // Pentest F-08 — the frontend shipped with NO security headers (only X-Powered-By: Next.js).
+  // These close the gaps: CSP (stored-XSS blast radius), clickjacking, MIME-sniffing, referrer
+  // leakage and permissions. `poweredByHeader: false` below removes the version banner.
+  //
+  // CSP notes:
+  //  - 'unsafe-inline' for script/style is required by Next.js hydration + the pre-paint theme
+  //    <script> and shadcn's runtime-injected styles. Keeping it is a conscious trade-off; the
+  //    real XSS defense is React's output escaping (no dangerouslySetInnerHTML on user data).
+  //  - connect-src is derived from NEXT_PUBLIC_API_URL so BOTH modes work: a relative /api/v1
+  //    (tunnel/single-origin) is 'self', an absolute http://localhost:8080 (local dev) is added
+  //    explicitly. The SSE stream connects to the same API base.
+  async headers() {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+    const apiOrigin = apiBase.startsWith("http")
+      ? new URL(apiBase).origin
+      : "http://localhost:8080";
+    const connectSrc = ["'self'", apiOrigin].join(" ");
+
+    const contentSecurityPolicy = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      `img-src 'self' data: blob:`,
+      `connect-src ${connectSrc}`,
+      "font-src 'self' data:",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join("; ");
+
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "Content-Security-Policy", value: contentSecurityPolicy },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+        ],
+      },
+    ];
+  },
+
+  // Pentest F-14 — stop advertising the runtime version to scanners.
+  poweredByHeader: false,
 };
 
 export default nextConfig;

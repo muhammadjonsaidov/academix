@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { validatePassword } from "@/lib/password-policy";
 import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { PaginationControl } from "@/components/shared/PaginationControl";
 import { Badge } from "@/components/ui/badge";
@@ -94,6 +95,13 @@ export default function AdminStudentsPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+
+    const policy = validatePassword(password);
+    if (!policy.valid) {
+      setError(policy.error);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await createStudent({

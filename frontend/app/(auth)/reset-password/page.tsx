@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { KeyRound } from "lucide-react";
 import { fieldClass } from "@/components/shared/FormField";
+import { validatePassword } from "@/lib/password-policy";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -34,6 +35,11 @@ function ResetPasswordForm() {
     setError(null);
     if (newPassword !== confirmPassword) {
       setError("Parollar mos kelmadi.");
+      return;
+    }
+    const policy = validatePassword(newPassword);
+    if (!policy.valid) {
+      setError(policy.error);
       return;
     }
     setIsSubmitting(true);

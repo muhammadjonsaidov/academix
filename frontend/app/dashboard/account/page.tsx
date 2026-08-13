@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { validatePassword } from "@/lib/password-policy";
 import { ROLE_ACCENT_CLASSES } from "@/components/shared/nav-config";
 import { useAdminStore } from "@/stores/useAdminStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -274,6 +275,12 @@ function PasswordCard() {
 
     if (newPassword !== confirmPassword) {
       setError("Yangi parollar bir xil emas.");
+      return;
+    }
+
+    const policy = validatePassword(newPassword);
+    if (!policy.valid) {
+      setError(policy.error);
       return;
     }
 
