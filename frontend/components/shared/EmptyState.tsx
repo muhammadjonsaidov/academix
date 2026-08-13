@@ -18,7 +18,9 @@ export function EmptyState({ icon: Icon, title, description, className }: EmptyS
         className,
       )}
     >
-      <Icon className="size-10 text-muted-foreground/40" strokeWidth={1.75} />
+      <span className="flex size-14 items-center justify-center rounded-full bg-muted/60">
+        <Icon className="size-6 text-muted-foreground/60" strokeWidth={1.75} />
+      </span>
       <p className="text-sm font-medium text-foreground">{title}</p>
       <p className="max-w-xs text-sm text-muted-foreground">{description}</p>
     </div>

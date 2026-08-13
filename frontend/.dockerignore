@@ -7,3 +7,5 @@ out/
 e2e/
 playwright-report/
 test-results/
+.env.local
+.env

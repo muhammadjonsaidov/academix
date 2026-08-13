@@ -18,6 +18,7 @@ import uz.academixai.infrastructure.persistence.NotificationPreferenceEntity;
 import uz.academixai.infrastructure.persistence.NotificationPreferenceRepository;
 import uz.academixai.infrastructure.persistence.NotificationRepository;
 import uz.academixai.infrastructure.queue.NotificationTelegramQueueProducer;
+import uz.academixai.infrastructure.realtime.RealtimeEventBus;
 import uz.academixai.interfaces.web.ApiException;
 
 /**
@@ -37,16 +38,19 @@ public class NotificationService {
   private final NotificationRepository notificationRepository;
   private final NotificationPreferenceRepository preferenceRepository;
   private final NotificationTelegramQueueProducer telegramQueueProducer;
+  private final RealtimeEventBus realtimeEventBus;
   private final ObjectMapper objectMapper;
 
   public NotificationService(
       NotificationRepository notificationRepository,
       NotificationPreferenceRepository preferenceRepository,
       NotificationTelegramQueueProducer telegramQueueProducer,
+      RealtimeEventBus realtimeEventBus,
       ObjectMapper objectMapper) {
     this.notificationRepository = notificationRepository;
     this.preferenceRepository = preferenceRepository;
     this.telegramQueueProducer = telegramQueueProducer;
+    this.realtimeEventBus = realtimeEventBus;
     this.objectMapper = objectMapper;
   }
 
@@ -87,6 +91,13 @@ public class NotificationService {
     if (telegramEnabled) {
       telegramQueueProducer.publish(notificationId, userId, title, body);
     }
+    // Live push — the frontend's NotificationBell refetches on this event. After commit, so
+    // the inbox row is durably visible when the client fetches it (same rule as Telegram).
+    Map<String, String> eventData = new java.util.HashMap<>();
+    eventData.put("id", notificationId.toString());
+    eventData.put("type", type.name());
+    eventData.put("title", title == null ? "" : title);
+    realtimeEventBus.publishAfterCommit(userId, "notification.created", eventData);
   }
 
   private static final int MAX_INBOX_PAGE = 100;

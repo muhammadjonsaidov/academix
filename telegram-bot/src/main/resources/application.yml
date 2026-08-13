@@ -18,6 +18,11 @@ spring:
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
+    # Same env mapping as the backend's application.yml — without these, Spring Boot falls
+    # back to guest/guest and the broker (which requires a real user, see infra docker-compose)
+    # refuses the connection with ACCESS_REFUSED, killing the bot at startup.
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
 server:
   port: ${SERVER_PORT:8081}

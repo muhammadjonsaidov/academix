@@ -1,0 +1,18 @@
+{
+  "name": "AcademiX AI — qo'lyozmani AI bilan baholash",
+  "short_name": "AcademiX",
+  "description": "AI yordamida qo'lyozma uy vazifalari va nazorat ishlarini baholovchi maktab platformasi.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf7f0",
+  "theme_color": "#faf7f0",
+  "lang": "uz",
+  "icons": [
+    {
+      "src": "/logo-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

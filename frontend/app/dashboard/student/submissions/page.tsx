@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { FULL_STATUS_META, StatusLabel } from "@/components/shared/submission-status";
+import { subscribeToAiStatus } from "@/hooks/useRealtime";
 import { useStudentStore } from "@/stores/useStudentStore";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,17 @@ export default function StudentSubmissionsPage() {
     fetchSubmissions()
       .catch(() => setError("Topshiriqlarni yuklab bo'lmadi."))
       .finally(() => setIsLoading(false));
+  }, [fetchSubmissions]);
+
+  // Live AI-status push: when a submission of mine finishes grading, the list
+  // refreshes in place — "AI tahlil qilmoqda" → "Baholandi" without a manual reload.
+  useEffect(() => {
+    const unsubscribe = subscribeToAiStatus((payload) => {
+      if (payload.status !== "AI_PROCESSING") {
+        fetchSubmissions().catch(() => {});
+      }
+    });
+    return unsubscribe;
   }, [fetchSubmissions]);
 
   return (

@@ -145,7 +145,7 @@ function cnSection(isActive: boolean): string {
   return [
     "flex items-center gap-2.5 rounded-md border-l-2 border-transparent px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
     isActive
-      ? "border-ink bg-accent text-foreground"
+      ? "border-foreground bg-accent text-foreground"
       : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
   ].join(" ");
 }
@@ -507,14 +507,14 @@ const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   HOMEWORK_ASSIGNED: "Yangi uy vazifasi",
   DEADLINE_REMINDER: "Muddat eslatmasi",
   HOMEWORK_GRADED: "Baholangan ishlar",
-  STREAK_BROKEN: "Streak uzilishi",
-  STREAK_MILESTONE: "Streak yutuqlari",
+  STREAK_BROKEN: "Faollik uzilishi",
+  STREAK_MILESTONE: "Faollik yutuqlari",
   BADGE_EARNED: "Yutuq belgilari",
   PSYCHOLOGICAL_ALERT: "Psixologik signallar",
   LATE_SUBMISSION: "Kechikkan topshiriqlar",
   CLASS_PROGRESS_REPORT: "Sinf hisobotlari",
-  HANDWRITING_PROFILE_RESET: "Qo'lyozma profili reset",
-  AI_BUDGET_LOW: "AI byudjet ogohlantirishi",
+  HANDWRITING_PROFILE_RESET: "Qo'lyozma profili qayta tiklanishi",
+  AI_BUDGET_LOW: "AI limiti ogohlantirishi",
 };
 
 function NotificationPreferencesCard() {

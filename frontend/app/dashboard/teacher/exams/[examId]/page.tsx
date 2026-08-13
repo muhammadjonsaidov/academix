@@ -83,7 +83,7 @@ function ExamSubmissionRow({ examId, submission }: { examId: string; submission:
                   <span>
                     {step.stepContent}
                     {!step.isCorrect && step.errorDescription ? (
-                      <span className="text-pen-red"> — {step.errorDescription}</span>
+                      <span className="text-destructive"> — {step.errorDescription}</span>
                     ) : null}
                   </span>
                 </p>

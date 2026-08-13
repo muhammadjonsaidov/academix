@@ -30,10 +30,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       @NonNull HttpServletResponse response,
       @NonNull FilterChain filterChain)
       throws ServletException, IOException {
+    String token = null;
     String header = request.getHeader("Authorization");
     if (header != null && header.startsWith("Bearer ")) {
+      token = header.substring(7);
+    } else if (request.getRequestURI().startsWith("/api/v1/realtime/")) {
+      // EventSource cannot set Authorization headers, so the SSE endpoint accepts the JWT as a
+      // query param instead. Scoped to /api/v1/realtime/** ONLY (query strings can end up in
+      // access logs) and uses the short-lived access token (15 min), never the refresh token.
+      token = request.getParameter("token");
+    }
+    if (token != null) {
       try {
-        var claims = jwtService.parseAccessToken(header.substring(7));
+        var claims = jwtService.parseAccessToken(token);
         var principal = new AcademixPrincipal(claims.userId(), claims.role(), claims.schoolId());
         var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + claims.role().name()));
         var authentication = new UsernamePasswordAuthenticationToken(principal, null, authorities);

@@ -25,7 +25,7 @@ import type { NotificationType } from "@/types/notification";
 // Per-type icon + accent so a glance separates "yutuq" from "signal" from "muddat".
 // Colors reuse the system's semantic tokens only — no new hues.
 const TYPE_META: Record<NotificationType, { icon: LucideIcon; className: string }> = {
-  HOMEWORK_ASSIGNED: { icon: BookOpen, className: "text-ink" },
+  HOMEWORK_ASSIGNED: { icon: BookOpen, className: "text-foreground" },
   DEADLINE_REMINDER: { icon: Clock, className: "text-severity-medium" },
   HOMEWORK_GRADED: { icon: ClipboardCheck, className: "text-success" },
   STREAK_BROKEN: { icon: Flame, className: "text-status-skipped" },
@@ -33,8 +33,8 @@ const TYPE_META: Record<NotificationType, { icon: LucideIcon; className: string 
   BADGE_EARNED: { icon: Award, className: "text-role-student" },
   PSYCHOLOGICAL_ALERT: { icon: HeartPulse, className: "text-severity-high" },
   LATE_SUBMISSION: { icon: Clock, className: "text-severity-medium" },
-  CLASS_PROGRESS_REPORT: { icon: LineChart, className: "text-ink" },
-  HANDWRITING_PROFILE_RESET: { icon: Fingerprint, className: "text-ink" },
+  CLASS_PROGRESS_REPORT: { icon: LineChart, className: "text-foreground" },
+  HANDWRITING_PROFILE_RESET: { icon: Fingerprint, className: "text-foreground" },
   AI_BUDGET_LOW: { icon: Bot, className: "text-severity-medium" },
 };
 
@@ -97,7 +97,7 @@ export function NotificationBell() {
         )}
       </Button>
       {isOpen && (
-        <div className="animate-rise absolute right-0 z-50 mt-2 flex max-h-[26rem] w-88 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-lg">
+        <div className="animate-rise absolute right-0 z-50 mt-2 flex max-h-[26rem] w-88 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-lg">
           <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
             <p className="text-sm font-semibold">
               Bildirishnomalar
@@ -134,7 +134,7 @@ export function NotificationBell() {
           ) : (
             <ul className="divide-y divide-border overflow-y-auto">
               {notifications.map((n) => {
-                const meta = TYPE_META[n.type] ?? { icon: Bell, className: "text-ink" };
+                const meta = TYPE_META[n.type] ?? { icon: Bell, className: "text-foreground" };
                 const Icon = meta.icon;
                 return (
                   <li

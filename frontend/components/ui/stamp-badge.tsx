@@ -1,8 +1,12 @@
 import { cn } from "@/lib/utils"
 
 const STAMP_VARIANTS = {
-  ink: "border-ink text-ink",
-  "chalk-green": "border-chalk-green text-chalk-green",
+  // Theme-aware aliases: foreground/success == ink/chalk-green in light, and
+  // flip to readable light tones on the dark "night notebook" — the raw
+  // --ink/--chalk-green anchors stay light-theme values (they feed the dark
+  // background derivations) and would be invisible on dark cards.
+  ink: "border-foreground text-foreground",
+  "chalk-green": "border-success text-success",
 } as const
 
 const STAMP_SIZES = {

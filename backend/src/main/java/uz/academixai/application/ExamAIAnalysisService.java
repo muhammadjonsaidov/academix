@@ -2,6 +2,7 @@ package uz.academixai.application;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,7 @@ import uz.academixai.infrastructure.persistence.SchoolClassEntity;
 import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.SubjectEntity;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
+import uz.academixai.infrastructure.realtime.RealtimeEventBus;
 import uz.academixai.infrastructure.storage.FileStorageService;
 
 /**
@@ -74,6 +76,7 @@ public class ExamAIAnalysisService {
   private final AiBudgetService aiBudgetService;
   private final GradingCriteriaService gradingCriteriaService;
   private final HandwritingService handwritingService;
+  private final RealtimeEventBus realtimeEventBus;
 
   public ExamAIAnalysisService(
       ExamSubmissionRepository submissionRepository,
@@ -87,7 +90,8 @@ public class ExamAIAnalysisService {
       QwenAIClient qwenAIClient,
       AiBudgetService aiBudgetService,
       GradingCriteriaService gradingCriteriaService,
-      HandwritingService handwritingService) {
+      HandwritingService handwritingService,
+      RealtimeEventBus realtimeEventBus) {
     this.submissionRepository = submissionRepository;
     this.examRepository = examRepository;
     this.subjectRepository = subjectRepository;
@@ -100,6 +104,7 @@ public class ExamAIAnalysisService {
     this.aiBudgetService = aiBudgetService;
     this.gradingCriteriaService = gradingCriteriaService;
     this.handwritingService = handwritingService;
+    this.realtimeEventBus = realtimeEventBus;
   }
 
   public void analyzeExamSubmission(UUID examSubmissionId) {
@@ -282,5 +287,18 @@ public class ExamAIAnalysisService {
             flaggedForReview,
             submission.uploadedAt());
     submissionRepository.save(ExamSubmissionEntity.fromDomain(updated));
+    // Live push to the exam's teacher and the submitting student on every status
+    // transition — same pattern as AIAnalysisService.updateStatus.
+    examRepository
+        .findById(submission.examId())
+        .ifPresent(
+            exam -> {
+              Map<String, Object> payload = new java.util.HashMap<>();
+              payload.put("submissionId", submission.id().toString());
+              payload.put("type", "EXAM");
+              payload.put("status", status.name());
+              realtimeEventBus.publishAfterCommit(exam.getTeacherId(), "ai.status", payload);
+              realtimeEventBus.publishAfterCommit(submission.studentId(), "ai.status", payload);
+            });
   }
 }

@@ -109,7 +109,11 @@ public class DataDeletionService {
    * is_reliable} and psychological_signals' {@code raw_evidence}/{@code description} for the
    * student — rows survive (audit/aggregation), only the sensitive content disappears.
    */
-  @Transactional
+  // noRollbackFor per the CLAUDE.md rule: this participates in the request's transaction (the
+  // RLS filter wraps every request) and throws a business ApiException (404) before any write —
+  // without it the RLS transaction goes rollback-only and the request dies with an
+  // UnexpectedRollbackException 500 instead of the intended 404 (confirmed by a real test run).
+  @Transactional(noRollbackFor = ApiException.class)
   public DataDeletionRequest approveDataDeletion(UUID schoolId, UUID requestId) {
     DataDeletionRequestEntity entity =
         requestRepository

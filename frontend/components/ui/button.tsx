@@ -9,6 +9,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        // The ONE gradient button — the AI identity family (globals.css
+        // --ai-gradient), reserved for hero/marketing CTAs and the live-demo
+        // "run" affordance. Product actions inside dashboards stay ink/primary.
+        gradient:
+          "bg-ai-gradient text-ai-foreground shadow-[0_6px_20px_-6px_var(--ai)] hover:shadow-[0_10px_28px_-8px_var(--ai)] hover:brightness-110 active:brightness-95",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

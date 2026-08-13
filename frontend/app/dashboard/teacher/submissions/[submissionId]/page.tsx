@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InkMark } from "@/components/ui/ink-mark";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { subscribeToAiStatus } from "@/hooks/useRealtime";
 import { useTeacherStore } from "@/stores/useTeacherStore";
 import type { ApiErrorResponse } from "@/types/auth";
 import type { ResetReason } from "@/types/teacher";
@@ -46,6 +47,17 @@ export default function TeacherSubmissionDetailPage() {
   useEffect(() => {
     fetchSubmission(submissionId).catch(() => setError("Topshiriqni yuklab bo'lmadi."));
   }, [fetchSubmission, submissionId]);
+
+  // Live AI-status push: when this submission leaves AI_PROCESSING the SSE event arrives
+  // and the detail view refetches itself — the "Yangilash" button stays as a manual fallback.
+  useEffect(() => {
+    const unsubscribe = subscribeToAiStatus((payload) => {
+      if (payload.submissionId === submissionId && payload.status !== "AI_PROCESSING") {
+        fetchSubmission(submissionId).catch(() => {});
+      }
+    });
+    return unsubscribe;
+  }, [submissionId, fetchSubmission]);
 
   async function handleRefresh() {
     setError(null);
@@ -141,8 +153,7 @@ export default function TeacherSubmissionDetailPage() {
                 AI tahlil qilmoqda
               </Badge>
               <span className="text-sm text-muted-foreground">
-                Natija tayyor bo&apos;lganda bu yerda ko&apos;rinadi. Push-xabar yuborilmaydi —
-                qo&apos;lda tekshiring.
+                Natija tayyor bo&apos;lganda bu yerda avtomatik ko&apos;rinadi (jonli yangilanadi).
               </span>
             </div>
             <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
@@ -160,7 +171,7 @@ export default function TeacherSubmissionDetailPage() {
             <div>
               <p className="font-medium">AI o&apos;tkazib yubordi</p>
               <p className="text-sm text-muted-foreground">
-                AI byudjeti tugagani sababli bu ish qo&apos;lda baholanadi.
+                AI limiti tugagani sababli bu ish qo&apos;lda baholanadi.
               </p>
             </div>
           </CardContent>
@@ -184,7 +195,7 @@ export default function TeacherSubmissionDetailPage() {
             {submission.aiFeedback.extractedText ? (
               <details className="text-sm">
                 <summary className="cursor-pointer text-muted-foreground select-none">
-                  O&apos;qilgan matn (OCR)
+                  O&apos;qilgan matn
                 </summary>
                 <p className="mt-2 rounded-md border border-border bg-background/60 p-3 whitespace-pre-wrap">
                   {submission.aiFeedback.extractedText}
@@ -208,7 +219,7 @@ export default function TeacherSubmissionDetailPage() {
                     <div className="min-w-0">
                       <p>{step.stepContent}</p>
                       {!step.isCorrect && step.errorDescription ? (
-                        <p className="mt-0.5 text-pen-red">{step.errorDescription}</p>
+                        <p className="mt-0.5 text-destructive">{step.errorDescription}</p>
                       ) : null}
                       {step.suggestion ? (
                         <p className="mt-0.5 text-muted-foreground">{step.suggestion}</p>

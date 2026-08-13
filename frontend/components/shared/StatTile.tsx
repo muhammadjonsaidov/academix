@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCountUp } from "@/hooks/useCountUp";
 import { cn } from "@/lib/utils";
 
 /** Small trend/secondary-value chip next to the main number. Tone is decided at the
@@ -17,6 +18,17 @@ const DELTA_TONE_CLASSES: Record<StatTileDelta["tone"], string> = {
   negative: "bg-destructive/10 text-destructive",
   neutral: "bg-muted text-muted-foreground",
 };
+
+/** StatTile's numeric value — counts up from 0 when the tile scrolls into view
+ * (the "numbers come alive" moment). Only pure numbers animate; formatted
+ * strings like "78%" / "4.2/5" render as-is. */
+function AnimatedValue({ value }: { value: React.ReactNode }) {
+  const numeric = typeof value === "number" && Number.isFinite(value) ? value : null;
+  // Hook called unconditionally (before any early return) — rules-of-hooks.
+  const { ref, value: count } = useCountUp(numeric ?? 0);
+  if (numeric === null) return <>{value}</>;
+  return <span ref={ref}>{Math.round(count)}</span>;
+}
 
 interface StatTileProps {
   label: string;
@@ -47,11 +59,16 @@ export function StatTile({
   className,
 }: StatTileProps) {
   return (
-    <Card className={className}>
-      <CardContent className="flex items-center gap-4 py-5">
+    <Card className={cn("card-lift hover-glow relative overflow-hidden", className)}>
+      {/* Soft role-accent corner wash — atmosphere only, behind the content */}
+      <span
+        aria-hidden
+        className="bg-accent-role/10 absolute -top-8 -right-8 size-24 rounded-full blur-2xl"
+      />
+      <CardContent className="relative flex items-center gap-4 py-5">
         <span
           className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-lg",
+            "flex size-10 shrink-0 items-center justify-center rounded-lg ring-1 ring-current",
             accentClassName,
           )}
         >
@@ -59,7 +76,9 @@ export function StatTile({
         </span>
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
-            <p className="font-data text-2xl leading-none font-semibold">{value}</p>
+            <p className="font-data text-2xl leading-none font-semibold">
+              <AnimatedValue value={value} />
+            </p>
             {delta ? (
               <span
                 className={cn(

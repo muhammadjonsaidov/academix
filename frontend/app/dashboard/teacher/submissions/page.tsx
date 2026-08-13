@@ -11,6 +11,7 @@ import { SubmissionStatusBadge, submissionRailClass } from "@/components/shared/
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { subscribeToAiStatus } from "@/hooks/useRealtime";
 import { useTeacherStore } from "@/stores/useTeacherStore";
 
 export default function TeacherSubmissionsPage() {
@@ -39,6 +40,17 @@ function TeacherSubmissionsList() {
     fetchSubmissions(assignmentId ? { assignmentId } : undefined)
       .catch(() => setError("Topshiriqlarni yuklab bo'lmadi."))
       .finally(() => setHasLoaded(true));
+  }, [fetchSubmissions, assignmentId]);
+
+  // Live AI-status push: any HOMEWORK submission finishing grading refreshes the list
+  // in place — the "Yangilash" button stays as a manual fallback.
+  useEffect(() => {
+    const unsubscribe = subscribeToAiStatus((payload) => {
+      if (payload.type === "HOMEWORK" && payload.status !== "AI_PROCESSING") {
+        fetchSubmissions(assignmentId ? { assignmentId } : undefined).catch(() => {});
+      }
+    });
+    return unsubscribe;
   }, [fetchSubmissions, assignmentId]);
 
   async function handleRefresh() {

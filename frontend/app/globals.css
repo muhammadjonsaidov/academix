@@ -26,6 +26,16 @@
  * chalk-green's own hue (~155deg) — a role chip must never read as an alert
  * or a "verified" mark. Recharts categorical colors (--chart-1..5) reuse
  * these same five hues directly — one palette, two jobs.
+ *
+ * One MORE family sits above the five: the AI accent (--ai / --ai-gradient),
+ * a vibrant indigo→violet arc (~262deg-301deg). It is the single non-neutral
+ * *identity* color in the system and is reserved for moments where "the AI
+ * itself" is the subject — hero/landing gradients, the AI Tutor, the live
+ * grading demo, marketing CTAs. All product *data* (grades, signals, roles)
+ * keeps its own semantics; the gradient only ever means "a machine is
+ * thinking/acting here." It sits adjacent to the cool role band but off every
+ * individual role hue, and far from chalk-green/pen-red, so it can never be
+ * mistaken for a verdict or a severity state.
  */
 @theme inline {
   --color-background: var(--background);
@@ -101,6 +111,12 @@
   --color-success-bg: var(--success-bg);
   --color-success-foreground: var(--success-foreground);
 
+  /* AI identity family — see the anchor-color block comment: vibrant, kept
+     for "the AI itself" moments only. */
+  --color-ai: var(--ai);
+  --color-ai-soft: var(--ai-soft);
+  --color-ai-foreground: var(--ai-foreground);
+
   /* Per-role accent family — used for sidebar active state, role badges,
      avatar rings. NOT used for primary buttons/links, which stay the one
      shared brand indigo (--primary) everywhere so the five dashboards read
@@ -156,7 +172,9 @@
   --border: color-mix(in oklch, var(--graphite) 28%, var(--paper));
   --input: color-mix(in oklch, var(--graphite) 32%, var(--paper));
   --ring: color-mix(in oklch, var(--ink) 45%, var(--paper));
-  --radius: 0.5rem;
+  /* Slightly rounder than the old 0.5rem — reads more contemporary while the
+     paper/ink identity is untouched. */
+  --radius: 0.625rem;
   --sidebar: color-mix(in oklch, var(--graphite) 5%, var(--paper));
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--ink);
@@ -215,6 +233,22 @@
   --success: var(--chalk-green);
   --success-bg: color-mix(in oklch, var(--chalk-green) 12%, var(--paper));
   --success-foreground: color-mix(in oklch, white 20%, var(--paper));
+
+  /* AI accent (light) — indigo→violet gradient anchors. --ai-foreground is
+     the near-white text that sits ON the gradient; --ai-soft is the tinted
+     chip/badge fill; --ai-gradient is the single shared gradient direction
+     used by text-ai-gradient / bg-ai-gradient everywhere (one value to
+     retune, not a dozen). */
+  --ai: oklch(0.56 0.19 275);
+  --ai-soft: color-mix(in oklch, var(--ai) 10%, var(--paper));
+  --ai-foreground: color-mix(in oklch, white 92%, var(--ai));
+  --ai-gradient:
+    linear-gradient(
+      135deg,
+      oklch(0.55 0.19 262) 0%,
+      oklch(0.57 0.21 283) 55%,
+      oklch(0.63 0.19 301) 100%
+    );
 }
 
 .dark {
@@ -295,6 +329,18 @@
   --success: color-mix(in oklch, var(--chalk-green) 78%, white);
   --success-bg: oklch(0.3 0.05 155);
   --success-foreground: oklch(0.15 0.02 155);
+
+  /* AI accent (dark) — same gradient plan, lifted lightness for dark bg. */
+  --ai: oklch(0.72 0.17 283);
+  --ai-soft: color-mix(in oklch, var(--ai) 18%, black);
+  --ai-foreground: oklch(0.18 0.03 283);
+  --ai-gradient:
+    linear-gradient(
+      135deg,
+      oklch(0.7 0.17 262) 0%,
+      oklch(0.72 0.18 283) 55%,
+      oklch(0.78 0.15 301) 100%
+    );
 }
 
 /*
@@ -545,6 +591,36 @@
   animation: stamp-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Live-demo OCR sweep — a hairline that walks the notebook sheet top→bottom
+   while the landing demo "reads" the handwriting. Top % is relative to the
+   positioned sheet, so it sweeps the whole sheet height regardless of size.
+   Reduced motion: killed by the global prefers-reduced-motion rule above. */
+@keyframes scan-sweep {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--ai), transparent);
+  animation: scan-sweep 1.5s ease-in-out infinite;
+}
+
 /* AI Tutor typing indicator — three ink dots breathing while the model thinks. */
 @keyframes typing-bounce {
   0%,
@@ -606,6 +682,129 @@
 }
 
 /*
+ * AI accent helpers — see the anchor-color block comment at the top for when
+ * these are allowed. text-ai-gradient is display type on hero/demo moments;
+ * bg-ai-gradient is the CTA/button/chip fill; border-ai-soft is the tinted
+ * edge for AI-flavored cards. All three read one shared gradient direction.
+ */
+@utility text-ai-gradient {
+  background-image: var(--ai-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* Fallback: if background-clip:text is unsupported, gradient text must not
+   render as invisible — it falls back to the ink anchor. Un-layered rules
+   beat the layered @utility output, so this wins only where needed. */
+@supports not (background-clip: text) {
+  .text-ai-gradient {
+    background-image: none;
+    color: var(--ink);
+  }
+}
+@utility bg-ai-gradient {
+  background-image: var(--ai-gradient);
+}
+@utility border-ai-soft {
+  border-color: color-mix(in oklch, var(--ai) 35%, transparent);
+}
+
+/*
+ * Ambient background textures — subtle, modern-SaaS patterning that reads
+ * as depth without competing with the paper/ink identity.
+ *   bg-grid-paper  faint ruled grid (hero) — same spirit as the notebook
+ *                  sheet, abstracted to full-bleed background
+ *   bg-dots        fine dot grid (CTA band)
+ */
+@utility bg-grid-paper {
+  background-image:
+    linear-gradient(to right, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+@utility bg-dots {
+  background-image: radial-gradient(
+    color-mix(in oklch, var(--foreground) 9%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+}
+
+/*
+ * Aurora drift — the hero's ambient gradient blobs slowly breathe (translate
+ * + scale on a long alternate loop) so the background feels alive without
+ * drawing the eye. Multiple blobs get staggered --aurora-delay inline styles.
+ * Killed by the global prefers-reduced-motion rule.
+ */
+@keyframes drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(36px, -28px) scale(1.07);
+  }
+  100% {
+    transform: translate(-22px, 18px) scale(0.95);
+  }
+}
+.aurora {
+  animation: drift 16s ease-in-out infinite alternate;
+  animation-delay: var(--aurora-delay, 0s);
+}
+
+/*
+ * Shine sweep — a light band passes over gradient CTAs (scoped to actual
+ * buttons/links so the decorative aurora blobs that also use bg-ai-gradient
+ * never get the effect). Static band under reduced motion, per the global
+ * rule (0.01ms duration freezes it mid-sweep, which reads as a soft sheen).
+ */
+@keyframes shine-sweep {
+  from {
+    transform: translateX(-160%) skewX(-20deg);
+  }
+  to {
+    transform: translateX(260%) skewX(-20deg);
+  }
+}
+a.bg-ai-gradient,
+button.bg-ai-gradient {
+  position: relative;
+  overflow: hidden;
+}
+a.bg-ai-gradient::after,
+button.bg-ai-gradient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    color-mix(in oklch, white 40%, transparent) 50%,
+    transparent 60%
+  );
+  transform: translateX(-160%) skewX(-20deg);
+  animation: shine-sweep 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/*
+ * Hover glow — card/row hover gets a soft halo in the surrounding accent hue
+ * (resolves via --accent-role inside a role-scoped shell, --ai otherwise).
+ * Pairs with card-lift: lift moves the card, glow gives it presence.
+ */
+@utility hover-glow {
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+  &:hover {
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--accent-role, var(--ai)) 28%, transparent),
+      0 14px 44px -14px color-mix(in oklch, var(--accent-role, var(--ai)) 38%, transparent);
+    border-color: color-mix(in oklch, var(--accent-role, var(--ai)) 42%, transparent);
+  }
+}
+
+/*
  * Exercise-book sheet — landing/hero prop (see app/page.tsx). Ruled lines +
  * the red margin rule of a real daftar page, drawn with gradients so it
  * scales to any size. --sheet-rule spacing matches the hero's line-height.
@@ -613,19 +812,190 @@
 @utility notebook-sheet {
   --sheet-rule: 2rem;
   background-color: var(--card);
+  /* Theme-aware anchors: --destructive / --foreground resolve to the same
+     values as --pen-red / --ink in light mode but flip to readable light
+     tones on the dark "night notebook" — same lines, both themes. */
   background-image:
     linear-gradient(
       to right,
       transparent calc(2.75rem - 1px),
-      color-mix(in oklch, var(--pen-red) 45%, transparent) calc(2.75rem - 1px),
-      color-mix(in oklch, var(--pen-red) 45%, transparent) 2.75rem,
+      color-mix(in oklch, var(--destructive) 45%, transparent) calc(2.75rem - 1px),
+      color-mix(in oklch, var(--destructive) 45%, transparent) 2.75rem,
       transparent 2.75rem
     ),
     repeating-linear-gradient(
       to bottom,
       transparent 0,
       transparent calc(var(--sheet-rule) - 1px),
-      color-mix(in oklch, var(--ink) 12%, transparent) calc(var(--sheet-rule) - 1px),
-      color-mix(in oklch, var(--ink) 12%, transparent) var(--sheet-rule)
+      color-mix(in oklch, var(--foreground) 12%, transparent) calc(var(--sheet-rule) - 1px),
+      color-mix(in oklch, var(--foreground) 12%, transparent) var(--sheet-rule)
     );
+}
+
+/*
+ * Scroll-reveal system
+ * -----------------------------------------------------------------------
+ * Elements start a hair below their resting spot and settle up-and-in (same
+ * rise curve as animate-rise) the first time they enter the viewport — the
+ * "page comes alive as you scroll" feel. Applied via components/shared/Reveal.
+ * Reduced motion: forced fully visible below (the global * rule above only
+ * shortens the transition; it can't un-hide content).
+ */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/*
+ * Infinite feature marquee — a slow, seam-less loop of product keywords that
+ * reads as "a live product, in motion". Two identical tracks translated -50%
+ * make the loop pixel-perfect (items carry their own right margin instead of
+ * flex gap so both halves are exactly equal width). Hover pauses it.
+ */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-mask {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 32s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/*
+ * Animated gradient ring — a light that slowly travels around a card's border
+ * (hero demo panel, closing CTA). Wrapper technique: the moving gradient lives
+ * in the wrapper's border-box background, content stays a normal child below,
+ * so there are no z-index/mask pitfalls. Inner rounded must sit ~1.5px inside
+ * the wrapper's radius to look crisp.
+ */
+@keyframes border-flow {
+  0%,
+  100% {
+    background-position: 0 0, 0% 0;
+  }
+  50% {
+    background-position: 0 0, -130% 0;
+  }
+}
+.gradient-ring {
+  padding: 1.5px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(
+        color-mix(in oklch, var(--card) 88%, transparent),
+        color-mix(in oklch, var(--card) 88%, transparent)
+      )
+      padding-box,
+    linear-gradient(115deg, transparent 22%, var(--ai) 50%, transparent 78%) border-box;
+  background-size: auto, 240% 100%;
+  animation: border-flow 6s ease-in-out infinite;
+}
+
+/*
+ * Hero sweep — the role-accent light travels along the dashboard hero's bottom
+ * edge every few seconds, mirroring the shell hairline above it. Atmosphere
+ * only; killed by reduced motion. The hero section itself is overflow-hidden,
+ * so the ::after light clips cleanly as it exits the right edge.
+ */
+.hero-sweep::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: -45%;
+  height: 2px;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, var(--accent-role), transparent);
+  animation: hero-sweep-move 6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes hero-sweep-move {
+  0% {
+    left: -45%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    left: 105%;
+    opacity: 0;
+  }
+}
+
+/*
+ * Shell hairline sweep — a soft light passes over the dashboard's role-accent
+ * top hairline every few seconds. Atmosphere only; killed by reduced motion.
+ */
+.shell-hairline {
+  overflow: hidden;
+}
+.shell-hairline::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -40%;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklch, white 55%, transparent),
+    transparent
+  );
+  animation: hairline-sweep 7s ease-in-out infinite;
+}
+@keyframes hairline-sweep {
+  0% {
+    left: -40%;
+  }
+  60%,
+  100% {
+    left: 110%;
+  }
+}
+
+/* Reduced-motion guards for the additions above — these must beat the global
+   * { animation-duration: 0.01ms !important } rule, hence !important here. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .marquee-track {
+    animation: none !important;
+  }
+  .gradient-ring {
+    animation: none !important;
+  }
+  .shell-hairline::after {
+    animation: none;
+    opacity: 0;
+  }
+  .hero-sweep::after {
+    animation: none;
+    opacity: 0;
+  }
 }

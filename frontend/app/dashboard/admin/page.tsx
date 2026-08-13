@@ -3,22 +3,28 @@
 import { useEffect, useState } from "react";
 import {
   AlertTriangle,
+  BarChart3,
   ClipboardList,
   GraduationCap,
   Inbox,
+  School,
   TrendingUp,
   Users,
 } from "lucide-react";
+import { DashboardHero, HeroAction } from "@/components/shared/DashboardHero";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { ProgressBar } from "@/components/shared/ProgressBar";
 import { StatTile, StatTileSkeleton } from "@/components/shared/StatTile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { useAdminAnalyticsStore } from "@/stores/useAdminAnalyticsStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function AdminDashboardPage() {
   const dashboard = useAdminAnalyticsStore((state) => state.dashboard);
   const fetchDashboard = useAdminAnalyticsStore((state) => state.fetchDashboard);
+  const firstName = useAuthStore((state) => state.user?.firstName);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -28,10 +34,30 @@ export default function AdminDashboardPage() {
       .finally(() => setIsLoading(false));
   }, [fetchDashboard]);
 
+  const heroDescription = dashboard
+    ? `${dashboard.totalStudents} o'quvchi · ${dashboard.totalTeachers} o'qituvchi · bugun ${dashboard.activeToday} faol`
+    : "Maktab bo'yicha umumiy holat.";
+
   return (
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
-        <PageHeader title="Bosh sahifa" description="Maktab bo'yicha umumiy holat." />
+        <DashboardHero
+          title={firstName ? `Salom, ${firstName}!` : "Salom!"}
+          description={heroDescription}
+          actions={
+            <>
+              <HeroAction href="/dashboard/admin/classes" icon={School}>
+                Sinflar
+              </HeroAction>
+              <HeroAction href="/dashboard/admin/teachers" icon={Users}>
+                O&apos;qituvchilar
+              </HeroAction>
+              <HeroAction href="/dashboard/admin/analytics" icon={BarChart3}>
+                Tahlil
+              </HeroAction>
+            </>
+          }
+        />
 
         {error ? (
           <p className="text-sm text-destructive">{error}</p>
@@ -91,13 +117,21 @@ export default function AdminDashboardPage() {
                       {dashboard.classProgressList.map((c) => (
                         <li
                           key={c.classId}
-                          className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm"
+                          className="card-lift hover-glow space-y-1.5 rounded-md border border-border px-3 py-2.5 text-sm"
                         >
-                          <span className="font-medium">{c.className}</span>
-                          <span className="font-data text-muted-foreground">
-                            {c.avgScore}% ({c.gradedCount} baholangan, {c.studentCount}{" "}
-                            o&apos;quvchi)
-                          </span>
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="truncate font-medium">{c.className}</span>
+                            <span className="font-data shrink-0 text-muted-foreground">
+                              {c.avgScore}%
+                            </span>
+                          </div>
+                          <ProgressBar
+                            value={c.avgScore}
+                            tone={c.avgScore >= 70 ? "success" : c.avgScore >= 50 ? "role" : "destructive"}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {c.gradedCount} baholangan · {c.studentCount} o&apos;quvchi
+                          </p>
                         </li>
                       ))}
                     </ul>
@@ -118,17 +152,38 @@ export default function AdminDashboardPage() {
                     />
                   ) : (
                     <ul className="space-y-2">
-                      {dashboard.teacherRankings.map((t) => (
+                      {dashboard.teacherRankings.map((t, index) => (
                         <li
                           key={t.teacherId}
-                          className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-sm"
+                          className="card-lift hover-glow space-y-1.5 rounded-md border border-border px-3 py-2.5 text-sm"
                         >
-                          <span className="font-medium">
-                            {t.firstName} {t.lastName}
-                          </span>
-                          <span className="font-data text-muted-foreground">
-                            {t.avgGrade}/5 ({t.gradedCount})
-                          </span>
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="flex min-w-0 items-center gap-2.5">
+                              {index < 3 ? (
+                                <span
+                                  className={cn(
+                                    "font-data flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ring-1",
+                                    index === 0
+                                      ? "bg-accent-role-muted text-accent-role ring-[var(--accent-role)]/40"
+                                      : "bg-muted text-muted-foreground ring-border",
+                                  )}
+                                >
+                                  {index + 1}
+                                </span>
+                              ) : (
+                                <span className="font-data text-xs font-semibold text-muted-foreground">
+                                  #{index + 1}
+                                </span>
+                              )}
+                              <span className="truncate font-medium">
+                                {t.firstName} {t.lastName}
+                              </span>
+                            </span>
+                            <span className="font-data shrink-0 text-muted-foreground">
+                              {t.avgGrade}/5 ({t.gradedCount})
+                            </span>
+                          </div>
+                          <ProgressBar value={t.avgGrade * 20} />
                         </li>
                       ))}
                     </ul>

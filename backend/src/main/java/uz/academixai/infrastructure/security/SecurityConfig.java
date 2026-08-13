@@ -55,7 +55,13 @@ public class SecurityConfig {
     // without this. In production, Nginx proxies both under one host (see infra/nginx/nginx.conf)
     // so this matters less there, but local dev breaks completely without it.
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(List.of(frontendUrl));
+    // Comma-separated so local dev (http://localhost:3000) and a deployed frontend
+    // (e.g. a Vercel domain) can coexist: FRONTEND_URL="http://localhost:3000,https://academix.vercel.app"
+    config.setAllowedOrigins(
+        java.util.Arrays.stream(frontendUrl.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toList());
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
     config.setAllowCredentials(true); // withCredentials: true on the frontend Axios client
@@ -74,7 +80,18 @@ public class SecurityConfig {
         .exceptionHandling(handling -> handling.authenticationEntryPoint(authenticationEntryPoint))
         .authorizeHttpRequests(
             auth -> {
-              auth.requestMatchers("/api/v1/auth/**", "/actuator/health").permitAll();
+              // Only the genuinely public auth endpoints are open — profile/logout/change-password
+              // must stay authenticated. A blanket "/api/v1/auth/**" permitAll (the old config)
+              // silently exposed those to anonymous callers, where @AuthenticationPrincipal is null
+              // and the controller NPE'd into a 500 instead of the proper 401 — confirmed by a real
+              // role-access test run.
+              auth.requestMatchers(
+                      "/api/v1/auth/login",
+                      "/api/v1/auth/refresh",
+                      "/api/v1/auth/forgot-password",
+                      "/api/v1/auth/reset-password",
+                      "/actuator/health")
+                  .permitAll();
               if (swaggerPublic) {
                 auth.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**")
                     .permitAll();

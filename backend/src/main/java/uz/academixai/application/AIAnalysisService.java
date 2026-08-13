@@ -2,6 +2,7 @@ package uz.academixai.application;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ import uz.academixai.infrastructure.persistence.SchoolClassEntity;
 import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.SubjectEntity;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
+import uz.academixai.infrastructure.realtime.RealtimeEventBus;
 import uz.academixai.infrastructure.storage.FileStorageService;
 
 /**
@@ -79,6 +81,7 @@ public class AIAnalysisService {
   private final GradingCriteriaService gradingCriteriaService;
   private final XPService xpService;
   private final HandwritingService handwritingService;
+  private final RealtimeEventBus realtimeEventBus;
 
   public AIAnalysisService(
       HomeworkSubmissionRepository submissionRepository,
@@ -93,7 +96,8 @@ public class AIAnalysisService {
       AiBudgetService aiBudgetService,
       GradingCriteriaService gradingCriteriaService,
       XPService xpService,
-      HandwritingService handwritingService) {
+      HandwritingService handwritingService,
+      RealtimeEventBus realtimeEventBus) {
     this.submissionRepository = submissionRepository;
     this.assignmentRepository = assignmentRepository;
     this.subjectRepository = subjectRepository;
@@ -107,6 +111,7 @@ public class AIAnalysisService {
     this.gradingCriteriaService = gradingCriteriaService;
     this.xpService = xpService;
     this.handwritingService = handwritingService;
+    this.realtimeEventBus = realtimeEventBus;
   }
 
   public void analyzeSubmission(UUID submissionId) {
@@ -347,5 +352,18 @@ public class AIAnalysisService {
             submission.submittedAt(),
             submission.xpEarned());
     submissionRepository.save(HomeworkSubmissionEntity.fromDomain(updated));
+    // Live push: the submission's teacher and student get every status transition
+    // (AI_PROCESSING → AI_DONE / AI_SKIPPED) so the UI can refresh without polling.
+    assignmentRepository
+        .findById(submission.assignmentId())
+        .ifPresent(
+            assignment -> {
+              Map<String, Object> payload = new java.util.HashMap<>();
+              payload.put("submissionId", submission.id().toString());
+              payload.put("type", "HOMEWORK");
+              payload.put("status", status.name());
+              realtimeEventBus.publishAfterCommit(assignment.getTeacherId(), "ai.status", payload);
+              realtimeEventBus.publishAfterCommit(submission.studentId(), "ai.status", payload);
+            });
   }
 }

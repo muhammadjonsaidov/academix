@@ -11,6 +11,7 @@ import { InkMark } from "@/components/ui/ink-mark";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { FULL_STATUS_META, StatusLabel } from "@/components/shared/submission-status";
+import { subscribeToAiStatus } from "@/hooks/useRealtime";
 import { useStudentStore } from "@/stores/useStudentStore";
 import { cn } from "@/lib/utils";
 
@@ -28,16 +29,17 @@ export default function StudentSubmissionDetailPage() {
     fetchSubmission(submissionId).catch(() => setError("Topshiriqni yuklab bo'lmadi."));
   }, [fetchSubmission, submissionId]);
 
-  // Auto-poll while the AI pipeline is running — the status flips to AI_DONE/AI_SKIPPED
-  // without the student having to mash "Yangilash" (no push channel exists by design).
-  const status = submission?.status;
+  // Live AI-status push: when this submission finishes grading (AI_DONE / AI_SKIPPED)
+  // the SSE event refetches it — "AI tahlil qilmoqda" flips to the verdict without
+  // polling or mashing "Yangilash".
   useEffect(() => {
-    if (!status || !REFETCHABLE_STATUSES.has(status)) return;
-    const timer = setInterval(() => {
-      fetchSubmission(submissionId).catch(() => {});
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [status, fetchSubmission, submissionId]);
+    const unsubscribe = subscribeToAiStatus((payload) => {
+      if (payload.submissionId === submissionId && payload.status !== "AI_PROCESSING") {
+        fetchSubmission(submissionId).catch(() => {});
+      }
+    });
+    return unsubscribe;
+  }, [submissionId, fetchSubmission]);
 
   async function handleRefresh() {
     setError(null);

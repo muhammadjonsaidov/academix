@@ -65,16 +65,37 @@ grading/delivery) — see the internal `CLAUDE.md`'s graceful-degradation notes.
 `JWT_SECRET` in `backend/.env` and `frontend/.env.local` **must be byte-for-byte identical** —
 different values silently break every authenticated request.
 
-### 2. Infra
+### 2. Full stack in Docker — one command (recommended)
 
 ```
-cd backend
-docker-compose -f ../infra/docker-compose.yml up -d
+cp infra/.env.example infra/.env   # optional: real AI/Telegram secrets
+cd infra
+docker compose up -d --build
 ```
 
-Brings up Postgres (with pgvector), Redis, RabbitMQ, SeaweedFS.
+Brings up the **whole product**: Postgres (with pgvector) + Redis + RabbitMQ + SeaweedFS,
+backend (`http://localhost:8080`), frontend (`http://localhost:3000`), telegram-bot, and a
+one-shot `seed` service that fills the DB with the demo data (`infra/seed/bootstrap.sql` first,
+then `infra/seed/demo-seed.sql`).
 
-### 3. Backend
+Demo logins (password `Test1234!` for all) — full list in `infra/seed/demo-seed.sql`:
+
+| Role        | Phone          |
+|-------------|----------------|
+| Admin       | +998901234567  |
+| Teacher     | +998911112233  |
+| Student     | +998933334455  |
+| Parent      | +998977001122  |
+| Psychologist| +998955501234  |
+
+Optional extras, still profile-gated:
+
+```
+docker compose --profile antivirus up -d clamav   # upload virus scanning (needs ACADEMIX_CLAMAV_ENABLED=true)
+docker compose --profile prod up -d               # nginx TLS + nightly postgres backup
+```
+
+### 3. Backend (local dev, no Docker)
 
 ```
 cd backend
@@ -82,12 +103,15 @@ cd backend
 ./gradlew test         # JUnit 5 + Testcontainers
 ```
 
-**`./gradlew test` needs step 2's stack running** — specifically SeaweedFS. Testcontainers starts
-Postgres/RabbitMQ/Redis itself, but `FileStorageService` reaches for the S3 endpoint from
-`@PostConstruct`, so without it the Spring context fails to start and 18 of 50 tests fail with a
-misleading `ApplicationContext failure threshold exceeded` that names no root cause.
+**`./gradlew test` needs the infra stack running** (postgres/redis/rabbitmq/seaweedfs) —
+`docker compose up -d` in `infra/` starts those along with the app; to run only the infra
+services (e.g. for local `./gradlew bootRun`/`npm run dev`), comment out the app services in
+`infra/docker-compose.yml`. Specifically SeaweedFS: Testcontainers starts Postgres/RabbitMQ/Redis itself, but
+`FileStorageService` reaches for the S3 endpoint from `@PostConstruct`, so without it the Spring
+context fails to start and 18 of 50 tests fail with a misleading `ApplicationContext failure
+threshold exceeded` that names no root cause.
 
-### 4. Frontend
+### 4. Frontend (local dev, no Docker)
 
 ```
 cd frontend
@@ -96,10 +120,12 @@ npm run dev            # http://localhost:3000
 npm run test
 ```
 
-### 5. Telegram bot (optional)
+### 5. Telegram bot
 
-Its own Gradle build — starting the backend does **not** start it. Skip this and everything works
-except Telegram delivery and the `/start` link flow.
+With Docker, telegram-bot comes up together with everything else (works with or without
+`TELEGRAM_BOT_TOKEN` — no token = bot skips polling, the app still works).
+
+Running it standalone (no Docker):
 
 ```
 cd telegram-bot

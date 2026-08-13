@@ -1,9 +1,15 @@
-# Local dev: `docker-compose up -d` starts only the infra deps below —
-# run backend/frontend locally via ./gradlew bootRun / npm run dev against them.
-# The full app stack (backend/frontend/nginx/certbot, matching production —
-# single-server per CLAUDE.md "Reality checks") is commented out further down;
-# it's slow to build and not needed for routine local iteration. Uncomment it
-# when actually testing a real container deploy.
+# Full AcademiX AI stack — one command, everything up:
+#   docker compose up -d --build
+# Then open http://localhost:3000 and log in with the demo accounts
+# (infra/seed/demo-seed.sql header: ADMIN +998901234567 / Test1234!).
+#
+# The prod-only pieces (nginx/certbot TLS, postgres-backup, clamav) stay profile-gated:
+#   docker compose --profile prod up -d      # nginx+certbot+backup, no clamav
+#   docker compose --profile antivirus up -d clamav
+#
+# Copy infra/.env.example → infra/.env to supply real secrets (QWEN_API_KEY,
+# GOOGLE_VISION_API_KEY, TELEGRAM_BOT_TOKEN, ...). Everything has working
+# local-dev defaults, so a bare `up` also works.
 
 services:
   postgres:
@@ -41,6 +47,13 @@ services:
 
   rabbitmq:
     image: rabbitmq:4.3.2-management
+    environment:
+      # guest/guest only accepts loopback connections — over the compose network the
+      # backend/telegram-bot are NOT loopback, so a real broker user is mandatory
+      # (confirmed in application.yml's own note). Backend + telegram-bot read the
+      # same RABBITMQ_USERNAME/RABBITMQ_PASSWORD below.
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-academix}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-academix_local_dev}
     ports:
       - "5672:5672"
       - "15672:15672" # management UI
@@ -61,14 +74,135 @@ services:
       - seaweedfs-data:/data
       - ./seaweedfs-config/s3-config.json:/etc/seaweedfs/s3-config.json:ro
 
-  # academix_tz.md §5.2 upload virus scanning. Behind the "antivirus" profile so it does NOT
-  # start with a plain `docker-compose up -d`: the image is ~1GB and spends several minutes
-  # loading signature databases before clamd accepts its first connection, which is a heavy
-  # default for local dev. Start it explicitly and flip the backend flag together:
-  #   docker-compose --profile antivirus up -d clamav
-  #   ACADEMIX_CLAMAV_ENABLED=true in backend/.env
-  # The backend fails uploads closed when the flag is on and clamd is unreachable, so turn
-  # both on together — and give clamd time to finish loading before the first upload.
+  backend:
+    build:
+      context: ../backend
+    environment:
+      # App runtime connection: restricted academix_app role, NOT the migration
+      # superuser below — see CLAUDE.md "Reality checks" (RLS is inert for a
+      # superuser/BYPASSRLS role).
+      DATABASE_URL: jdbc:postgresql://postgres:5432/academix
+      DATABASE_APP_USERNAME: ${DATABASE_APP_USERNAME:-academix_app}
+      DATABASE_APP_PASSWORD: ${DATABASE_APP_PASSWORD:-academix_app_local_dev_only}
+      # Flyway migration connection: superuser (CREATE EXTENSION etc. need it)
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-academix}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-academix}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-academix}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-academix_local_dev}
+      # Must be byte-for-byte identical to the frontend's — proxy.ts and JwtService
+      # derive their HMAC key from the raw bytes; a mismatch logs everyone out.
+      JWT_SECRET: ${JWT_SECRET:-local-dev-only-placeholder-not-for-production-use}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      SEAWEEDFS_S3_ENDPOINT: http://seaweedfs:8333
+      SEAWEEDFS_ACCESS_KEY: ${SEAWEEDFS_ACCESS_KEY:-local-dev-access-key}
+      SEAWEEDFS_SECRET_KEY: ${SEAWEEDFS_SECRET_KEY:-local-dev-secret-key}
+      SEAWEEDFS_BUCKET: ${SEAWEEDFS_BUCKET:-homeworks}
+      # Real AI/email/telegram keys — app degrades gracefully without them
+      QWEN_API_KEY: ${QWEN_API_KEY:-}
+      GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-}
+      GMAIL_USERNAME: ${GMAIL_USERNAME:-}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-academix_notify_bot}
+      # prod profile skips the dev badge seeder — the `seed` service below owns
+      # all demo data (fixed badge ids that demo-seed.sql references).
+      SPRING_PROFILES_ACTIVE: prod
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      seaweedfs:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+  telegram-bot:
+    build:
+      context: ../telegram-bot
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/academix
+      DATABASE_APP_USERNAME: ${DATABASE_APP_USERNAME:-academix_app}
+      DATABASE_APP_PASSWORD: ${DATABASE_APP_PASSWORD:-academix_app_local_dev_only}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-academix}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-academix_local_dev}
+      # Empty token = bot logs "polling skipped" and the app works without Telegram
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-academix_notify_bot}
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        # NEXT_PUBLIC_* are inlined at build time — the browser talks to the
+        # backend directly on the published port (CORS allows localhost:3000).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080/api/v1}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME:-academix_notify_bot}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+        # Rewrite target, baked at build time (see frontend/Dockerfile + next.config.ts).
+        BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://backend:8080}
+    environment:
+      # Runtime-only (proxy.ts route-guard cookie verification) — byte-for-byte
+      # identical to the backend's JWT_SECRET.
+      JWT_SECRET: ${JWT_SECRET:-local-dev-only-placeholder-not-for-production-use}
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_started
+
+  # One-shot: after Flyway has created the schema (backend healthy), apply the
+  # fresh-DB bootstrap + the demo seed. Idempotent, exits after running.
+  seed:
+    image: postgres:18-alpine
+    environment:
+      PGPASSWORD: ${DATABASE_PASSWORD:-academix}
+    volumes:
+      - ./seed/bootstrap.sql:/bootstrap.sql:ro
+      - ./seed/demo-seed.sql:/demo-seed.sql:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for backend health (Flyway schema)..."
+        until wget -qO- http://backend:8080/actuator/health 2>/dev/null | grep -q UP; do sleep 3; done
+        psql -v ON_ERROR_STOP=1 -h postgres -U ${DATABASE_USERNAME:-academix} -d academix -f /bootstrap.sql
+        psql -v ON_ERROR_STOP=1 -h postgres -U ${DATABASE_USERNAME:-academix} -d academix -f /demo-seed.sql
+        echo "Seed complete — demo logins ready."
+    restart: "no"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # academix_tz.md §5.2 upload virus scanning. ~1GB image, slow signature load —
+  # profile-gated so a plain `up` stays light. Backend flag: ACADEMIX_CLAMAV_ENABLED=true.
   clamav:
     image: clamav/clamav:1.5.3
     ports:
@@ -76,7 +210,6 @@ services:
     volumes:
       - clamav-db:/var/lib/clamav # persist signature DBs so restarts don't re-download ~1GB
     healthcheck:
-      # clamd answers PING with PONG only once signature loading is complete.
       test: ["CMD-SHELL", "clamdcheck.sh || exit 1"]
       interval: 30s
       timeout: 10s
@@ -101,102 +234,34 @@ services:
       - ./backups:/backups
     profiles: ["prod"]
 
-  # --- App-build services, intentionally commented out during Sprint 0+ local dev ---
-  # Building backend/frontend via Docker is slow and gives no live output/debugging —
-  # run them directly instead: `cd backend && ./gradlew bootRun`,
-  # `cd frontend && npm run dev`, both against the infra services above. Uncomment
-  # this whole block (and see deploy-release skill) when actually testing/running a
-  # real container deploy, not for routine local iteration.
-  #
-  # backend:
-  #   build:
-  #     context: ../backend
-  #   environment:
-  #     # App runtime connection: restricted academix_app role, NOT the migration
-  #     # superuser below — see CLAUDE.md "Reality checks" (RLS is inert for a
-  #     # superuser/BYPASSRLS role).
-  #     DATABASE_URL: jdbc:postgresql://postgres:5432/academix
-  #     DATABASE_APP_USERNAME: academix_app
-  #     DATABASE_APP_PASSWORD: ${DATABASE_APP_PASSWORD:-academix_app_local_dev_only}
-  #     # Flyway migration connection: superuser (CREATE EXTENSION etc. need it)
-  #     FLYWAY_USERNAME: ${DATABASE_USERNAME:-academix}
-  #     FLYWAY_PASSWORD: ${DATABASE_PASSWORD:-academix}
-  #     REDIS_HOST: redis
-  #     RABBITMQ_HOST: rabbitmq
-  #     JWT_SECRET: ${JWT_SECRET}
-  #     QWEN_API_KEY: ${QWEN_API_KEY}
-  #     GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY}
-  #     SEAWEEDFS_S3_ENDPOINT: http://seaweedfs:8333
-  #     SEAWEEDFS_ACCESS_KEY: ${SEAWEEDFS_ACCESS_KEY}
-  #     SEAWEEDFS_SECRET_KEY: ${SEAWEEDFS_SECRET_KEY}
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_started
-  #     rabbitmq:
-  #       condition: service_started
-  #   profiles: ["prod"]
-  #
-  # telegram-bot:
-  #   build:
-  #     context: ../telegram-bot
-  #   environment:
-  #     DATABASE_URL: jdbc:postgresql://postgres:5432/academix
-  #     DATABASE_APP_USERNAME: academix_app
-  #     DATABASE_APP_PASSWORD: ${DATABASE_APP_PASSWORD:-academix_app_local_dev_only}
-  #     REDIS_HOST: redis
-  #     RABBITMQ_HOST: rabbitmq
-  #     TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-  #     TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_started
-  #     rabbitmq:
-  #       condition: service_started
-  #   profiles: ["prod"]
-  #
-  # frontend:
-  #   build:
-  #     context: ../frontend
-  #     args:
-  #       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://academixai.uz/api/v1}
-  #       NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
-  #       NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
-  #   depends_on:
-  #     - backend
-  #   profiles: ["prod"]
-  #
-  # nginx:
-  #   image: nginx:latest
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-  #     - certbot-www:/var/www/certbot
-  #     - certbot-certs:/etc/letsencrypt
-  #   depends_on:
-  #     - backend
-  #     - frontend
-  #   profiles: ["prod"]
-  #
-  # certbot:
-  #   image: certbot/certbot:latest
-  #   volumes:
-  #     - certbot-www:/var/www/certbot
-  #     - certbot-certs:/etc/letsencrypt
-  #   entrypoint: >
-  #     sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done"
-  #   profiles: ["prod"]
+  # --- Production TLS front (needs real certs; infra/nginx/nginx.conf is Let's
+  #     Encrypt-oriented). Local/one-command dev goes straight to :3000/:8080. ---
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - certbot-www:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+    depends_on:
+      - backend
+      - frontend
+    profiles: ["prod"]
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+    entrypoint: >
+      sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done"
+    profiles: ["prod"]
 
 volumes:
   postgres-data:
   seaweedfs-data:
   clamav-db: # only used by the profile-gated clamav service above
-  # certbot-www / certbot-certs only used by the commented-out nginx/certbot
-  # services above — uncomment alongside them.
-  # certbot-www:
-  # certbot-certs:
+  certbot-www:
+  certbot-certs:

@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu, Settings, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useRealtimeEvents } from "@/hooks/useRealtime";
 import { NotificationBell } from "@/components/shared/NotificationBell";
 import { TelegramConnect } from "@/components/shared/TelegramConnect";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
@@ -41,6 +42,9 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
+  // One SSE connection per logged-in session — live notifications + AI status pushes.
+  // No-ops while logged out (hook reads the access token).
+  useRealtimeEvents();
   const logout = useAuthStore((state) => state.logout);
   const bootstrapSession = useAuthStore((state) => state.bootstrapSession);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -94,7 +98,14 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
   return (
     // data-role drives the CSS role-accent layer in globals.css — everything inside
     // resolves var(--accent-role)/var(--accent-role-muted) to this role's tokens.
-    <div data-role={role} className="flex min-h-screen bg-background">
+    <div data-role={role} className="relative flex min-h-screen bg-background">
+      {/* Role-accent top hairline — a modern SaaS signature bar that fades out
+          toward the right. Wears this role's accent hue (resolves via the
+          data-role layer), so each dashboard opens with its own color note. */}
+      <div
+        aria-hidden
+        className="bg-gradient-to-r from-[var(--accent-role)] via-[var(--accent-role)] to-transparent shell-hairline pointer-events-none absolute top-0 right-0 left-0 z-50 h-0.5"
+      />
       {/* Desktop persistent sidebar */}
       <aside className="hidden lg:flex lg:w-sidebar lg:shrink-0 lg:flex-col lg:border-r lg:border-sidebar-border lg:bg-sidebar">
         <SidebarBrand role={role} />
@@ -140,26 +151,43 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
         </aside>
       </div>
 
-      <div className="flex min-h-screen flex-1 flex-col">
-        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-4 lg:px-6">
-          <div className="flex items-center gap-3">
+      {/* min-w-0 is load-bearing: without it this flex item grows to its content's
+          min-content width, stretching the header/main past the viewport on mobile
+          (real overflow found by the responsive audit — e.g. account page hit 530px). */}
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <header className="flex items-center justify-between gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-4 sm:py-4 lg:px-6">
+          {/* Left cluster — min-w-0 + truncate so a long name can't push the icon
+              row off-screen on narrow phones (real overflow found by the mobile
+              audit on the student dashboard). */}
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Button
               variant="outline"
               size="icon"
-              className="lg:hidden"
+              className="shrink-0 lg:hidden"
               aria-label="Menyuni ochish"
               onClick={() => setIsDrawerOpen(true)}
             >
               <Menu className="size-4" strokeWidth={1.75} />
             </Button>
-            <div>
-              <p className="text-sm text-muted-foreground">{ROLE_LABEL[role]} paneli</p>
-              <h1 className="font-heading text-lg font-semibold">
-                {user.firstName} {user.lastName}
-              </h1>
+            <div className="flex min-w-0 items-center gap-2">
+              {/* Role dot — the shell's signature color note, repeated in the header */}
+              <span
+                aria-hidden
+                className="bg-accent-role size-2 shrink-0 rounded-full ring-2 ring-[var(--accent-role)]/25"
+              />
+              <div className="min-w-0">
+                <p className="hidden text-xs text-muted-foreground sm:block sm:text-sm">
+                  {ROLE_LABEL[role]} paneli
+                </p>
+                <h1 className="font-heading truncate text-base leading-tight font-semibold sm:text-lg">
+                  {user.firstName} {user.lastName}
+                </h1>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          {/* Right cluster — shrink-0 so the header never wraps/overflows; tight gaps
+              on phones (icon buttons are 36px, four of them + avatar need the room). */}
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2 lg:gap-3">
             <ThemeToggle />
             <TelegramConnect />
             <NotificationBell />
@@ -173,7 +201,7 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
         </header>
         {/* Keyed by pathname so client-side route changes re-run the rise
             animation — the new page settles in instead of hard-swapping. */}
-        <main key={pathname} className="animate-rise flex-1 p-6">
+        <main key={pathname} className="animate-rise flex-1 p-4 sm:p-6">
           {children}
         </main>
       </div>
@@ -325,8 +353,9 @@ function SidebarNav({
                     onClick={onNavigate}
                     className={cn(
                       "flex items-center gap-2.5 rounded-md border-l-2 border-transparent px-3 py-2 text-sm font-medium transition-colors",
-                      active ? accent.active : "text-muted-foreground hover:bg-muted/60",
-                      active ? accent.border : undefined,
+                      active
+                        ? cn(accent.active, accent.border, "shadow-[0_2px_14px_-4px_var(--accent-role)]")
+                        : "text-muted-foreground hover:bg-muted/60",
                     )}
                   >
                     <Icon className="size-4 shrink-0" strokeWidth={1.75} />

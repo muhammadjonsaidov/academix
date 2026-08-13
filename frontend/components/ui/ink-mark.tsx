@@ -37,7 +37,9 @@ function InkMark({ variant, label, draw, className, ...props }: InkMarkProps) {
       aria-label={label}
       className={cn(
         "inline-block size-[1.1em] shrink-0 align-[-0.15em]",
-        variant === "check" ? "text-chalk-green" : "text-pen-red",
+        // text-success / text-destructive are the theme-aware aliases of the
+        // chalk-green / pen-red anchors (identical in light, readable in dark).
+        variant === "check" ? "text-success" : "text-destructive",
         draw && "ink-draw",
         className
       )}

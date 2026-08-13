@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1c2b3a"/>
+      <stop offset="100%" stop-color="#141d28"/>
+    </linearGradient>
+    <linearGradient id="ai" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c5cff"/>
+      <stop offset="55%" stop-color="#8a63ff"/>
+      <stop offset="100%" stop-color="#a678ff"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3d6b4f"/>
+      <stop offset="100%" stop-color="#2f5340"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- ambient glows -->
+  <circle cx="1050" cy="120" r="260" fill="url(#ai)" opacity="0.18"/>
+  <circle cx="80" cy="560" r="220" fill="url(#green)" opacity="0.16"/>
+
+  <!-- ruled notebook lines -->
+  <g stroke="#faf7f0" stroke-opacity="0.05">
+    <line x1="0" y1="520" x2="1200" y2="520"/>
+    <line x1="0" y1="556" x2="1200" y2="556"/>
+    <line x1="0" y1="592" x2="1200" y2="592"/>
+    <line x1="60" y1="500" x2="60" y2="630"/>
+  </g>
+
+  <!-- brand -->
+  <text x="72" y="130" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700" fill="#faf7f0">AcademiX <tspan fill="#a678ff">AI</tspan></text>
+
+  <!-- headline -->
+  <text x="72" y="280" font-family="Georgia, 'Times New Roman', serif" font-size="64" font-weight="600" fill="#faf7f0">Daftardagi har bir yechim —</text>
+  <text x="72" y="360" font-family="Georgia, 'Times New Roman', serif" font-size="64" font-weight="600">
+    <tspan fill="url(#ai)">o'qituvchidek</tspan>
+    <tspan fill="#faf7f0"> tekshiriladi.</tspan>
+  </text>
+
+  <!-- subtext -->
+  <text x="72" y="440" font-family="Arial, Helvetica, sans-serif" font-size="30" fill="#b8c2cc">AI qo'lyozmani o'qiydi · bosqichma-bosqich tahlil qiladi · baho taklif qiladi</text>
+
+  <!-- grade stamp -->
+  <g transform="translate(1010, 300)">
+    <rect x="-110" y="-110" width="220" height="220" rx="36" fill="none" stroke="#b23a2e" stroke-width="6" transform="rotate(-6)"/>
+    <text x="0" y="58" text-anchor="middle" font-family="Georgia, serif" font-size="150" font-weight="700" fill="#b23a2e" transform="rotate(-6)">5</text>
+  </g>
+
+  <!-- footer -->
+  <text x="72" y="585" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#8a94a0">Maktablar · Xususiy maktablar · O'quv markazlari</text>
+</svg>

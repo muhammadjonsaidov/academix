@@ -46,8 +46,14 @@ npm-debug.log*
 infra/postgres-data/
 infra/backups/
 
-# Claude Code personal overrides (project-scoped, not team-shared)
-.claude/settings.local.json
+# Agent working folders — local tooling state, not project code
+.claude/
+.freebuff/
+
+# Throwaway manual test scripts (browser/login/flow checks run by hand)
+test_*.py
+test_*.js
+frontend/shots-*.png
 
 # NOTE: .github/workflows/ used to be ignored here ("kept locally, skipped on GitHub for now").
 # It is tracked again as of the CI addition — a workflow that is never committed never runs, and
