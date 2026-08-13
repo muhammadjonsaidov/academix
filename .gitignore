@@ -48,7 +48,6 @@ infra/backups/
 
 # Agent working folders — local tooling state, not project code
 .claude/
-.freebuff/
 
 # Throwaway manual test scripts (browser/login/flow checks run by hand)
 test_*.py

@@ -155,4 +155,3 @@ bo'lmasa tunnel o'chgan. Asosiy stack (backend/frontend/DB) esa **ishlashda davo
 
 
 
-https://github.com/korean-deamon/academix.git va bu private git hammasini push qilib qo'y okay hammasini .claude o'chirib tashla .freebuffni ham o'chir okay va keraksiz narsalarni gitignorega qo'sh ham 

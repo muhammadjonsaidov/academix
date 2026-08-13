@@ -31,14 +31,26 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-1 items-center justify-center bg-background p-4">
+    <main className="relative isolate flex min-h-screen flex-1 items-center justify-center overflow-hidden bg-background p-4">
+      {/* Ambient AI + chalk glows — same language as the landing hero and login page */}
+      <div aria-hidden className="absolute inset-0 -z-10">
+        <div className="bg-ai-gradient absolute -top-32 left-1/2 size-[26rem] -translate-x-1/2 rounded-full opacity-15 blur-3xl" />
+        <div className="absolute -bottom-24 -left-16 size-80 rounded-full bg-chalk-green/10 blur-3xl" />
+      </div>
+
       <div className="animate-rise w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
           <Image src="/logo-mark.svg" alt="AcademiX AI" width={64} height={59} priority />
-          <h1 className="font-heading text-xl font-semibold">AcademiX AI</h1>
+          <h1 className="font-heading text-xl font-semibold">
+            AcademiX <span className="text-ai-gradient">AI</span>
+          </h1>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-ai-soft bg-ai-soft/60 px-2.5 py-0.5 text-xs font-medium text-ai">
+            <KeyRound className="size-3" strokeWidth={1.75} />
+            Parolni tiklash
+          </span>
         </div>
 
-        <Card>
+        <Card className="shadow-lg">
           <CardHeader className="border-b-0 pb-0">
             <p className="flex items-center gap-2 text-sm font-medium text-foreground">
               <KeyRound className="size-4" strokeWidth={1.75} />
@@ -76,7 +88,7 @@ export default function ForgotPasswordPage() {
                     className={`${fieldClass} w-full`}
                   />
                 </div>
-                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                <Button type="submit" variant="gradient" className="w-full" size="lg" disabled={isSubmitting}>
                   {isSubmitting ? "Yuborilmoqda..." : "Tiklash havolasini yuborish"}
                 </Button>
                 <Link
