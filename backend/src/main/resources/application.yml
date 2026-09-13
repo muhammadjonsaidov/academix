@@ -127,11 +127,13 @@ academix:
     port: ${CLAMAV_PORT:3310}
     timeout-ms: ${CLAMAV_TIMEOUT_MS:30000}
   ai:
-    qwen:
-      api-key: ${QWEN_API_KEY:}
-      base-url: ${QWEN_BASE_URL:https://dashscope-intl.aliyuncs.com/compatible-mode/v1}
-      model-text: ${QWEN_MODEL_TEXT:qwen3.7-max}
-      model-vision: ${QWEN_MODEL_VISION:qwen3.7-plus}
+    openai-compatible:
+      # AI_* names are provider-neutral. QWEN_* fallbacks preserve existing deployments during
+      # migration; remove them from the production .env after switching successfully.
+      api-key: ${AI_API_KEY:${QWEN_API_KEY:}}
+      base-url: ${AI_BASE_URL:${QWEN_BASE_URL:https://dashscope-intl.aliyuncs.com/compatible-mode/v1}}
+      model-text: ${AI_MODEL_TEXT:${QWEN_MODEL_TEXT:qwen3.7-max}}
+      model-vision: ${AI_MODEL_VISION:${QWEN_MODEL_VISION:qwen3.7-plus}}
     google-vision:
       api-key: ${GOOGLE_VISION_API_KEY:}
   telegram:
@@ -168,6 +170,6 @@ resilience4j:
       # shared 5s slow-call-duration-threshold would classify nearly every real Qwen call as
       # "slow," tripping the circuit open even when Qwen is working correctly. 75s gives margin
       # under AiRestClientTimeoutConfig's 90s read timeout while still catching genuine hangs.
-      qwen:
+      aiProvider:
         base-config: default
         slow-call-duration-threshold: 75s

@@ -117,7 +117,7 @@ tasks.withType<Test> {
 }
 
 // backend/.env was never actually loaded by `./gradlew bootRun` — no dotenv library, no task
-// config existed anywhere. Confirmed real: QWEN_API_KEY sat in .env with a genuine value while
+// config existed anywhere. Confirmed real: AI_API_KEY sat in .env with a genuine value while
 // every bootRun this session ran with it empty (a live 401 "You didn't provide an API key" from
 // Qwen proved it — a manual curl with the same key worked fine). DATABASE_URL/JWT_SECRET/etc.
 // only ever *looked* wired because their .env values happen to equal application.yml's inline

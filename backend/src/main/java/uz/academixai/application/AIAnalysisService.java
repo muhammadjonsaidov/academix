@@ -16,13 +16,13 @@ import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.domain.SubmissionType;
 import uz.academixai.infrastructure.ai.AiBudgetService;
 import uz.academixai.infrastructure.ai.AiCallCategory;
+import uz.academixai.infrastructure.ai.AiGradingResult;
+import uz.academixai.infrastructure.ai.AiProviderUnavailableException;
 import uz.academixai.infrastructure.ai.DocumentTextLayout;
 import uz.academixai.infrastructure.ai.GoogleVisionClient;
 import uz.academixai.infrastructure.ai.GradingCriterion;
 import uz.academixai.infrastructure.ai.OcrUnavailableException;
-import uz.academixai.infrastructure.ai.QwenAIClient;
-import uz.academixai.infrastructure.ai.QwenGradingResult;
-import uz.academixai.infrastructure.ai.QwenUnavailableException;
+import uz.academixai.infrastructure.ai.OpenAiCompatibleClient;
 import uz.academixai.infrastructure.persistence.AIFeedbackEntity;
 import uz.academixai.infrastructure.persistence.AIFeedbackRepository;
 import uz.academixai.infrastructure.persistence.AiUsageLogEntity;
@@ -76,7 +76,7 @@ public class AIAnalysisService {
   private final AiUsageLogRepository aiUsageLogRepository;
   private final FileStorageService fileStorageService;
   private final GoogleVisionClient googleVisionClient;
-  private final QwenAIClient qwenAIClient;
+  private final OpenAiCompatibleClient aiClient;
   private final AiBudgetService aiBudgetService;
   private final GradingCriteriaService gradingCriteriaService;
   private final XPService xpService;
@@ -92,7 +92,7 @@ public class AIAnalysisService {
       AiUsageLogRepository aiUsageLogRepository,
       FileStorageService fileStorageService,
       GoogleVisionClient googleVisionClient,
-      QwenAIClient qwenAIClient,
+      OpenAiCompatibleClient aiClient,
       AiBudgetService aiBudgetService,
       GradingCriteriaService gradingCriteriaService,
       XPService xpService,
@@ -106,7 +106,7 @@ public class AIAnalysisService {
     this.aiUsageLogRepository = aiUsageLogRepository;
     this.fileStorageService = fileStorageService;
     this.googleVisionClient = googleVisionClient;
-    this.qwenAIClient = qwenAIClient;
+    this.aiClient = aiClient;
     this.aiBudgetService = aiBudgetService;
     this.gradingCriteriaService = gradingCriteriaService;
     this.xpService = xpService;
@@ -168,10 +168,10 @@ public class AIAnalysisService {
     String subjectAndGrade = subjectAndGrade(assignment);
     List<GradingCriterion> criteria = resolveCriteria(assignment);
 
-    QwenGradingResult result;
+    AiGradingResult result;
     try {
-      result = qwenAIClient.gradeSubmission(subjectAndGrade, criteria, extractedText);
-    } catch (QwenUnavailableException e) {
+      result = aiClient.gradeSubmission(subjectAndGrade, criteria, extractedText);
+    } catch (AiProviderUnavailableException e) {
       // Correct degradation (AI_SKIPPED, per TZ §8), but silent — undiagnosable without a log
       // line why grading actually failed (auth, timeout, malformed JSON, circuit open).
       log.warn(
@@ -289,7 +289,7 @@ public class AIAnalysisService {
   private void saveGradedFeedback(
       HomeworkSubmission submission,
       String extractedText,
-      QwenGradingResult result,
+      AiGradingResult result,
       float aiScorePercent,
       HandwritingCheckResult handwriting) {
     AIFeedback feedback =

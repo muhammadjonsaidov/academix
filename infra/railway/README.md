@@ -94,7 +94,9 @@ FRONTEND_URL=https://www.academixai.uz     # CORS allowlist — exact origin, no
 COOKIE_DOMAIN=.academixai.uz               # see AuthController; leave UNSET while testing on
                                            # *.railway.app domains (cross-site there anyway)
 
-QWEN_API_KEY=<real key>                    # empty = graceful degradation to AI_SKIPPED
+AI_API_KEY=<real key>                      # empty = graceful degradation to AI_SKIPPED
+AI_BASE_URL=https://api.deepseek.com       # or another OpenAI-compatible endpoint
+AI_MODEL_TEXT=deepseek-v4-flash
 GOOGLE_VISION_API_KEY=<real key>
 GMAIL_USERNAME=<gmail address>             # password-reset email; optional for demo
 GMAIL_APP_PASSWORD=<gmail app password>
@@ -179,6 +181,6 @@ every datastore above requires one. Turn the proxies off when the bot isn't runn
 3. Real browser (not curl — CORS is invisible to curl): login at the frontend URL works.
 4. Submit a homework with a photo → backend logs show the afterCommit queue publish →
    consumer picks it up (RLS `SET LOCAL` from message `schoolId`) → status reaches
-   `AI_DONE`/`AI_SKIPPED` (SKIPPED is correct if no QWEN_API_KEY set).
+   `AI_DONE`/`AI_SKIPPED` (SKIPPED is correct if no AI_API_KEY is set).
 5. `rabbitmqctl list_queues` in the rabbitmq service shell: queues exist, DLQ empty.
 6. On custom domains: F5 on a dashboard stays logged in (cookie domain works).

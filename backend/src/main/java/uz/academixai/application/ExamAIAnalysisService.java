@@ -14,12 +14,12 @@ import uz.academixai.domain.HandwritingCheckResult;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.infrastructure.ai.AiBudgetService;
 import uz.academixai.infrastructure.ai.AiCallCategory;
+import uz.academixai.infrastructure.ai.AiGradingResult;
+import uz.academixai.infrastructure.ai.AiProviderUnavailableException;
 import uz.academixai.infrastructure.ai.GoogleVisionClient;
 import uz.academixai.infrastructure.ai.GradingCriterion;
 import uz.academixai.infrastructure.ai.OcrUnavailableException;
-import uz.academixai.infrastructure.ai.QwenAIClient;
-import uz.academixai.infrastructure.ai.QwenGradingResult;
-import uz.academixai.infrastructure.ai.QwenUnavailableException;
+import uz.academixai.infrastructure.ai.OpenAiCompatibleClient;
 import uz.academixai.infrastructure.persistence.AiUsageLogEntity;
 import uz.academixai.infrastructure.persistence.AiUsageLogRepository;
 import uz.academixai.infrastructure.persistence.ExamAIFeedbackEntity;
@@ -72,7 +72,7 @@ public class ExamAIAnalysisService {
   private final AiUsageLogRepository aiUsageLogRepository;
   private final FileStorageService fileStorageService;
   private final GoogleVisionClient googleVisionClient;
-  private final QwenAIClient qwenAIClient;
+  private final OpenAiCompatibleClient aiClient;
   private final AiBudgetService aiBudgetService;
   private final GradingCriteriaService gradingCriteriaService;
   private final HandwritingService handwritingService;
@@ -87,7 +87,7 @@ public class ExamAIAnalysisService {
       AiUsageLogRepository aiUsageLogRepository,
       FileStorageService fileStorageService,
       GoogleVisionClient googleVisionClient,
-      QwenAIClient qwenAIClient,
+      OpenAiCompatibleClient aiClient,
       AiBudgetService aiBudgetService,
       GradingCriteriaService gradingCriteriaService,
       HandwritingService handwritingService,
@@ -100,7 +100,7 @@ public class ExamAIAnalysisService {
     this.aiUsageLogRepository = aiUsageLogRepository;
     this.fileStorageService = fileStorageService;
     this.googleVisionClient = googleVisionClient;
-    this.qwenAIClient = qwenAIClient;
+    this.aiClient = aiClient;
     this.aiBudgetService = aiBudgetService;
     this.gradingCriteriaService = gradingCriteriaService;
     this.handwritingService = handwritingService;
@@ -156,10 +156,10 @@ public class ExamAIAnalysisService {
     String subjectAndGrade = subjectAndGrade(exam);
     List<GradingCriterion> criteria = resolveCriteria(exam);
 
-    QwenGradingResult result;
+    AiGradingResult result;
     try {
-      result = qwenAIClient.gradeSubmission(subjectAndGrade, criteria, extractedText);
-    } catch (QwenUnavailableException e) {
+      result = aiClient.gradeSubmission(subjectAndGrade, criteria, extractedText);
+    } catch (AiProviderUnavailableException e) {
       log.warn(
           "Qwen grading unavailable for exam submission {}, falling to AI_SKIPPED",
           submission.id(),
@@ -252,7 +252,7 @@ public class ExamAIAnalysisService {
   private void saveGradedFeedback(
       ExamSubmission submission,
       String extractedText,
-      QwenGradingResult result,
+      AiGradingResult result,
       float aiScorePercent,
       HandwritingCheckResult handwriting) {
     ExamAIFeedback feedback =

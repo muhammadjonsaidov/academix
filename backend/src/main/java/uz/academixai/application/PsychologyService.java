@@ -21,10 +21,10 @@ import uz.academixai.domain.PsychologicalSignal;
 import uz.academixai.domain.Role;
 import uz.academixai.domain.SignalSeverity;
 import uz.academixai.domain.SignalType;
+import uz.academixai.infrastructure.ai.AiProviderUnavailableException;
+import uz.academixai.infrastructure.ai.OpenAiCompatibleClient;
 import uz.academixai.infrastructure.ai.PsychologyAnalysisResult;
 import uz.academixai.infrastructure.ai.PsychologySignalCandidate;
-import uz.academixai.infrastructure.ai.QwenAIClient;
-import uz.academixai.infrastructure.ai.QwenUnavailableException;
 import uz.academixai.infrastructure.persistence.AiChatMessageEntity;
 import uz.academixai.infrastructure.persistence.AiChatMessageRepository;
 import uz.academixai.infrastructure.persistence.ExamSubmissionRepository;
@@ -79,7 +79,7 @@ public class PsychologyService {
   private final PsychologicalSignalRepository signalRepository;
   private final ParentStudentLinkRepository parentStudentLinkRepository;
   private final NotificationService notificationService;
-  private final QwenAIClient qwenAIClient;
+  private final OpenAiCompatibleClient aiClient;
   private final ObjectMapper objectMapper;
   private final TransactionTemplate transactionTemplate;
   private final EntityManager entityManager;
@@ -95,7 +95,7 @@ public class PsychologyService {
       PsychologicalSignalRepository signalRepository,
       ParentStudentLinkRepository parentStudentLinkRepository,
       NotificationService notificationService,
-      QwenAIClient qwenAIClient,
+      OpenAiCompatibleClient aiClient,
       ObjectMapper objectMapper,
       TransactionTemplate transactionTemplate,
       EntityManager entityManager) {
@@ -109,7 +109,7 @@ public class PsychologyService {
     this.signalRepository = signalRepository;
     this.parentStudentLinkRepository = parentStudentLinkRepository;
     this.notificationService = notificationService;
-    this.qwenAIClient = qwenAIClient;
+    this.aiClient = aiClient;
     this.objectMapper = objectMapper;
     this.transactionTemplate = transactionTemplate;
     this.entityManager = entityManager;
@@ -143,8 +143,8 @@ public class PsychologyService {
     String activitySummary = buildActivitySummary(studentId, schoolId.get());
     PsychologyAnalysisResult result;
     try {
-      result = qwenAIClient.analyzePsychology(activitySummary);
-    } catch (QwenUnavailableException e) {
+      result = aiClient.analyzePsychology(activitySummary);
+    } catch (AiProviderUnavailableException e) {
       // Graceful degradation, same principle as AIAnalysisService — a Qwen outage never blocks
       // the nightly job for other students, it just means no signal fires for this one tonight.
       log.warn("Psychology analysis unavailable for student {}", studentId, e);

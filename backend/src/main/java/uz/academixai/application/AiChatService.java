@@ -17,8 +17,8 @@ import uz.academixai.domain.Subject;
 import uz.academixai.domain.SubjectType;
 import uz.academixai.infrastructure.ai.AiBudgetService;
 import uz.academixai.infrastructure.ai.AiCallCategory;
-import uz.academixai.infrastructure.ai.QwenAIClient;
-import uz.academixai.infrastructure.ai.QwenUnavailableException;
+import uz.academixai.infrastructure.ai.AiProviderUnavailableException;
+import uz.academixai.infrastructure.ai.OpenAiCompatibleClient;
 import uz.academixai.infrastructure.persistence.AiChatMessageEntity;
 import uz.academixai.infrastructure.persistence.AiChatMessageRepository;
 import uz.academixai.infrastructure.persistence.HomeworkAssignmentRepository;
@@ -54,7 +54,7 @@ public class AiChatService {
   private final HomeworkAssignmentRepository assignmentRepository;
   private final SubjectRepository subjectRepository;
   private final AiBudgetService budgetService;
-  private final QwenAIClient qwenClient;
+  private final OpenAiCompatibleClient aiClient;
   private final RedisRateLimiter rateLimiter;
 
   public AiChatService(
@@ -62,13 +62,13 @@ public class AiChatService {
       HomeworkAssignmentRepository assignmentRepository,
       SubjectRepository subjectRepository,
       AiBudgetService budgetService,
-      QwenAIClient qwenClient,
+      OpenAiCompatibleClient aiClient,
       RedisRateLimiter rateLimiter) {
     this.chatRepository = chatRepository;
     this.assignmentRepository = assignmentRepository;
     this.subjectRepository = subjectRepository;
     this.budgetService = budgetService;
-    this.qwenClient = qwenClient;
+    this.aiClient = aiClient;
     this.rateLimiter = rateLimiter;
   }
 
@@ -116,8 +116,8 @@ public class AiChatService {
     String subjectAndContext = "Fan: " + subject;
     String rawResponse;
     try {
-      rawResponse = qwenClient.tutorChat(subjectAndContext, message);
-    } catch (QwenUnavailableException e) {
+      rawResponse = aiClient.tutorChat(subjectAndContext, message);
+    } catch (AiProviderUnavailableException e) {
       log.warn("Qwen tutor chat unavailable for student {}", studentId, e);
       return persistAndReturn(
           schoolId,

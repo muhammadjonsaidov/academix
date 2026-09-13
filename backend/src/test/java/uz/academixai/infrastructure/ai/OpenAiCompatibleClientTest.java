@@ -12,7 +12,7 @@ import uz.academixai.domain.LessonPlanContent;
 
 /**
  * Pure parsing-logic test against the exact grading JSON shape documented in academix_tz.md §3.2 —
- * no network call (no real QWEN_API_KEY is available in this environment; see CLAUDE.md).
+ * no network call (no real AI_API_KEY is available in this environment; see CLAUDE.md).
  *
  * <p>Two Jackson stacks on purpose, mirroring production: {@code jackson3Mapper} builds the outer
  * "chat completion" response fixture (Jackson 3 — matches {@code QwenAIClient}'s HTTP-body-bound
@@ -20,7 +20,7 @@ import uz.academixai.domain.LessonPlanContent;
  * used the legacy type), while {@code objectMapper} (legacy Jackson 2, the same {@code
  * JacksonConfig} bean used at runtime) parses the extracted content string internally.
  */
-class QwenAIClientTest {
+class OpenAiCompatibleClientTest {
 
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final JsonMapper jackson3Mapper = JsonMapper.builder().build();
@@ -49,7 +49,7 @@ class QwenAIClientTest {
         jackson3Mapper.readTree(
             wrapAsChatCompletion(GRADING_JSON.replace("\"", "\\\"").replace("\n", "\\n")));
 
-    QwenGradingResult result = QwenAIClient.parseGradingResult(response, objectMapper);
+    AiGradingResult result = OpenAiCompatibleClient.parseGradingResult(response, objectMapper);
 
     assertThat(result.criteriaScores()).hasSize(3);
     assertThat(result.criteriaScores().get(0))
@@ -68,23 +68,23 @@ class QwenAIClientTest {
         jackson3Mapper.readTree(
             wrapAsChatCompletion(fenced.replace("\"", "\\\"").replace("\n", "\\n")));
 
-    QwenGradingResult result = QwenAIClient.parseGradingResult(response, objectMapper);
+    AiGradingResult result = OpenAiCompatibleClient.parseGradingResult(response, objectMapper);
 
     assertThat(result.criteriaScores()).hasSize(3);
   }
 
   @Test
-  void throwsQwenUnavailableExceptionOnUnparsableContent() throws Exception {
+  void throwsAiProviderUnavailableExceptionOnUnparsableContent() throws Exception {
     var response = jackson3Mapper.readTree(wrapAsChatCompletion("not json at all"));
 
-    assertThatThrownBy(() -> QwenAIClient.parseGradingResult(response, objectMapper))
-        .isInstanceOf(QwenUnavailableException.class);
+    assertThatThrownBy(() -> OpenAiCompatibleClient.parseGradingResult(response, objectMapper))
+        .isInstanceOf(AiProviderUnavailableException.class);
   }
 
   @Test
   void buildsUserContentWithSubjectCriteriaAndText() {
     String content =
-        QwenAIClient.buildUserContent(
+        OpenAiCompatibleClient.buildUserContent(
             "Matematika 7-sinf", List.of(new GradingCriterion("Yechish usuli", 40)), "5x + 3 = 18");
 
     assertThat(content)
@@ -112,7 +112,8 @@ class QwenAIClientTest {
         jackson3Mapper.readTree(
             wrapAsChatCompletion(LESSON_PLAN_JSON.replace("\"", "\\\"").replace("\n", "\\n")));
 
-    LessonPlanContent result = QwenAIClient.parseLessonPlanContent(response, objectMapper);
+    LessonPlanContent result =
+        OpenAiCompatibleClient.parseLessonPlanContent(response, objectMapper);
 
     assertThat(result.objectives()).containsExactly("Chiziqli tenglamalarni yechishni o'rganish");
     assertThat(result.activities()).hasSize(2);
@@ -122,11 +123,11 @@ class QwenAIClientTest {
   }
 
   @Test
-  void throwsQwenUnavailableExceptionOnUnparsableLessonPlanContent() throws Exception {
+  void throwsAiProviderUnavailableExceptionOnUnparsableLessonPlanContent() throws Exception {
     var response = jackson3Mapper.readTree(wrapAsChatCompletion("not json at all"));
 
-    assertThatThrownBy(() -> QwenAIClient.parseLessonPlanContent(response, objectMapper))
-        .isInstanceOf(QwenUnavailableException.class);
+    assertThatThrownBy(() -> OpenAiCompatibleClient.parseLessonPlanContent(response, objectMapper))
+        .isInstanceOf(AiProviderUnavailableException.class);
   }
 
   private static String wrapAsChatCompletion(String escapedContent) {

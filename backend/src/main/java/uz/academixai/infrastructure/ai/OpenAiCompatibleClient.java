@@ -16,10 +16,8 @@ import uz.academixai.domain.LessonPlanContent;
 import uz.academixai.domain.StepAnalysis;
 
 /**
- * academix_tz.md §3.2 — Alibaba Qwen via DashScope's OpenAI-compatible {@code /chat/completions}
- * endpoint. Only text (no image) — OCR already happened via {@link GoogleVisionClient}, so {@code
- * qwen3.7-max} (text-only) is used, not the {@code qwen3.7-plus} multimodal model (spec explicitly
- * reserves that for future image+text use, not called anywhere yet).
+ * OpenAI-compatible {@code /chat/completions} client. The provider, base URL, and models are
+ * configuration rather than code, so it supports DeepSeek, Qwen, and compatible providers.
  *
  * <p>The spec's own JSON example has a top-level {@code "system"} field alongside {@code
  * "messages"} — that's illustrative, not the real OpenAI-compatible wire format (which puts the
@@ -27,8 +25,8 @@ import uz.academixai.domain.StepAnalysis;
  * real wire format, matching what "OpenAI-compatible chat-completions" actually means.
  */
 @Component
-@EnableConfigurationProperties(QwenProperties.class)
-public class QwenAIClient {
+@EnableConfigurationProperties(OpenAiCompatibleProperties.class)
+public class OpenAiCompatibleClient {
 
   private static final String SYSTEM_PROMPT =
       """
@@ -92,7 +90,7 @@ public class QwenAIClient {
       Javobni FAQAT quyidagi JSON formatida qaytar, boshqa matn qo'shma:
       {"solvable": true, "reason": "..."}""";
 
-  // academix_tz.md §3.3 — exact system prompt, text-only qwen3.7-max.
+  // academix_tz.md §3.3 — exact system prompt for the configured text model.
   private static final String PSYCHOLOGY_SYSTEM_PROMPT =
       """
       Quyidagi o'quvchi faollik ko'rsatkichlari (kirish vaqtlari, AI chat bilan yozishmalari) \
@@ -105,18 +103,20 @@ public class QwenAIClient {
       }""";
 
   private final RestClient restClient;
-  private final QwenProperties properties;
+  private final OpenAiCompatibleProperties properties;
   private final ObjectMapper objectMapper;
 
-  public QwenAIClient(
-      RestClient.Builder restClientBuilder, QwenProperties properties, ObjectMapper objectMapper) {
+  public OpenAiCompatibleClient(
+      RestClient.Builder restClientBuilder,
+      OpenAiCompatibleProperties properties,
+      ObjectMapper objectMapper) {
     this.restClient = restClientBuilder.build();
     this.properties = properties;
     this.objectMapper = objectMapper;
   }
 
-  @CircuitBreaker(name = "qwen", fallbackMethod = "gradeSubmissionFallback")
-  public QwenGradingResult gradeSubmission(
+  @CircuitBreaker(name = "aiProvider", fallbackMethod = "gradeSubmissionFallback")
+  public AiGradingResult gradeSubmission(
       String subjectAndGrade, List<GradingCriterion> criteria, String extractedText) {
     String userContent = buildUserContent(subjectAndGrade, criteria, extractedText);
 
@@ -146,15 +146,15 @@ public class QwenAIClient {
   }
 
   @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
-  private QwenGradingResult gradeSubmissionFallback(
+  private AiGradingResult gradeSubmissionFallback(
       String subjectAndGrade,
       List<GradingCriterion> criteria,
       String extractedText,
       Throwable cause) {
-    throw new QwenUnavailableException("Qwen grading unavailable", cause);
+    throw new AiProviderUnavailableException("AI provider grading unavailable", cause);
   }
 
-  @CircuitBreaker(name = "qwen", fallbackMethod = "generateLessonPlanFallback")
+  @CircuitBreaker(name = "aiProvider", fallbackMethod = "generateLessonPlanFallback")
   public LessonPlanContent generateLessonPlan(
       String subjectAndGrade, String topic, String syllabusExtractedContent) {
     String userContent =
@@ -194,7 +194,8 @@ public class QwenAIClient {
   @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
   private LessonPlanContent generateLessonPlanFallback(
       String subjectAndGrade, String topic, String syllabusExtractedContent, Throwable cause) {
-    throw new QwenUnavailableException("Qwen lesson-plan generation unavailable", cause);
+    throw new AiProviderUnavailableException(
+        "AI provider lesson-plan generation unavailable", cause);
   }
 
   static LessonPlanContent parseLessonPlanContent(
@@ -221,11 +222,12 @@ public class QwenAIClient {
       return new LessonPlanContent(
           objectives, activities, materials, root.path("homeworkSuggestion").asText(""));
     } catch (Exception e) {
-      throw new QwenUnavailableException("Qwen response was not valid JSON: " + content, e);
+      throw new AiProviderUnavailableException(
+          "AI provider response was not valid JSON: " + content, e);
     }
   }
 
-  @CircuitBreaker(name = "qwen", fallbackMethod = "generateUniqueTaskFallback")
+  @CircuitBreaker(name = "aiProvider", fallbackMethod = "generateUniqueTaskFallback")
   public String generateUniqueTask(String subjectAndGrade, String standardTaskDescription) {
     String userContent =
         "Fan/sinf: %s. Standart topshiriq: %s".formatted(subjectAndGrade, standardTaskDescription);
@@ -257,17 +259,19 @@ public class QwenAIClient {
     try {
       return objectMapper.readTree(json).path("taskContent").asText("");
     } catch (Exception e) {
-      throw new QwenUnavailableException("Qwen response was not valid JSON: " + content, e);
+      throw new AiProviderUnavailableException(
+          "AI provider response was not valid JSON: " + content, e);
     }
   }
 
   @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
   private String generateUniqueTaskFallback(
       String subjectAndGrade, String standardTaskDescription, Throwable cause) {
-    throw new QwenUnavailableException("Qwen unique-task generation unavailable", cause);
+    throw new AiProviderUnavailableException(
+        "AI provider unique-task generation unavailable", cause);
   }
 
-  @CircuitBreaker(name = "qwen", fallbackMethod = "verifyTaskSolvableFallback")
+  @CircuitBreaker(name = "aiProvider", fallbackMethod = "verifyTaskSolvableFallback")
   public boolean verifyTaskSolvable(String taskContent) {
     Map<String, Object> requestBody =
         Map.of(
@@ -296,18 +300,19 @@ public class QwenAIClient {
     try {
       return objectMapper.readTree(json).path("solvable").asBoolean(false);
     } catch (Exception e) {
-      throw new QwenUnavailableException("Qwen response was not valid JSON: " + content, e);
+      throw new AiProviderUnavailableException(
+          "AI provider response was not valid JSON: " + content, e);
     }
   }
 
   @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
   private boolean verifyTaskSolvableFallback(String taskContent, Throwable cause) {
-    throw new QwenUnavailableException("Qwen task verification unavailable", cause);
+    throw new AiProviderUnavailableException("AI provider task verification unavailable", cause);
   }
 
   // Single-turn — the request body (academix_tz.md §2.3) carries only the current message, no
   // conversation history, so no multi-turn context threading is built here (judgment call).
-  @CircuitBreaker(name = "qwen", fallbackMethod = "tutorChatFallback")
+  @CircuitBreaker(name = "aiProvider", fallbackMethod = "tutorChatFallback")
   public String tutorChat(String subjectAndContext, String studentMessage) {
     String userContent = "%s\n\nO'quvchi savoli: %s".formatted(subjectAndContext, studentMessage);
 
@@ -339,10 +344,10 @@ public class QwenAIClient {
   @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
   private String tutorChatFallback(
       String subjectAndContext, String studentMessage, Throwable cause) {
-    throw new QwenUnavailableException("Qwen tutor chat unavailable", cause);
+    throw new AiProviderUnavailableException("AI provider tutor chat unavailable", cause);
   }
 
-  @CircuitBreaker(name = "qwen", fallbackMethod = "analyzePsychologyFallback")
+  @CircuitBreaker(name = "aiProvider", fallbackMethod = "analyzePsychologyFallback")
   public PsychologyAnalysisResult analyzePsychology(String activitySummary) {
     Map<String, Object> requestBody =
         Map.of(
@@ -372,7 +377,7 @@ public class QwenAIClient {
   @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
   private PsychologyAnalysisResult analyzePsychologyFallback(
       String activitySummary, Throwable cause) {
-    throw new QwenUnavailableException("Qwen psychology analysis unavailable", cause);
+    throw new AiProviderUnavailableException("AI provider psychology analysis unavailable", cause);
   }
 
   static PsychologyAnalysisResult parsePsychologyResult(
@@ -393,7 +398,8 @@ public class QwenAIClient {
       return new PsychologyAnalysisResult(
           signals, root.path("isManipulationSuspected").asBoolean(false));
     } catch (Exception e) {
-      throw new QwenUnavailableException("Qwen response was not valid JSON: " + content, e);
+      throw new AiProviderUnavailableException(
+          "AI provider response was not valid JSON: " + content, e);
     }
   }
 
@@ -408,7 +414,7 @@ public class QwenAIClient {
   }
 
   /** Extracts and parses the OpenAI-shaped {@code choices[0].message.content} JSON string. */
-  static QwenGradingResult parseGradingResult(
+  static AiGradingResult parseGradingResult(
       tools.jackson.databind.JsonNode response, ObjectMapper objectMapper) {
     String content = response.path("choices").path(0).path("message").path("content").asText("");
     String json = stripMarkdownFence(content);
@@ -435,7 +441,7 @@ public class QwenAIClient {
                     : node.path("errorDescription").asText(),
                 null));
       }
-      return new QwenGradingResult(
+      return new AiGradingResult(
           criteriaScores,
           root.path("feedback").asText(""),
           stepAnalyses,
@@ -443,7 +449,8 @@ public class QwenAIClient {
           root.path("plagiarismType").asText("CLEAN"),
           root.path("plagiarismEvidence").asText(""));
     } catch (Exception e) {
-      throw new QwenUnavailableException("Qwen response was not valid JSON: " + content, e);
+      throw new AiProviderUnavailableException(
+          "AI provider response was not valid JSON: " + content, e);
     }
   }
 

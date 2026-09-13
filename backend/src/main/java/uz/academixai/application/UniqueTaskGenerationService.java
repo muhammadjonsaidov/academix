@@ -11,8 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.AssignmentType;
 import uz.academixai.domain.StudentUniqueTask;
-import uz.academixai.infrastructure.ai.QwenAIClient;
-import uz.academixai.infrastructure.ai.QwenUnavailableException;
+import uz.academixai.infrastructure.ai.AiProviderUnavailableException;
+import uz.academixai.infrastructure.ai.OpenAiCompatibleClient;
 import uz.academixai.infrastructure.ai.UniqueTaskValidator;
 import uz.academixai.infrastructure.ai.UniqueTaskValidatorRegistry;
 import uz.academixai.infrastructure.persistence.HomeworkAssignmentEntity;
@@ -50,7 +50,7 @@ public class UniqueTaskGenerationService {
   private final StudentUniqueTaskRepository uniqueTaskRepository;
   private final SubjectRepository subjectRepository;
   private final SchoolClassRepository classRepository;
-  private final QwenAIClient qwenAIClient;
+  private final OpenAiCompatibleClient aiClient;
   private final UniqueTaskValidatorRegistry validatorRegistry;
 
   public UniqueTaskGenerationService(
@@ -59,14 +59,14 @@ public class UniqueTaskGenerationService {
       StudentUniqueTaskRepository uniqueTaskRepository,
       SubjectRepository subjectRepository,
       SchoolClassRepository classRepository,
-      QwenAIClient qwenAIClient,
+      OpenAiCompatibleClient aiClient,
       UniqueTaskValidatorRegistry validatorRegistry) {
     this.assignmentRepository = assignmentRepository;
     this.studentProfileRepository = studentProfileRepository;
     this.uniqueTaskRepository = uniqueTaskRepository;
     this.subjectRepository = subjectRepository;
     this.classRepository = classRepository;
-    this.qwenAIClient = qwenAIClient;
+    this.aiClient = aiClient;
     this.validatorRegistry = validatorRegistry;
   }
 
@@ -164,8 +164,8 @@ public class UniqueTaskGenerationService {
       String subjectAndGrade, String standardDescription, Optional<UniqueTaskValidator> validator) {
     String generated;
     try {
-      generated = qwenAIClient.generateUniqueTask(subjectAndGrade, standardDescription);
-    } catch (QwenUnavailableException e) {
+      generated = aiClient.generateUniqueTask(subjectAndGrade, standardDescription);
+    } catch (AiProviderUnavailableException e) {
       // Graceful per-student fallback (correct — don't fail the whole batch), but silently
       // returning null makes "why did this student fall back to standard" undiagnosable
       // without a log line, same class of gap fixed elsewhere in the AI catch sites.
@@ -179,8 +179,8 @@ public class UniqueTaskGenerationService {
       return null;
     }
     try {
-      return qwenAIClient.verifyTaskSolvable(generated) ? generated : null;
-    } catch (QwenUnavailableException e) {
+      return aiClient.verifyTaskSolvable(generated) ? generated : null;
+    } catch (AiProviderUnavailableException e) {
       log.warn("Qwen task-verification unavailable, falling back to standard", e);
       return null;
     }

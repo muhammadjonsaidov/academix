@@ -7,7 +7,7 @@
 #   docker compose --profile prod up -d      # nginx+certbot+backup, no clamav
 #   docker compose --profile antivirus up -d clamav
 #
-# Copy infra/.env.example → infra/.env to supply real secrets (QWEN_API_KEY,
+# Copy infra/.env.example → infra/.env to supply real secrets (AI_API_KEY,
 # GOOGLE_VISION_API_KEY, TELEGRAM_BOT_TOKEN, ...). Everything has working
 # local-dev defaults, so a bare `up` also works.
 
@@ -104,7 +104,15 @@ services:
       SEAWEEDFS_SECRET_KEY: ${SEAWEEDFS_SECRET_KEY:-local-dev-secret-key}
       SEAWEEDFS_BUCKET: ${SEAWEEDFS_BUCKET:-homeworks}
       # Real AI/email/telegram keys — app degrades gracefully without them
+      AI_API_KEY: ${AI_API_KEY:-${QWEN_API_KEY:-}}
+      AI_BASE_URL: ${AI_BASE_URL:-${QWEN_BASE_URL:-https://dashscope-intl.aliyuncs.com/compatible-mode/v1}}
+      AI_MODEL_TEXT: ${AI_MODEL_TEXT:-${QWEN_MODEL_TEXT:-qwen3.7-max}}
+      AI_MODEL_VISION: ${AI_MODEL_VISION:-${QWEN_MODEL_VISION:-qwen3.7-plus}}
+      # Temporary compatibility with existing deployments. New environments should use AI_* only.
       QWEN_API_KEY: ${QWEN_API_KEY:-}
+      QWEN_BASE_URL: ${QWEN_BASE_URL:-}
+      QWEN_MODEL_TEXT: ${QWEN_MODEL_TEXT:-}
+      QWEN_MODEL_VISION: ${QWEN_MODEL_VISION:-}
       GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-}
       GMAIL_USERNAME: ${GMAIL_USERNAME:-}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}

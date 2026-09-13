@@ -10,8 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.LessonPlan;
 import uz.academixai.domain.LessonPlanContent;
-import uz.academixai.infrastructure.ai.QwenAIClient;
-import uz.academixai.infrastructure.ai.QwenUnavailableException;
+import uz.academixai.infrastructure.ai.AiProviderUnavailableException;
+import uz.academixai.infrastructure.ai.OpenAiCompatibleClient;
 import uz.academixai.infrastructure.persistence.LessonPlanEntity;
 import uz.academixai.infrastructure.persistence.LessonPlanRepository;
 import uz.academixai.infrastructure.persistence.SchoolClassEntity;
@@ -42,19 +42,19 @@ public class LessonPlanService {
   private final TeacherSyllabusRepository syllabusRepository;
   private final SubjectRepository subjectRepository;
   private final SchoolClassRepository classRepository;
-  private final QwenAIClient qwenAIClient;
+  private final OpenAiCompatibleClient aiClient;
 
   public LessonPlanService(
       LessonPlanRepository lessonPlanRepository,
       TeacherSyllabusRepository syllabusRepository,
       SubjectRepository subjectRepository,
       SchoolClassRepository classRepository,
-      QwenAIClient qwenAIClient) {
+      OpenAiCompatibleClient aiClient) {
     this.lessonPlanRepository = lessonPlanRepository;
     this.syllabusRepository = syllabusRepository;
     this.subjectRepository = subjectRepository;
     this.classRepository = classRepository;
-    this.qwenAIClient = qwenAIClient;
+    this.aiClient = aiClient;
   }
 
   public LessonPlan generate(
@@ -139,8 +139,8 @@ public class LessonPlanService {
   private LessonPlanContent callGenerate(
       String subjectAndGrade, String topic, String syllabusExtractedContent) {
     try {
-      return qwenAIClient.generateLessonPlan(subjectAndGrade, topic, syllabusExtractedContent);
-    } catch (QwenUnavailableException e) {
+      return aiClient.generateLessonPlan(subjectAndGrade, topic, syllabusExtractedContent);
+    } catch (AiProviderUnavailableException e) {
       // ApiException bypasses GlobalExceptionHandler's logging (only its catch-all
       // Exception.class handler logs) — without this, the real cause (auth failure,
       // timeout, malformed JSON, genuine circuit-open) was silently swallowed, confirmed
