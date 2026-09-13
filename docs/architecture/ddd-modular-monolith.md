@@ -40,6 +40,27 @@ entities and Spring Data repositories are never shared.
 | Notification | in-app preferences, Telegram links and delivery | all contexts through events |
 | Reporting | read models and generated reports | School, Learning, Progress, Wellbeing |
 
+## Package ownership map
+
+The following is the target package ownership for every remaining global domain class. A class is
+moved together with its JPA mapping/repository and its primary application use case; it is not moved
+individually just to make the tree look cleaner.
+
+| Target context | Domain types to move | Primary application area |
+| --- | --- | --- |
+| `school` | `School`, `SchoolClass`, `Subject`, `SubjectType`, `ClassSubjectTeacher`, `StudentProfile` | school administration, class/subject assignment and school context resolution |
+| `learning` | `HomeworkAssignment`, `HomeworkSubmission`, `Exam`, `ExamSubmission`, `Grade`, `ExamGrade`, `SubmissionStatus`, `SubmissionType`, `AssignmentType`, `CriteriaItem`, `CriteriaScore`, `SubjectGradingCriteria`, `TeacherSyllabus`, `LessonPlan`, `LessonPlanContent`, `LessonActivity`, `StudentUniqueTask` | homework, exams, grading, syllabus, lesson plans and unique tasks |
+| `intelligence` | `AIFeedback`, `ExamAIFeedback`, `AiChatMessage`, `HandwritingProfile`, `HandwritingCheckResult`, `HandwritingResetLog`, `PlagiarismType`, `StepAnalysis`, `ChatBlockReason` | OpenAI-compatible provider, chat, OCR, plagiarism and handwriting analysis |
+| `wellbeing` | `PsychologicalSignal`, `SignalType`, `SignalSeverity`, `WatchlistEntry` | psychology signals, watchlists and intervention workflow |
+| `family` | `ParentStudentLink`, `ParentRelation`, `DataDeletionRequest`, `DeletionRequestStatus` | parent-child links, consent and data-deletion requests |
+| `identity` | `User`, `Role`, `PasswordResetLog`, `ResetReason` | credentials, account lifecycle and password recovery |
+| `shared` | `FileType` | stable technical value type only; it must not gain business rules |
+
+The migrated contexts currently use the exact target tree. `school` is next, but it has 152 source
+references, so its migration is performed in two compilable slices: first school/class/subject and
+their adapters, then student profile and cross-context read dependencies. This avoids a broken
+intermediate deployment.
+
 `Learning` is the core domain. `Identity`, `Notification`, file storage, AMQP and AI providers are
 supporting domains or technical adapters. A context references another context only through a
 published command/query interface or an immutable event; it must not join its tables directly.
