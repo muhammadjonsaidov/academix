@@ -8,19 +8,14 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.StudentProfile;
-import uz.academixai.infrastructure.persistence.HomeworkSubmissionEntity;
-import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
-import uz.academixai.infrastructure.persistence.StudentProfileEntity;
-import uz.academixai.infrastructure.persistence.StudentProfileRepository;
+import uz.academixai.progress.application.port.out.BadgeCatalog;
+import uz.academixai.progress.application.port.out.HomeworkSubmissionXpStore;
+import uz.academixai.progress.application.port.out.StudentBadgeStore;
+import uz.academixai.progress.application.port.out.StudentProgressProfileStore;
+import uz.academixai.progress.application.port.out.XpHistoryStore;
 import uz.academixai.progress.domain.Badge;
 import uz.academixai.progress.domain.StudentBadge;
 import uz.academixai.progress.domain.XpHistoryEntry;
-import uz.academixai.progress.infrastructure.persistence.BadgeEntity;
-import uz.academixai.progress.infrastructure.persistence.BadgeRepository;
-import uz.academixai.progress.infrastructure.persistence.StudentBadgeEntity;
-import uz.academixai.progress.infrastructure.persistence.StudentBadgeRepository;
-import uz.academixai.progress.infrastructure.persistence.XpHistoryEntity;
-import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 
 /**
  * academix_tz.md §4 XPService. XP/streak only fire on AI_DONE/GRADED (anti-gaming, never on
@@ -40,32 +35,31 @@ public class XPService {
   private static final int SEVEN_DAY_STREAK_BONUS = 50;
   private static final float STREAK_MIN_SCORE = 30f;
 
-  private final HomeworkSubmissionRepository submissionRepository;
-  private final StudentProfileRepository studentProfileRepository;
-  private final XpHistoryRepository xpHistoryRepository;
-  private final BadgeRepository badgeRepository;
-  private final StudentBadgeRepository studentBadgeRepository;
+  private final HomeworkSubmissionXpStore submissions;
+  private final StudentProgressProfileStore profiles;
+  private final XpHistoryStore history;
+  private final BadgeCatalog badges;
+  private final StudentBadgeStore studentBadges;
 
   public XPService(
-      HomeworkSubmissionRepository submissionRepository,
-      StudentProfileRepository studentProfileRepository,
-      XpHistoryRepository xpHistoryRepository,
-      BadgeRepository badgeRepository,
-      StudentBadgeRepository studentBadgeRepository) {
-    this.submissionRepository = submissionRepository;
-    this.studentProfileRepository = studentProfileRepository;
-    this.xpHistoryRepository = xpHistoryRepository;
-    this.badgeRepository = badgeRepository;
-    this.studentBadgeRepository = studentBadgeRepository;
+      HomeworkSubmissionXpStore submissions,
+      StudentProgressProfileStore profiles,
+      XpHistoryStore history,
+      BadgeCatalog badges,
+      StudentBadgeStore studentBadges) {
+    this.submissions = submissions;
+    this.profiles = profiles;
+    this.history = history;
+    this.badges = badges;
+    this.studentBadges = studentBadges;
   }
 
   /** academix_tz.md §4 XP table — tiered by score, halved when late. */
   public void calculateAndAwardXP(UUID submissionId, float finalScorePercent, boolean isLate) {
-    HomeworkSubmissionEntity subEntity =
-        submissionRepository
+    HomeworkSubmission submission =
+        submissions
             .findById(submissionId)
             .orElseThrow(() -> new IllegalStateException("Unknown submissionId " + submissionId));
-    HomeworkSubmission submission = subEntity.toDomain();
 
     int newXp = tierXp(finalScorePercent, isLate);
     int previousXp = submission.xpEarned();
@@ -77,8 +71,7 @@ public class XPService {
           previousXp == 0 ? "Uy vazifasi baholandi" : "Ball qayta ko'rib chiqildi");
     }
     if (newXp != previousXp) {
-      submissionRepository.save(
-          HomeworkSubmissionEntity.fromDomain(withXpEarned(submission, newXp)));
+      submissions.save(withXpEarned(submission, newXp));
     }
   }
 
@@ -93,16 +86,13 @@ public class XPService {
    * no-op, so it never double-increments.
    */
   public void updateStreak(UUID studentId, float finalScorePercent) {
-    StudentProfileEntity entity =
-        studentProfileRepository
-            .findByUserId(studentId)
+    StudentProfile profile =
+        profiles
+            .findByStudentId(studentId)
             .orElseThrow(() -> new IllegalStateException("No student profile for " + studentId));
-    StudentProfile profile = entity.toDomain();
 
     if (finalScorePercent < STREAK_MIN_SCORE) {
-      studentProfileRepository.save(
-          StudentProfileEntity.fromDomain(
-              withStreak(profile, 0, profile.maxStreak(), profile.lastSubmissionDate())));
+      profiles.save(withStreak(profile, 0, profile.maxStreak(), profile.lastSubmissionDate()));
       return;
     }
 
@@ -117,8 +107,7 @@ public class XPService {
             ? profile.currentStreak() + 1
             : 1;
     int newMaxStreak = Math.max(profile.maxStreak(), newStreak);
-    studentProfileRepository.save(
-        StudentProfileEntity.fromDomain(withStreak(profile, newStreak, newMaxStreak, today)));
+    profiles.save(withStreak(profile, newStreak, newMaxStreak, today));
 
     if (newStreak % 7 == 0) {
       addXp(studentId, SEVEN_DAY_STREAK_BONUS, newStreak + " kunlik streak bonusi");
@@ -130,15 +119,13 @@ public class XPService {
    */
   public List<Badge> checkAndAwardBadges(UUID studentId) {
     StudentProfile profile =
-        studentProfileRepository
-            .findByUserId(studentId)
-            .map(StudentProfileEntity::toDomain)
+        profiles
+            .findByStudentId(studentId)
             .orElseThrow(() -> new IllegalStateException("No student profile for " + studentId));
 
     List<Badge> newlyAwarded = new ArrayList<>();
-    for (BadgeEntity badgeEntity : badgeRepository.findAll()) {
-      Badge badge = badgeEntity.toDomain();
-      if (studentBadgeRepository.existsByStudentIdAndBadgeId(studentId, badge.id())) {
+    for (Badge badge : badges.findAll()) {
+      if (studentBadges.existsByStudentIdAndBadgeId(studentId, badge.id())) {
         continue;
       }
       boolean qualifies =
@@ -149,7 +136,7 @@ public class XPService {
       if (qualifies) {
         StudentBadge awarded =
             new StudentBadge(UUID.randomUUID(), studentId, badge.id(), LocalDateTime.now());
-        studentBadgeRepository.save(StudentBadgeEntity.fromDomain(awarded));
+        studentBadges.save(awarded);
         newlyAwarded.add(badge);
       }
     }
@@ -157,17 +144,15 @@ public class XPService {
   }
 
   private void addXp(UUID studentId, int xp, String reason) {
-    StudentProfileEntity entity =
-        studentProfileRepository
-            .findByUserId(studentId)
+    StudentProfile profile =
+        profiles
+            .findByStudentId(studentId)
             .orElseThrow(() -> new IllegalStateException("No student profile for " + studentId));
-    StudentProfile profile = entity.toDomain();
-    studentProfileRepository.save(
-        StudentProfileEntity.fromDomain(withTotalXp(profile, profile.totalXp() + xp)));
+    profiles.save(withTotalXp(profile, profile.totalXp() + xp));
 
     XpHistoryEntry entry =
         new XpHistoryEntry(UUID.randomUUID(), studentId, xp, reason, LocalDateTime.now());
-    xpHistoryRepository.save(XpHistoryEntity.fromDomain(entry));
+    history.save(entry);
   }
 
   private static int tierXp(float score, boolean isLate) {
