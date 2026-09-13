@@ -172,8 +172,8 @@ public class PsychologistService {
             .filter(x -> x.occurredAt().isAfter(since))
             .toList();
 
-    // keyPhrases needs AI Tutor chat message content — that feature doesn't exist yet (see
-    // PsychologyService's Javadoc for the same flagged gap). Empty, not fabricated.
+    // Key phrases intentionally remain empty: a psychologist dashboard must not expose raw,
+    // unreviewed student chat content merely because Wellbeing analysis can process it.
     return new BehaviorProfile(activeHours, xpTrend, submissionPattern, List.of());
   }
 

@@ -112,9 +112,9 @@ notification/
   adapter/in/web/         notification and Telegram REST controllers plus DTOs
 ```
 
-`PsychologyService` currently calls `notification.application.NotificationService` directly. This
-is an explicit transitional dependency; it will become a published `PsychologicalAlertRaised`
-event when the Wellbeing context is migrated.
+The Wellbeing notification adapter currently calls Notification's published `NotificationService`
+API while creating a severity-qualified signal. This is an explicit transitional dependency; it will become a durable
+`PsychologicalAlertRaised` event when the notification outbox publishes cross-context events.
 
 `reporting` is the second fully vertical migration:
 
@@ -188,8 +188,15 @@ the next Intelligence slices. Tutor chat is now a complete Intelligence vertical
 `TutorChatService` owns subject parsing, assignment relevance, budget, answer-leak guardrails and
 bounded history. Its AI provider, rate limit, assignment lookup and persistence dependencies are
 outbound ports, so the student HTTP adapter calls only the published `TutorChat` API. Psychology
-signal and intervention workflows remain the next Wellbeing migration; they must not be folded into
-Intelligence merely because a future signal-analysis adapter may call an AI provider.
+signal and intervention workflows are now beginning their Wellbeing migration; they must not be
+folded into Intelligence merely because a signal-analysis adapter calls an AI provider.
+
+`BehaviorAnalysisService` is the first Wellbeing vertical slice. The scheduled adapter invokes its
+published `BehaviorAnalysis` API; the service reads privacy-minimized activity metadata, validates
+provider signal candidates, persists immutable signals and applies the severity-to-alert matrix
+through ports. The RLS-aware activity adapter establishes school scope inside the scheduler's own
+transaction. Psychologist dashboard, resolution, watchlist and reports remain legacy use cases and
+will move together in the next Wellbeing slice.
 
 ## Ordered implementation plan
 

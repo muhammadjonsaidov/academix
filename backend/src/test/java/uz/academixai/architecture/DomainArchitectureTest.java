@@ -85,4 +85,14 @@ class DomainArchitectureTest {
           .dependOnClassesThat()
           .resideInAnyPackage("uz.academixai.infrastructure..", "uz.academixai.application..")
           .because("Intelligence policies must depend on provider and configuration ports");
+
+  @ArchTest
+  static final ArchRule wellbeingApplicationMustDependOnPortsNotInfrastructure =
+      noClasses()
+          .that()
+          .resideInAnyPackage("uz.academixai.wellbeing.application..")
+          .should()
+          .dependOnClassesThat()
+          .resideInAnyPackage("uz.academixai.infrastructure..", "uz.academixai.application..")
+          .because("Wellbeing policies must depend on activity, AI, storage and alert ports");
 }

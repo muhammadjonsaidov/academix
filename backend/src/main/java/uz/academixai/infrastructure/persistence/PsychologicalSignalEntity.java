@@ -21,8 +21,8 @@ import uz.academixai.domain.SignalType;
  * <p>{@code rawEvidence} is a {@code String} mapped {@code @JdbcTypeCode(SqlTypes.JSON)} against a
  * {@code jsonb} column — per the lesson in CLAUDE.md's {@code lesson_plans.teacher_edited_plan}
  * incident, this means the string's CONTENTS must themselves already be a valid JSON document (e.g.
- * a JSON-encoded string literal), not arbitrary free text — {@code PsychologyService} must always
- * write via a JSON serializer, never a raw Qwen evidence string directly.
+ * a JSON-encoded string literal), not arbitrary free text — the Wellbeing persistence adapter must
+ * receive evidence serialized by its dedicated port, never a raw provider evidence string.
  */
 @Entity
 @Table(name = "psychological_signals")
