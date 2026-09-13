@@ -1,4 +1,4 @@
-package uz.academixai.domain;
+package uz.academixai.notification.domain;
 
 import java.util.UUID;
 

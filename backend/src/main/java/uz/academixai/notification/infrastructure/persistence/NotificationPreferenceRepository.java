@@ -1,10 +1,10 @@
-package uz.academixai.infrastructure.persistence;
+package uz.academixai.notification.infrastructure.persistence;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
-import uz.academixai.domain.NotificationType;
+import uz.academixai.notification.domain.NotificationType;
 
 public interface NotificationPreferenceRepository
     extends JpaRepository<NotificationPreferenceEntity, UUID> {

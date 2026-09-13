@@ -13,7 +13,7 @@ import uz.academixai.interfaces.web.ApiException;
  * classpath since early sprints but were never wired to anything (no {@code ProxyManager}, no bean,
  * no usage) — CLAUDE.md records the decision to defer the real integration until a broad enough
  * need justified it. The counter pattern below is what {@link
- * uz.academixai.application.TelegramLinkService} and {@link
+ * uz.academixai.notification.application.TelegramLinkService} and {@link
  * uz.academixai.application.PasswordResetService} each already hand-rolled; this class exists so
  * the three limits added afterwards (login, file upload, AI chat — academix_tz.md §5.3) share one
  * implementation instead of becoming copies three, four and five. Those two earlier services are

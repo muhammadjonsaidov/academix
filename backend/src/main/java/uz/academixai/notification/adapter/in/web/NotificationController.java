@@ -1,4 +1,4 @@
-package uz.academixai.interfaces.web.notifications;
+package uz.academixai.notification.adapter.in.web;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.NotificationService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.notification.application.NotificationService;
 
 /**
  * Deviation — no notification inbox endpoints exist in academix_tz.md at all (flagged repeatedly

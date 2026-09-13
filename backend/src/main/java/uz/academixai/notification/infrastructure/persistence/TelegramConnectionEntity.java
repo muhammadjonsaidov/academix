@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.persistence;
+package uz.academixai.notification.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -6,7 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.TelegramConnection;
+import uz.academixai.notification.domain.TelegramConnection;
 
 /** JPA mapping for {@code telegram_connections} (backend_tdd.md §4.1 table 15). */
 @Entity

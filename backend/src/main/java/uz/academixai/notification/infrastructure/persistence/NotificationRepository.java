@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.persistence;
+package uz.academixai.notification.infrastructure.persistence;
 
 import java.time.LocalDateTime;
 import java.util.List;

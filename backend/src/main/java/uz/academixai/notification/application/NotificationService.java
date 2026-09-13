@@ -1,4 +1,4 @@
-package uz.academixai.application;
+package uz.academixai.notification.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
@@ -10,16 +10,16 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.academixai.domain.Notification;
-import uz.academixai.domain.NotificationPreference;
-import uz.academixai.domain.NotificationType;
-import uz.academixai.infrastructure.persistence.NotificationEntity;
-import uz.academixai.infrastructure.persistence.NotificationPreferenceEntity;
-import uz.academixai.infrastructure.persistence.NotificationPreferenceRepository;
-import uz.academixai.infrastructure.persistence.NotificationRepository;
 import uz.academixai.infrastructure.queue.NotificationTelegramQueueProducer;
 import uz.academixai.infrastructure.realtime.RealtimeEventBus;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.notification.domain.Notification;
+import uz.academixai.notification.domain.NotificationPreference;
+import uz.academixai.notification.domain.NotificationType;
+import uz.academixai.notification.infrastructure.persistence.NotificationEntity;
+import uz.academixai.notification.infrastructure.persistence.NotificationPreferenceEntity;
+import uz.academixai.notification.infrastructure.persistence.NotificationPreferenceRepository;
+import uz.academixai.notification.infrastructure.persistence.NotificationRepository;
 
 /**
  * academix_tz.md §1.15 / §4 {@code sendNotification(userId, type, params)}. Always persists a

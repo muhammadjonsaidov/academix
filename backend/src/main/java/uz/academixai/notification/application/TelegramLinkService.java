@@ -1,14 +1,14 @@
-package uz.academixai.application;
+package uz.academixai.notification.application;
 
 import java.time.Duration;
 import java.util.UUID;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import uz.academixai.domain.TelegramConnection;
-import uz.academixai.infrastructure.persistence.TelegramConnectionRepository;
 import uz.academixai.infrastructure.telegram.TelegramProperties;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.notification.domain.TelegramConnection;
+import uz.academixai.notification.infrastructure.persistence.TelegramConnectionRepository;
 
 /**
  * academix_tz.md §2.7 "barcha rollar uchun umumiy" (common to all roles) Telegram sub-resource —

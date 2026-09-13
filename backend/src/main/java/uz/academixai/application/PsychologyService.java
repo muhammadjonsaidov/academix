@@ -20,7 +20,6 @@ import uz.academixai.application.port.out.ai.AiProvider;
 import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
 import uz.academixai.application.port.out.ai.PsychologyAnalysisResult;
 import uz.academixai.application.port.out.ai.PsychologySignalCandidate;
-import uz.academixai.domain.NotificationType;
 import uz.academixai.domain.PsychologicalSignal;
 import uz.academixai.domain.Role;
 import uz.academixai.domain.SignalSeverity;
@@ -41,6 +40,8 @@ import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
 import uz.academixai.infrastructure.persistence.XpHistoryEntity;
 import uz.academixai.infrastructure.persistence.XpHistoryRepository;
+import uz.academixai.notification.application.NotificationService;
+import uz.academixai.notification.domain.NotificationType;
 
 /**
  * academix_tz.md §1.14/§3.3/§4 PsychologyService — nightly silent behavior analysis + the strict

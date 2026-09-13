@@ -11,9 +11,12 @@ Each bounded context has this shape:
 
 ```
 <context>/
-  application/       use cases and input/output ports
-  domain/            aggregates, value objects and business rules
-  infrastructure/    adapters for JPA, Redis, AMQP, HTTP and object storage
+  domain/                    aggregates, value objects and business rules
+  application/               use cases and input/output ports
+    port/in/                 public commands and queries (when a context needs an explicit API)
+    port/out/                storage, messaging and external-service abstractions
+  infrastructure/            outbound adapters for JPA, Redis, AMQP, HTTP and object storage
+  adapter/in/web/            REST controllers and request/response DTOs
 ```
 
 Controllers are inbound adapters. They only validate/map HTTP data and call an application use
@@ -70,6 +73,22 @@ before scaling the backend beyond one instance.
 self-service profile operations. Its `AccountRepository` is an outbound port and
 `JpaAccountRepository` adapts the existing `users` table. This preserves `schoolId` as part of the
 identity aggregate so self-service edits cannot erase teacher-school ownership.
+
+`notification` is the first fully vertical package migration:
+
+```
+notification/
+  domain/                 Notification, NotificationPreference, NotificationType,
+                          TelegramConnection
+  application/            NotificationService, TelegramLinkService
+  infrastructure/
+    persistence/          notification and Telegram JPA entities/repositories
+  adapter/in/web/         notification and Telegram REST controllers plus DTOs
+```
+
+`PsychologyService` currently calls `notification.application.NotificationService` directly. This
+is an explicit transitional dependency; it will become a published `PsychologicalAlertRaised`
+event when the Wellbeing context is migrated.
 
 The remaining global `application`, `domain`, `infrastructure` and `interfaces` packages are legacy
 code and are not the target layout. They are migrated context by context; a big-bang package move is

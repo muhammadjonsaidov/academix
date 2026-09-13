@@ -1,4 +1,4 @@
-package uz.academixai.domain;
+package uz.academixai.notification.domain;
 
 /** academix_tz.md §1.15 — exact enum, don't add/reorder without checking the spec. */
 public enum NotificationType {

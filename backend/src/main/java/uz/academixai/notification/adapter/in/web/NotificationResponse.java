@@ -1,9 +1,9 @@
-package uz.academixai.interfaces.web.notifications;
+package uz.academixai.notification.adapter.in.web;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.Notification;
-import uz.academixai.domain.NotificationType;
+import uz.academixai.notification.domain.Notification;
+import uz.academixai.notification.domain.NotificationType;
 
 /** Deviation — no inbox response shape is documented in academix_tz.md, see NotificationService. */
 public record NotificationResponse(

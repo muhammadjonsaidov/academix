@@ -1,4 +1,4 @@
-package uz.academixai.interfaces.web.notifications;
+package uz.academixai.notification.adapter.in.web;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.TelegramLinkService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.notification.application.TelegramLinkService;
 
 /**
  * academix_tz.md §2.7 "barcha rollar uchun umumiy" — Telegram sub-resource, common to every role.

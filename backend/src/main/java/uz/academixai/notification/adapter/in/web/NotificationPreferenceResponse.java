@@ -1,7 +1,7 @@
-package uz.academixai.interfaces.web.notifications;
+package uz.academixai.notification.adapter.in.web;
 
-import uz.academixai.domain.NotificationPreference;
-import uz.academixai.domain.NotificationType;
+import uz.academixai.notification.domain.NotificationPreference;
+import uz.academixai.notification.domain.NotificationType;
 
 /** Deviation — see NotificationController. {@code locked} marks types that can't be muted. */
 public record NotificationPreferenceResponse(

@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.persistence;
+package uz.academixai.notification.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import uz.academixai.domain.Notification;
-import uz.academixai.domain.NotificationType;
+import uz.academixai.notification.domain.Notification;
+import uz.academixai.notification.domain.NotificationType;
 
 /**
  * JPA mapping for {@code notifications} (see V31 migration). Maps to/from {@link Notification}.

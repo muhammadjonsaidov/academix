@@ -1,6 +1,6 @@
-package uz.academixai.interfaces.web.notifications;
+package uz.academixai.notification.adapter.in.web;
 
-import uz.academixai.application.TelegramLinkService.LinkTokenResult;
+import uz.academixai.notification.application.TelegramLinkService.LinkTokenResult;
 
 /** academix_tz.md §2.7 — POST /notifications/telegram/link-token, exact shape. */
 public record LinkTokenResponse(String linkUrl, long expiresInSeconds) {

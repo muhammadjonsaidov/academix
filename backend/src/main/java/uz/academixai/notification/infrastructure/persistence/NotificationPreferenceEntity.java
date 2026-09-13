@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.persistence;
+package uz.academixai.notification.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -7,8 +7,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.UUID;
-import uz.academixai.domain.NotificationPreference;
-import uz.academixai.domain.NotificationType;
+import uz.academixai.notification.domain.NotificationPreference;
+import uz.academixai.notification.domain.NotificationType;
 
 /** JPA mapping for {@code notification_preferences} (V41). Maps to/from the domain record. */
 @Entity
