@@ -7,6 +7,10 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import uz.academixai.application.port.out.ai.AiGradingResult;
+import uz.academixai.application.port.out.ai.AiProvider;
+import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
+import uz.academixai.application.port.out.ai.GradingCriterion;
 import uz.academixai.domain.CriteriaScore;
 import uz.academixai.domain.ExamAIFeedback;
 import uz.academixai.domain.ExamSubmission;
@@ -14,12 +18,8 @@ import uz.academixai.domain.HandwritingCheckResult;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.infrastructure.ai.AiBudgetService;
 import uz.academixai.infrastructure.ai.AiCallCategory;
-import uz.academixai.infrastructure.ai.AiGradingResult;
-import uz.academixai.infrastructure.ai.AiProviderUnavailableException;
 import uz.academixai.infrastructure.ai.GoogleVisionClient;
-import uz.academixai.infrastructure.ai.GradingCriterion;
 import uz.academixai.infrastructure.ai.OcrUnavailableException;
-import uz.academixai.infrastructure.ai.OpenAiCompatibleClient;
 import uz.academixai.infrastructure.persistence.AiUsageLogEntity;
 import uz.academixai.infrastructure.persistence.AiUsageLogRepository;
 import uz.academixai.infrastructure.persistence.ExamAIFeedbackEntity;
@@ -72,7 +72,7 @@ public class ExamAIAnalysisService {
   private final AiUsageLogRepository aiUsageLogRepository;
   private final FileStorageService fileStorageService;
   private final GoogleVisionClient googleVisionClient;
-  private final OpenAiCompatibleClient aiClient;
+  private final AiProvider aiClient;
   private final AiBudgetService aiBudgetService;
   private final GradingCriteriaService gradingCriteriaService;
   private final HandwritingService handwritingService;
@@ -87,7 +87,7 @@ public class ExamAIAnalysisService {
       AiUsageLogRepository aiUsageLogRepository,
       FileStorageService fileStorageService,
       GoogleVisionClient googleVisionClient,
-      OpenAiCompatibleClient aiClient,
+      AiProvider aiClient,
       AiBudgetService aiBudgetService,
       GradingCriteriaService gradingCriteriaService,
       HandwritingService handwritingService,
@@ -161,7 +161,7 @@ public class ExamAIAnalysisService {
       result = aiClient.gradeSubmission(subjectAndGrade, criteria, extractedText);
     } catch (AiProviderUnavailableException e) {
       log.warn(
-          "Qwen grading unavailable for exam submission {}, falling to AI_SKIPPED",
+          "AI provider grading unavailable for exam submission {}, falling to AI_SKIPPED",
           submission.id(),
           e);
       saveOcrOnlyFeedback(submission, extractedText, handwritingResult);

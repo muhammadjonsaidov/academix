@@ -16,15 +16,15 @@ import org.springframework.data.domain.Limit;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import uz.academixai.application.port.out.ai.AiProvider;
+import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
+import uz.academixai.application.port.out.ai.PsychologyAnalysisResult;
+import uz.academixai.application.port.out.ai.PsychologySignalCandidate;
 import uz.academixai.domain.NotificationType;
 import uz.academixai.domain.PsychologicalSignal;
 import uz.academixai.domain.Role;
 import uz.academixai.domain.SignalSeverity;
 import uz.academixai.domain.SignalType;
-import uz.academixai.infrastructure.ai.AiProviderUnavailableException;
-import uz.academixai.infrastructure.ai.OpenAiCompatibleClient;
-import uz.academixai.infrastructure.ai.PsychologyAnalysisResult;
-import uz.academixai.infrastructure.ai.PsychologySignalCandidate;
 import uz.academixai.infrastructure.persistence.AiChatMessageEntity;
 import uz.academixai.infrastructure.persistence.AiChatMessageRepository;
 import uz.academixai.infrastructure.persistence.ExamSubmissionRepository;
@@ -79,7 +79,7 @@ public class PsychologyService {
   private final PsychologicalSignalRepository signalRepository;
   private final ParentStudentLinkRepository parentStudentLinkRepository;
   private final NotificationService notificationService;
-  private final OpenAiCompatibleClient aiClient;
+  private final AiProvider aiClient;
   private final ObjectMapper objectMapper;
   private final TransactionTemplate transactionTemplate;
   private final EntityManager entityManager;
@@ -95,7 +95,7 @@ public class PsychologyService {
       PsychologicalSignalRepository signalRepository,
       ParentStudentLinkRepository parentStudentLinkRepository,
       NotificationService notificationService,
-      OpenAiCompatibleClient aiClient,
+      AiProvider aiClient,
       ObjectMapper objectMapper,
       TransactionTemplate transactionTemplate,
       EntityManager entityManager) {

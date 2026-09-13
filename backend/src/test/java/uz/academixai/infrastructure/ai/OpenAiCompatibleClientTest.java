@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
+import uz.academixai.application.port.out.ai.AiGradingResult;
+import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
+import uz.academixai.application.port.out.ai.GradingCriterion;
 import uz.academixai.domain.CriteriaScore;
 import uz.academixai.domain.LessonPlanContent;
 
@@ -15,10 +18,11 @@ import uz.academixai.domain.LessonPlanContent;
  * no network call (no real AI_API_KEY is available in this environment; see CLAUDE.md).
  *
  * <p>Two Jackson stacks on purpose, mirroring production: {@code jackson3Mapper} builds the outer
- * "chat completion" response fixture (Jackson 3 — matches {@code QwenAIClient}'s HTTP-body-bound
- * {@code response} parameter type, confirmed real by an actual InvalidDefinitionException when this
- * used the legacy type), while {@code objectMapper} (legacy Jackson 2, the same {@code
- * JacksonConfig} bean used at runtime) parses the extracted content string internally.
+ * "chat completion" response fixture (Jackson 3 — matches {@code OpenAiCompatibleClient}'s
+ * HTTP-body-bound {@code response} parameter type, confirmed real by an actual
+ * InvalidDefinitionException when this used the legacy type), while {@code objectMapper} (legacy
+ * Jackson 2, the same {@code JacksonConfig} bean used at runtime) parses the extracted content
+ * string internally.
  */
 class OpenAiCompatibleClientTest {
 

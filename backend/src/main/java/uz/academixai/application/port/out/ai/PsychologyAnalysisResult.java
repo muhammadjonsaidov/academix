@@ -1,7 +1,7 @@
-package uz.academixai.infrastructure.ai;
+package uz.academixai.application.port.out.ai;
 
 import java.util.List;
 
-/** Qwen psychology-analysis response shape (TZ §3.3, exact). */
+/** Provider output for a psychology analysis. */
 public record PsychologyAnalysisResult(
     List<PsychologySignalCandidate> signals, boolean isManipulationSuspected) {}

@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Limit;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import uz.academixai.application.port.out.ai.AiProvider;
+import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
 import uz.academixai.domain.AiChatMessage;
 import uz.academixai.domain.ChatBlockReason;
 import uz.academixai.domain.HomeworkAssignment;
@@ -17,8 +19,6 @@ import uz.academixai.domain.Subject;
 import uz.academixai.domain.SubjectType;
 import uz.academixai.infrastructure.ai.AiBudgetService;
 import uz.academixai.infrastructure.ai.AiCallCategory;
-import uz.academixai.infrastructure.ai.AiProviderUnavailableException;
-import uz.academixai.infrastructure.ai.OpenAiCompatibleClient;
 import uz.academixai.infrastructure.persistence.AiChatMessageEntity;
 import uz.academixai.infrastructure.persistence.AiChatMessageRepository;
 import uz.academixai.infrastructure.persistence.HomeworkAssignmentRepository;
@@ -28,7 +28,7 @@ import uz.academixai.interfaces.web.ApiException;
 
 /**
  * academix_tz.md §2.3/§3.4 "AI Tutor chat" — two-layer jailbreak defense: layer 1 is {@code
- * QwenAIClient}'s system prompt, layer 2 is this service's response-level bare-answer heuristic
+ * {@link AiProvider}'s system prompt, layer 2 is this service's response-level bare-answer heuristic
  * (below). Chat is the first AI category to degrade when a school's budget runs out (backend TDD
  * "AI cost/budget system") — unlike homework grading's silent {@code AI_SKIPPED}, chat has no
  * content to fall back to, so a budget-exhausted request is blocked outright with {@link
@@ -54,7 +54,7 @@ public class AiChatService {
   private final HomeworkAssignmentRepository assignmentRepository;
   private final SubjectRepository subjectRepository;
   private final AiBudgetService budgetService;
-  private final OpenAiCompatibleClient aiClient;
+  private final AiProvider aiClient;
   private final RedisRateLimiter rateLimiter;
 
   public AiChatService(
@@ -62,7 +62,7 @@ public class AiChatService {
       HomeworkAssignmentRepository assignmentRepository,
       SubjectRepository subjectRepository,
       AiBudgetService budgetService,
-      OpenAiCompatibleClient aiClient,
+      AiProvider aiClient,
       RedisRateLimiter rateLimiter) {
     this.chatRepository = chatRepository;
     this.assignmentRepository = assignmentRepository;
@@ -118,7 +118,7 @@ public class AiChatService {
     try {
       rawResponse = aiClient.tutorChat(subjectAndContext, message);
     } catch (AiProviderUnavailableException e) {
-      log.warn("Qwen tutor chat unavailable for student {}", studentId, e);
+      log.warn("AI provider tutor chat unavailable for student {}", studentId, e);
       return persistAndReturn(
           schoolId,
           studentId,

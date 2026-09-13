@@ -10,6 +10,12 @@ import java.util.stream.Collectors;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import uz.academixai.application.port.out.ai.AiGradingResult;
+import uz.academixai.application.port.out.ai.AiProvider;
+import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
+import uz.academixai.application.port.out.ai.GradingCriterion;
+import uz.academixai.application.port.out.ai.PsychologyAnalysisResult;
+import uz.academixai.application.port.out.ai.PsychologySignalCandidate;
 import uz.academixai.domain.CriteriaScore;
 import uz.academixai.domain.LessonActivity;
 import uz.academixai.domain.LessonPlanContent;
@@ -26,7 +32,7 @@ import uz.academixai.domain.StepAnalysis;
  */
 @Component
 @EnableConfigurationProperties(OpenAiCompatibleProperties.class)
-public class OpenAiCompatibleClient {
+public class OpenAiCompatibleClient implements AiProvider {
 
   private static final String SYSTEM_PROMPT =
       """
@@ -120,29 +126,7 @@ public class OpenAiCompatibleClient {
       String subjectAndGrade, List<GradingCriterion> criteria, String extractedText) {
     String userContent = buildUserContent(subjectAndGrade, criteria, extractedText);
 
-    Map<String, Object> requestBody =
-        Map.of(
-            "model", properties.modelText(),
-            "messages",
-                List.of(
-                    Map.of("role", "system", "content", SYSTEM_PROMPT),
-                    Map.of("role", "user", "content", userContent)));
-
-    // Boot 4.1 defaults to Jackson 3 as the primary message converter — binding directly to the
-    // legacy com.fasterxml.jackson.databind.JsonNode here throws InvalidDefinitionException
-    // ("no Creators... abstract type"), confirmed by a real request. Use Jackson 3's own JsonNode
-    // for this one outer HTTP-body binding; objectMapper.readTree(json) below (legacy
-    // ObjectMapper bean) still returns the legacy JsonNode for everything else in this file.
-    tools.jackson.databind.JsonNode response =
-        restClient
-            .post()
-            .uri(properties.baseUrl() + "/chat/completions")
-            .header("Authorization", "Bearer " + properties.apiKey())
-            .body(requestBody)
-            .retrieve()
-            .body(tools.jackson.databind.JsonNode.class);
-
-    return parseGradingResult(response, objectMapper);
+    return parseGradingResult(complete(SYSTEM_PROMPT, userContent), objectMapper);
   }
 
   @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
@@ -166,29 +150,7 @@ public class OpenAiCompatibleClient {
                     ? ""
                     : " Darslik matni: " + syllabusExtractedContent);
 
-    Map<String, Object> requestBody =
-        Map.of(
-            "model", properties.modelText(),
-            "messages",
-                List.of(
-                    Map.of("role", "system", "content", LESSON_PLAN_SYSTEM_PROMPT),
-                    Map.of("role", "user", "content", userContent)));
-
-    // Boot 4.1 defaults to Jackson 3 as the primary message converter — binding directly to the
-    // legacy com.fasterxml.jackson.databind.JsonNode here throws InvalidDefinitionException
-    // ("no Creators... abstract type"), confirmed by a real request. Use Jackson 3's own JsonNode
-    // for this one outer HTTP-body binding; objectMapper.readTree(json) below (legacy
-    // ObjectMapper bean) still returns the legacy JsonNode for everything else in this file.
-    tools.jackson.databind.JsonNode response =
-        restClient
-            .post()
-            .uri(properties.baseUrl() + "/chat/completions")
-            .header("Authorization", "Bearer " + properties.apiKey())
-            .body(requestBody)
-            .retrieve()
-            .body(tools.jackson.databind.JsonNode.class);
-
-    return parseLessonPlanContent(response, objectMapper);
+    return parseLessonPlanContent(complete(LESSON_PLAN_SYSTEM_PROMPT, userContent), objectMapper);
   }
 
   @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
@@ -232,29 +194,7 @@ public class OpenAiCompatibleClient {
     String userContent =
         "Fan/sinf: %s. Standart topshiriq: %s".formatted(subjectAndGrade, standardTaskDescription);
 
-    Map<String, Object> requestBody =
-        Map.of(
-            "model", properties.modelText(),
-            "messages",
-                List.of(
-                    Map.of("role", "system", "content", UNIQUE_TASK_SYSTEM_PROMPT),
-                    Map.of("role", "user", "content", userContent)));
-
-    // Boot 4.1 defaults to Jackson 3 as the primary message converter — binding directly to the
-    // legacy com.fasterxml.jackson.databind.JsonNode here throws InvalidDefinitionException
-    // ("no Creators... abstract type"), confirmed by a real request. Use Jackson 3's own JsonNode
-    // for this one outer HTTP-body binding; objectMapper.readTree(json) below (legacy
-    // ObjectMapper bean) still returns the legacy JsonNode for everything else in this file.
-    tools.jackson.databind.JsonNode response =
-        restClient
-            .post()
-            .uri(properties.baseUrl() + "/chat/completions")
-            .header("Authorization", "Bearer " + properties.apiKey())
-            .body(requestBody)
-            .retrieve()
-            .body(tools.jackson.databind.JsonNode.class);
-
-    String content = response.path("choices").path(0).path("message").path("content").asText("");
+    String content = completionContent(complete(UNIQUE_TASK_SYSTEM_PROMPT, userContent));
     String json = stripMarkdownFence(content);
     try {
       return objectMapper.readTree(json).path("taskContent").asText("");
@@ -273,29 +213,7 @@ public class OpenAiCompatibleClient {
 
   @CircuitBreaker(name = "aiProvider", fallbackMethod = "verifyTaskSolvableFallback")
   public boolean verifyTaskSolvable(String taskContent) {
-    Map<String, Object> requestBody =
-        Map.of(
-            "model", properties.modelText(),
-            "messages",
-                List.of(
-                    Map.of("role", "system", "content", VERIFY_TASK_SYSTEM_PROMPT),
-                    Map.of("role", "user", "content", taskContent)));
-
-    // Boot 4.1 defaults to Jackson 3 as the primary message converter — binding directly to the
-    // legacy com.fasterxml.jackson.databind.JsonNode here throws InvalidDefinitionException
-    // ("no Creators... abstract type"), confirmed by a real request. Use Jackson 3's own JsonNode
-    // for this one outer HTTP-body binding; objectMapper.readTree(json) below (legacy
-    // ObjectMapper bean) still returns the legacy JsonNode for everything else in this file.
-    tools.jackson.databind.JsonNode response =
-        restClient
-            .post()
-            .uri(properties.baseUrl() + "/chat/completions")
-            .header("Authorization", "Bearer " + properties.apiKey())
-            .body(requestBody)
-            .retrieve()
-            .body(tools.jackson.databind.JsonNode.class);
-
-    String content = response.path("choices").path(0).path("message").path("content").asText("");
+    String content = completionContent(complete(VERIFY_TASK_SYSTEM_PROMPT, taskContent));
     String json = stripMarkdownFence(content);
     try {
       return objectMapper.readTree(json).path("solvable").asBoolean(false);
@@ -316,29 +234,7 @@ public class OpenAiCompatibleClient {
   public String tutorChat(String subjectAndContext, String studentMessage) {
     String userContent = "%s\n\nO'quvchi savoli: %s".formatted(subjectAndContext, studentMessage);
 
-    Map<String, Object> requestBody =
-        Map.of(
-            "model", properties.modelText(),
-            "messages",
-                List.of(
-                    Map.of("role", "system", "content", TUTOR_CHAT_SYSTEM_PROMPT),
-                    Map.of("role", "user", "content", userContent)));
-
-    // Boot 4.1 defaults to Jackson 3 as the primary message converter — binding directly to the
-    // legacy com.fasterxml.jackson.databind.JsonNode here throws InvalidDefinitionException
-    // ("no Creators... abstract type"), confirmed by a real request. Use Jackson 3's own JsonNode
-    // for this one outer HTTP-body binding; objectMapper.readTree(json) below (legacy
-    // ObjectMapper bean) still returns the legacy JsonNode for everything else in this file.
-    tools.jackson.databind.JsonNode response =
-        restClient
-            .post()
-            .uri(properties.baseUrl() + "/chat/completions")
-            .header("Authorization", "Bearer " + properties.apiKey())
-            .body(requestBody)
-            .retrieve()
-            .body(tools.jackson.databind.JsonNode.class);
-
-    return response.path("choices").path(0).path("message").path("content").asText("");
+    return completionContent(complete(TUTOR_CHAT_SYSTEM_PROMPT, userContent));
   }
 
   @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
@@ -349,29 +245,7 @@ public class OpenAiCompatibleClient {
 
   @CircuitBreaker(name = "aiProvider", fallbackMethod = "analyzePsychologyFallback")
   public PsychologyAnalysisResult analyzePsychology(String activitySummary) {
-    Map<String, Object> requestBody =
-        Map.of(
-            "model", properties.modelText(),
-            "messages",
-                List.of(
-                    Map.of("role", "system", "content", PSYCHOLOGY_SYSTEM_PROMPT),
-                    Map.of("role", "user", "content", activitySummary)));
-
-    // Boot 4.1 defaults to Jackson 3 as the primary message converter — binding directly to the
-    // legacy com.fasterxml.jackson.databind.JsonNode here throws InvalidDefinitionException
-    // ("no Creators... abstract type"), confirmed by a real request. Use Jackson 3's own JsonNode
-    // for this one outer HTTP-body binding; objectMapper.readTree(json) below (legacy
-    // ObjectMapper bean) still returns the legacy JsonNode for everything else in this file.
-    tools.jackson.databind.JsonNode response =
-        restClient
-            .post()
-            .uri(properties.baseUrl() + "/chat/completions")
-            .header("Authorization", "Bearer " + properties.apiKey())
-            .body(requestBody)
-            .retrieve()
-            .body(tools.jackson.databind.JsonNode.class);
-
-    return parsePsychologyResult(response, objectMapper);
+    return parsePsychologyResult(complete(PSYCHOLOGY_SYSTEM_PROMPT, activitySummary), objectMapper);
   }
 
   @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
@@ -452,6 +326,27 @@ public class OpenAiCompatibleClient {
       throw new AiProviderUnavailableException(
           "AI provider response was not valid JSON: " + content, e);
     }
+  }
+
+  private tools.jackson.databind.JsonNode complete(String systemPrompt, String userContent) {
+    Map<String, Object> requestBody =
+        Map.of(
+            "model", properties.modelText(),
+            "messages",
+                List.of(
+                    Map.of("role", "system", "content", systemPrompt),
+                    Map.of("role", "user", "content", userContent)));
+    return restClient
+        .post()
+        .uri(properties.baseUrl() + "/chat/completions")
+        .header("Authorization", "Bearer " + properties.apiKey())
+        .body(requestBody)
+        .retrieve()
+        .body(tools.jackson.databind.JsonNode.class);
+  }
+
+  private static String completionContent(tools.jackson.databind.JsonNode response) {
+    return response.path("choices").path(0).path("message").path("content").asText("");
   }
 
   private static String stripMarkdownFence(String content) {

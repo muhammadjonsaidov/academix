@@ -8,10 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import uz.academixai.application.port.out.ai.AiProvider;
+import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
 import uz.academixai.domain.LessonPlan;
 import uz.academixai.domain.LessonPlanContent;
-import uz.academixai.infrastructure.ai.AiProviderUnavailableException;
-import uz.academixai.infrastructure.ai.OpenAiCompatibleClient;
 import uz.academixai.infrastructure.persistence.LessonPlanEntity;
 import uz.academixai.infrastructure.persistence.LessonPlanRepository;
 import uz.academixai.infrastructure.persistence.SchoolClassEntity;
@@ -42,14 +42,14 @@ public class LessonPlanService {
   private final TeacherSyllabusRepository syllabusRepository;
   private final SubjectRepository subjectRepository;
   private final SchoolClassRepository classRepository;
-  private final OpenAiCompatibleClient aiClient;
+  private final AiProvider aiClient;
 
   public LessonPlanService(
       LessonPlanRepository lessonPlanRepository,
       TeacherSyllabusRepository syllabusRepository,
       SubjectRepository subjectRepository,
       SchoolClassRepository classRepository,
-      OpenAiCompatibleClient aiClient) {
+      AiProvider aiClient) {
     this.lessonPlanRepository = lessonPlanRepository;
     this.syllabusRepository = syllabusRepository;
     this.subjectRepository = subjectRepository;
@@ -145,7 +145,7 @@ public class LessonPlanService {
       // Exception.class handler logs) — without this, the real cause (auth failure,
       // timeout, malformed JSON, genuine circuit-open) was silently swallowed, confirmed
       // by a real 503 with zero corresponding log line.
-      log.warn("Qwen lesson-plan generation unavailable", e);
+      log.warn("AI provider lesson-plan generation unavailable", e);
       throw new ApiException(
           HttpStatus.SERVICE_UNAVAILABLE,
           "ERR_AI_UNAVAILABLE",

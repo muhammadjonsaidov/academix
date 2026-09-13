@@ -9,10 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import uz.academixai.application.port.out.ai.AiProvider;
+import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
 import uz.academixai.domain.AssignmentType;
 import uz.academixai.domain.StudentUniqueTask;
-import uz.academixai.infrastructure.ai.AiProviderUnavailableException;
-import uz.academixai.infrastructure.ai.OpenAiCompatibleClient;
 import uz.academixai.infrastructure.ai.UniqueTaskValidator;
 import uz.academixai.infrastructure.ai.UniqueTaskValidatorRegistry;
 import uz.academixai.infrastructure.persistence.HomeworkAssignmentEntity;
@@ -50,7 +50,7 @@ public class UniqueTaskGenerationService {
   private final StudentUniqueTaskRepository uniqueTaskRepository;
   private final SubjectRepository subjectRepository;
   private final SchoolClassRepository classRepository;
-  private final OpenAiCompatibleClient aiClient;
+  private final AiProvider aiClient;
   private final UniqueTaskValidatorRegistry validatorRegistry;
 
   public UniqueTaskGenerationService(
@@ -59,7 +59,7 @@ public class UniqueTaskGenerationService {
       StudentUniqueTaskRepository uniqueTaskRepository,
       SubjectRepository subjectRepository,
       SchoolClassRepository classRepository,
-      OpenAiCompatibleClient aiClient,
+      AiProvider aiClient,
       UniqueTaskValidatorRegistry validatorRegistry) {
     this.assignmentRepository = assignmentRepository;
     this.studentProfileRepository = studentProfileRepository;
@@ -169,7 +169,7 @@ public class UniqueTaskGenerationService {
       // Graceful per-student fallback (correct — don't fail the whole batch), but silently
       // returning null makes "why did this student fall back to standard" undiagnosable
       // without a log line, same class of gap fixed elsewhere in the AI catch sites.
-      log.warn("Qwen unique-task generation unavailable, falling back to standard", e);
+      log.warn("AI provider unique-task generation unavailable, falling back to standard", e);
       return null;
     }
     if (generated == null || generated.isBlank()) {
@@ -181,7 +181,7 @@ public class UniqueTaskGenerationService {
     try {
       return aiClient.verifyTaskSolvable(generated) ? generated : null;
     } catch (AiProviderUnavailableException e) {
-      log.warn("Qwen task-verification unavailable, falling back to standard", e);
+      log.warn("AI provider task verification unavailable, falling back to standard", e);
       return null;
     }
   }

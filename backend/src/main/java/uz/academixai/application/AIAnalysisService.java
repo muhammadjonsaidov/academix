@@ -7,6 +7,10 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import uz.academixai.application.port.out.ai.AiGradingResult;
+import uz.academixai.application.port.out.ai.AiProvider;
+import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
+import uz.academixai.application.port.out.ai.GradingCriterion;
 import uz.academixai.domain.AIFeedback;
 import uz.academixai.domain.CriteriaScore;
 import uz.academixai.domain.HandwritingCheckResult;
@@ -16,13 +20,9 @@ import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.domain.SubmissionType;
 import uz.academixai.infrastructure.ai.AiBudgetService;
 import uz.academixai.infrastructure.ai.AiCallCategory;
-import uz.academixai.infrastructure.ai.AiGradingResult;
-import uz.academixai.infrastructure.ai.AiProviderUnavailableException;
 import uz.academixai.infrastructure.ai.DocumentTextLayout;
 import uz.academixai.infrastructure.ai.GoogleVisionClient;
-import uz.academixai.infrastructure.ai.GradingCriterion;
 import uz.academixai.infrastructure.ai.OcrUnavailableException;
-import uz.academixai.infrastructure.ai.OpenAiCompatibleClient;
 import uz.academixai.infrastructure.persistence.AIFeedbackEntity;
 import uz.academixai.infrastructure.persistence.AIFeedbackRepository;
 import uz.academixai.infrastructure.persistence.AiUsageLogEntity;
@@ -76,7 +76,7 @@ public class AIAnalysisService {
   private final AiUsageLogRepository aiUsageLogRepository;
   private final FileStorageService fileStorageService;
   private final GoogleVisionClient googleVisionClient;
-  private final OpenAiCompatibleClient aiClient;
+  private final AiProvider aiClient;
   private final AiBudgetService aiBudgetService;
   private final GradingCriteriaService gradingCriteriaService;
   private final XPService xpService;
@@ -92,7 +92,7 @@ public class AIAnalysisService {
       AiUsageLogRepository aiUsageLogRepository,
       FileStorageService fileStorageService,
       GoogleVisionClient googleVisionClient,
-      OpenAiCompatibleClient aiClient,
+      AiProvider aiClient,
       AiBudgetService aiBudgetService,
       GradingCriteriaService gradingCriteriaService,
       XPService xpService,
@@ -175,7 +175,9 @@ public class AIAnalysisService {
       // Correct degradation (AI_SKIPPED, per TZ §8), but silent — undiagnosable without a log
       // line why grading actually failed (auth, timeout, malformed JSON, circuit open).
       log.warn(
-          "Qwen grading unavailable for submission {}, falling to AI_SKIPPED", submission.id(), e);
+          "AI provider grading unavailable for submission {}, falling to AI_SKIPPED",
+          submission.id(),
+          e);
       saveOcrOnlyFeedback(submission, extractedText, handwritingResult);
       updateStatus(submission, SubmissionStatus.AI_SKIPPED);
       return;
