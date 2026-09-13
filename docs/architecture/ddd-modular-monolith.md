@@ -179,7 +179,10 @@ models, so the web adapter never reaches JPA entities or persistence repositorie
 
 `intelligence` now owns the monthly AI budget policy. Its `AiBudgetService` depends on a School
 limit lookup and a Redis usage-counter port, while Learning and legacy callers consume that public
-application API. Provider/OCR orchestration remains the next Intelligence migration slice.
+application API. Homework OCR, grading, plagiarism and handwriting orchestration are now owned by
+`HomeworkAiAnalysisService`: its provider, object-storage, Learning-persistence, Progress and SSE
+dependencies are all ports. Its queue contract and graceful `AI_SKIPPED` behavior are preserved.
+Exam analysis, tutor chat and psychology analysis remain the next Intelligence slices.
 
 ## Ordered implementation plan
 

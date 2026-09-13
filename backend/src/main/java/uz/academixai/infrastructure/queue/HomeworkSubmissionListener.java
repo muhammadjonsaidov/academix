@@ -4,15 +4,15 @@ import jakarta.persistence.EntityManager;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import uz.academixai.application.AIAnalysisService;
+import uz.academixai.intelligence.application.HomeworkAiAnalysisService;
 
 /**
  * Consumes {@code homework.submissions.queue} — see {@link HomeworkQueueConfig} for retry/DLX/TTL
- * config and {@link AIAnalysisService} for the actual OCR+grading pipeline. A thrown exception here
- * triggers the container's retry advice (3 attempts, then dead-lettered) — {@link
- * AIAnalysisService} deliberately does NOT let a Qwen/Vision outage reach this point (it degrades
- * to {@code AI_SKIPPED} internally instead), so only genuinely unexpected failures (e.g. a missing
- * submission row) end up retried/dead-lettered here.
+ * config and {@link HomeworkAiAnalysisService} for the actual OCR+grading pipeline. A thrown
+ * exception here triggers the container's retry advice (3 attempts, then dead-lettered) — {@link
+ * HomeworkAiAnalysisService} deliberately does NOT let a Qwen/Vision outage reach this point (it
+ * degrades to {@code AI_SKIPPED} internally instead), so only genuinely unexpected failures (e.g. a
+ * missing submission row) end up retried/dead-lettered here.
  *
  * <p><b>Runs its own {@code SET LOCAL app.current_school_id}, same as {@code RlsTransactionFilter}
  * does for HTTP requests.</b> {@code homework_submissions} is RLS-enabled, but this listener has no
@@ -24,12 +24,12 @@ import uz.academixai.application.AIAnalysisService;
 @Component
 public class HomeworkSubmissionListener {
 
-  private final AIAnalysisService aiAnalysisService;
+  private final HomeworkAiAnalysisService aiAnalysisService;
   private final TransactionTemplate transactionTemplate;
   private final EntityManager entityManager;
 
   public HomeworkSubmissionListener(
-      AIAnalysisService aiAnalysisService,
+      HomeworkAiAnalysisService aiAnalysisService,
       TransactionTemplate transactionTemplate,
       EntityManager entityManager) {
     this.aiAnalysisService = aiAnalysisService;
@@ -47,7 +47,7 @@ public class HomeworkSubmissionListener {
           entityManager
               .createNativeQuery("SET LOCAL app.current_school_id = '" + message.schoolId() + "'")
               .executeUpdate();
-          aiAnalysisService.analyzeSubmission(message.submissionId());
+          aiAnalysisService.analyze(message.submissionId());
         });
   }
 }
