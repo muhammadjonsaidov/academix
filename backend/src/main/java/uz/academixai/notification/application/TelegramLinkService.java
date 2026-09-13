@@ -23,7 +23,7 @@ import uz.academixai.notification.infrastructure.persistence.TelegramConnectionR
  * doc-comment mention, dependencies on the classpath but unwired). Formally wiring Bucket4j's Redis
  * {@code ProxyManager} (a real, non-trivial integration — codec, connection setup) for one
  * low-stakes endpoint is disproportionate; this uses a plain Redis {@code INCR}+{@code EXPIRE}
- * counter instead, the exact same real-time-counter pattern {@link AiBudgetService} already uses.
+ * counter instead, the same real-time-counter pattern used by the Intelligence AI budget policy.
  * Adopting Bucket4j itself is deferred to whenever a broader rate-limiting need actually justifies
  * the integration cost — consistent with CLAUDE.md's "don't build for scale this project doesn't
  * have yet" principle.

@@ -18,8 +18,6 @@ import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.PlagiarismType;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.domain.SubmissionType;
-import uz.academixai.infrastructure.ai.AiBudgetService;
-import uz.academixai.infrastructure.ai.AiCallCategory;
 import uz.academixai.infrastructure.ai.DocumentTextLayout;
 import uz.academixai.infrastructure.ai.GoogleVisionClient;
 import uz.academixai.infrastructure.ai.OcrUnavailableException;
@@ -37,6 +35,8 @@ import uz.academixai.infrastructure.persistence.SubjectEntity;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.infrastructure.realtime.RealtimeEventBus;
 import uz.academixai.infrastructure.storage.FileStorageService;
+import uz.academixai.intelligence.application.AiBudgetService;
+import uz.academixai.intelligence.domain.AiCallCategory;
 import uz.academixai.progress.application.XPService;
 
 /**

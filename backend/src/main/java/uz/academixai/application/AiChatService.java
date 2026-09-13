@@ -17,13 +17,13 @@ import uz.academixai.domain.ChatBlockReason;
 import uz.academixai.domain.HomeworkAssignment;
 import uz.academixai.domain.Subject;
 import uz.academixai.domain.SubjectType;
-import uz.academixai.infrastructure.ai.AiBudgetService;
-import uz.academixai.infrastructure.ai.AiCallCategory;
 import uz.academixai.infrastructure.persistence.AiChatMessageEntity;
 import uz.academixai.infrastructure.persistence.AiChatMessageRepository;
 import uz.academixai.infrastructure.persistence.HomeworkAssignmentRepository;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.infrastructure.ratelimit.RedisRateLimiter;
+import uz.academixai.intelligence.application.AiBudgetService;
+import uz.academixai.intelligence.domain.AiCallCategory;
 import uz.academixai.interfaces.web.ApiException;
 
 /**

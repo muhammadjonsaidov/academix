@@ -75,4 +75,14 @@ class DomainArchitectureTest {
           .dependOnClassesThat()
           .resideInAnyPackage("uz.academixai.infrastructure..", "uz.academixai.application..")
           .because("Progress XP policy must use its persistence ports, not JPA adapters directly");
+
+  @ArchTest
+  static final ArchRule intelligenceApplicationMustDependOnPortsNotInfrastructure =
+      noClasses()
+          .that()
+          .resideInAnyPackage("uz.academixai.intelligence.application..")
+          .should()
+          .dependOnClassesThat()
+          .resideInAnyPackage("uz.academixai.infrastructure..", "uz.academixai.application..")
+          .because("Intelligence policies must depend on provider and configuration ports");
 }

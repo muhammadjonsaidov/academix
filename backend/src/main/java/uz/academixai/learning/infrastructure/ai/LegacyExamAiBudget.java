@@ -2,8 +2,8 @@ package uz.academixai.learning.infrastructure.ai;
 
 import java.util.UUID;
 import org.springframework.stereotype.Component;
-import uz.academixai.infrastructure.ai.AiBudgetService;
-import uz.academixai.infrastructure.ai.AiCallCategory;
+import uz.academixai.intelligence.application.AiBudgetService;
+import uz.academixai.intelligence.domain.AiCallCategory;
 import uz.academixai.learning.application.port.out.ExamAiBudget;
 
 /** Explicit adapter until the Intelligence budget policy becomes a published API. */

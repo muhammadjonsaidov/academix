@@ -16,8 +16,6 @@ import uz.academixai.domain.ExamAIFeedback;
 import uz.academixai.domain.ExamSubmission;
 import uz.academixai.domain.HandwritingCheckResult;
 import uz.academixai.domain.SubmissionStatus;
-import uz.academixai.infrastructure.ai.AiBudgetService;
-import uz.academixai.infrastructure.ai.AiCallCategory;
 import uz.academixai.infrastructure.ai.GoogleVisionClient;
 import uz.academixai.infrastructure.ai.OcrUnavailableException;
 import uz.academixai.infrastructure.persistence.AiUsageLogEntity;
@@ -34,6 +32,8 @@ import uz.academixai.infrastructure.persistence.SubjectEntity;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.infrastructure.realtime.RealtimeEventBus;
 import uz.academixai.infrastructure.storage.FileStorageService;
+import uz.academixai.intelligence.application.AiBudgetService;
+import uz.academixai.intelligence.domain.AiCallCategory;
 
 /**
  * academix_backend_tdd.md §6.7 — {@code exam.submissions.queue} consumer's actual pipeline. Same

@@ -177,6 +177,10 @@ Student exam cards and result detail are exposed through Learning's `StudentExam
 authorizes the student's School membership through a published lookup and returns only domain read
 models, so the web adapter never reaches JPA entities or persistence repositories.
 
+`intelligence` now owns the monthly AI budget policy. Its `AiBudgetService` depends on a School
+limit lookup and a Redis usage-counter port, while Learning and legacy callers consume that public
+application API. Provider/OCR orchestration remains the next Intelligence migration slice.
+
 ## Ordered implementation plan
 
 1. Complete Identity ports for token issuance, sessions, rate limiting and school-context lookup.
