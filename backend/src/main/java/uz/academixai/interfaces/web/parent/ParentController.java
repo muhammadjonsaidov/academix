@@ -18,10 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.application.DataDeletionService;
 import uz.academixai.application.ParentDashboardService;
 import uz.academixai.application.ParentLinkService;
-import uz.academixai.application.ParentProgressService;
 import uz.academixai.application.ParentReportService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.learning.application.port.in.StudentHomeworkQuery.HomeworkItem;
+import uz.academixai.progress.application.port.in.ParentProgress;
 import uz.academixai.reporting.adapter.in.web.ReportResponse;
 import uz.academixai.reporting.application.ReportService.ReportDownload;
 
@@ -34,14 +34,14 @@ public class ParentController {
   private final DataDeletionService dataDeletionService;
   private final ParentLinkService parentLinkService;
   private final ParentDashboardService parentDashboardService;
-  private final ParentProgressService parentProgressService;
+  private final ParentProgress parentProgressService;
   private final ParentReportService parentReportService;
 
   public ParentController(
       DataDeletionService dataDeletionService,
       ParentLinkService parentLinkService,
       ParentDashboardService parentDashboardService,
-      ParentProgressService parentProgressService,
+      ParentProgress parentProgressService,
       ParentReportService parentReportService) {
     this.dataDeletionService = dataDeletionService;
     this.parentLinkService = parentLinkService;
