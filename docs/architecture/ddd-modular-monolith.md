@@ -184,7 +184,12 @@ application API. Homework OCR, grading, plagiarism and handwriting orchestration
 dependencies are all ports. Its queue contract and graceful `AI_SKIPPED` behavior are preserved.
 `ExamAiAnalysisService` uses the same provider-neutral OCR/grading/handwriting boundaries while
 keeping exam-only review flags and its separate budget. Tutor chat and psychology analysis remain
-the next Intelligence slices.
+the next Intelligence slices. Tutor chat is now a complete Intelligence vertical slice:
+`TutorChatService` owns subject parsing, assignment relevance, budget, answer-leak guardrails and
+bounded history. Its AI provider, rate limit, assignment lookup and persistence dependencies are
+outbound ports, so the student HTTP adapter calls only the published `TutorChat` API. Psychology
+signal and intervention workflows remain the next Wellbeing migration; they must not be folded into
+Intelligence merely because a future signal-analysis adapter may call an AI provider.
 
 ## Ordered implementation plan
 

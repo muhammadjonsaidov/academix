@@ -67,7 +67,7 @@ public class OpenAiCompatibleClient implements AiProvider {
       }""";
 
   // academix_tz.md §3.4 — exact system prompt wording from the spec, layer 1 of the two-layer
-  // jailbreak defense (layer 2 is AiChatService's response-level bare-answer heuristic).
+  // jailbreak defense (layer 2 is TutorChatService's response-level bare-answer heuristic).
   private static final String TUTOR_CHAT_SYSTEM_PROMPT =
       """
       Sen o'quvchiga yordam beruvchi AI Tutorsan. Hech qachon tayyor javob berma — faqat qadam-baqadam
