@@ -4,7 +4,6 @@ import type { LoginResponse, Profile, UserSummary } from "@/types/auth";
 
 interface AuthState {
   accessToken: string | null;
-  refreshToken: string | null;
   user: UserSummary | null;
   profile: Profile | null;
   isAuthenticated: boolean;
@@ -28,7 +27,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/a
 // create a real circular module dependency with lib/api/client.ts (which imports this store).
 export const useAuthStore = create<AuthState>((set, get) => ({
   accessToken: null,
-  refreshToken: null,
   user: null,
   profile: null,
   isAuthenticated: false,
@@ -41,7 +39,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     );
     set({
       accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
       user: data.user,
       isAuthenticated: true,
     });
@@ -51,7 +48,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const token = get().accessToken;
     set({
       accessToken: null,
-      refreshToken: null,
       user: null,
       profile: null,
       isAuthenticated: false,

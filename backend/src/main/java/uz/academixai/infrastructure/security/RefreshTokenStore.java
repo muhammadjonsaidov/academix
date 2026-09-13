@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Tracks which refresh-token jti's are still valid, so logout can revoke them before their 7-day
- * expiry. No rotation on refresh (TZ §2.1's /auth/refresh response only returns a new accessToken)
- * — a refresh token stays valid until logout or natural expiry.
+ * expiry. Refresh rotation revokes the used token JTI and stores a replacement before the next
+ * access token is returned.
  *
  * <p>TZ §2.1's {@code /auth/logout} only carries the access token (no refresh token in the
  * request), so there's no way to revoke one specific refresh token — this revokes all of the user's
@@ -32,8 +32,13 @@ public class RefreshTokenStore {
     redis.expire(USER_INDEX_PREFIX + userId, ttl);
   }
 
-  public boolean isValid(UUID jti) {
-    return Boolean.TRUE.equals(redis.hasKey(TOKEN_KEY_PREFIX + jti));
+  /**
+   * Atomically reads and removes a refresh-token JTI. A second concurrent refresh gets null and
+   * fails, which closes the otherwise unavoidable {@code hasKey -> delete} replay race.
+   */
+  public boolean consume(UUID jti, UUID expectedUserId) {
+    String storedUserId = redis.opsForValue().getAndDelete(TOKEN_KEY_PREFIX + jti);
+    return expectedUserId.toString().equals(storedUserId);
   }
 
   public void revokeAllForUser(UUID userId) {

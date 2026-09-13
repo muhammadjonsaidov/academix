@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.ExamService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.learning.application.port.in.ExamManagement;
 
 /**
  * academix_tz.md §2.3 "Nazorat ishi (imtihon)" — exact contract for create, don't drift path/shape
@@ -23,9 +23,9 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 @PreAuthorize("hasRole('TEACHER')")
 public class TeacherExamController {
 
-  private final ExamService examService;
+  private final ExamManagement examService;
 
-  public TeacherExamController(ExamService examService) {
+  public TeacherExamController(ExamManagement examService) {
     this.examService = examService;
   }
 

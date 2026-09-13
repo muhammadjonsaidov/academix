@@ -56,10 +56,12 @@ individually just to make the tree look cleaner.
 | `identity` | `User`, `Role`, `PasswordResetLog`, `ResetReason` | credentials, account lifecycle and password recovery |
 | `shared` | `FileType` | stable technical value type only; it must not gain business rules |
 
-The migrated contexts currently use the exact target tree. `school` is next, but it has 152 source
-references, so its migration is performed in two compilable slices: first school/class/subject and
-their adapters, then student profile and cross-context read dependencies. This avoids a broken
-intermediate deployment.
+The migrated contexts currently use the exact target tree. `school` is migrated in compilable
+slices because it has 152 source references: school/class/subject administration and
+teacher-class-subject membership are complete vertical slices with outbound ports and JPA adapters.
+`TeacherAccess` is the published School API used by Learning and teacher analytics;
+`TeacherContextService` and `AssignmentService` no longer exist. Student profile and remaining
+cross-context reads follow. This avoids a broken intermediate deployment.
 
 `Learning` is the core domain. `Identity`, `Notification`, file storage, AMQP and AI providers are
 supporting domains or technical adapters. A context references another context only through a
@@ -73,9 +75,12 @@ are `Account`, `School`, `HomeworkAssignment`, `HomeworkSubmission`, `Exam`, `Ex
 commits. For example, a submitted homework can trigger AI analysis, XP evaluation and notification;
 submission acceptance itself must not wait for those side effects.
 
-The existing RabbitMQ messages are transport adapters, not domain models. New flows publish an
-application event first, then an adapter reliably externalizes it. Introducing an outbox is required
-before scaling the backend beyond one instance.
+RabbitMQ messages are transport adapters, not domain models. Submission acceptance and Telegram
+delivery requests use the transactional outbox: the business row and durable event record commit
+together, then a locked scheduled dispatcher publishes with retry/backoff. Delivery is at-least-once,
+therefore consumers claim state transitions atomically or use their persisted delivery marker before
+making external calls. New cross-context flows must use this path rather than `afterCommit`
+publishing.
 
 ## Migration rules
 
@@ -145,10 +150,17 @@ The remaining global `application`, `domain`, `infrastructure` and `interfaces` 
 code and are not the target layout. They are migrated context by context; a big-bang package move is
 not permitted.
 
+`learning` owns the teacher homework- and exam-management slices. Their controllers depend on
+`HomeworkManagement` and `ExamManagement` input ports; the use cases depend on their stores and
+read-model ports plus School's published `TeacherAccess` API. Exam AI-budget lookup and unique-task
+generation are explicit compatibility adapters. The JPA schemas, student submission, review and AI
+grading move in subsequent slices.
+
 ## Ordered implementation plan
 
 1. Complete Identity ports for token issuance, sessions, rate limiting and school-context lookup.
-2. Migrate School ownership and membership management.
+2. Complete School ownership and membership management (school/class administration is complete;
+   subject, teacher membership and student profile remain).
 3. Migrate Learning around submission and grading aggregates; publish submission events after commit.
 4. Move AI, handwriting and OCR behind `Intelligence` ports and consume Learning events.
 5. Migrate Wellbeing and Notification to event-driven consumers.

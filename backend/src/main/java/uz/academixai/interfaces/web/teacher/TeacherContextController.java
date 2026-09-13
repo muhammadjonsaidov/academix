@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.application.TeacherAnalyticsService;
-import uz.academixai.application.TeacherContextService;
 import uz.academixai.application.TeacherDashboardService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.school.application.port.in.TeacherAccess;
 
 /** academix_tz.md §2.3 "Mening sinflarim va fanlarim" — exact contract, don't drift. */
 @RestController
@@ -19,15 +19,15 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 @PreAuthorize("hasRole('TEACHER')")
 public class TeacherContextController {
 
-  private final TeacherContextService teacherContextService;
+  private final TeacherAccess teacherAccess;
   private final TeacherDashboardService teacherDashboardService;
   private final TeacherAnalyticsService teacherAnalyticsService;
 
   public TeacherContextController(
-      TeacherContextService teacherContextService,
+      TeacherAccess teacherAccess,
       TeacherDashboardService teacherDashboardService,
       TeacherAnalyticsService teacherAnalyticsService) {
-    this.teacherContextService = teacherContextService;
+    this.teacherAccess = teacherAccess;
     this.teacherDashboardService = teacherDashboardService;
     this.teacherAnalyticsService = teacherAnalyticsService;
   }
@@ -55,7 +55,7 @@ public class TeacherContextController {
 
   @GetMapping("/classes")
   public List<TeacherClassResponse> classes(@AuthenticationPrincipal AcademixPrincipal principal) {
-    return teacherContextService.myClasses(principal.schoolId(), principal.userId()).stream()
+    return teacherAccess.myClasses(principal.schoolId(), principal.userId()).stream()
         .map(TeacherClassResponse::from)
         .toList();
   }
@@ -63,7 +63,7 @@ public class TeacherContextController {
   @GetMapping("/subjects")
   public List<TeacherSubjectResponse> subjects(
       @AuthenticationPrincipal AcademixPrincipal principal) {
-    return teacherContextService.mySubjects(principal.schoolId(), principal.userId()).stream()
+    return teacherAccess.mySubjects(principal.schoolId(), principal.userId()).stream()
         .map(TeacherSubjectResponse::from)
         .toList();
   }
@@ -71,9 +71,7 @@ public class TeacherContextController {
   @GetMapping("/classes/{classId}/students")
   public List<TeacherStudentResponse> classStudents(
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID classId) {
-    return teacherContextService
-        .classStudents(principal.schoolId(), principal.userId(), classId)
-        .stream()
+    return teacherAccess.classStudents(principal.schoolId(), principal.userId(), classId).stream()
         .map(TeacherStudentResponse::from)
         .toList();
   }

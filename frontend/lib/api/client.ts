@@ -29,15 +29,12 @@ apiClient.interceptors.response.use(
 
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
-      const refreshToken = useAuthStore.getState().refreshToken;
-
       try {
-        // With no in-memory refresh token (fresh page load racing session bootstrap), an
-        // empty body still works: the backend falls back to the httpOnly academix_refresh
-        // cookie, which withCredentials carries along.
+        // The long-lived refresh credential is only an HttpOnly cookie. JavaScript never receives,
+        // stores or forwards it; withCredentials lets the browser attach it to this endpoint.
         const { data } = await axios.post<RefreshResponse>(
           `${apiClient.defaults.baseURL}/auth/refresh`,
-          refreshToken ? { refreshToken } : {},
+          {},
           { withCredentials: true },
         );
         useAuthStore.getState().setAccessToken(data.accessToken);

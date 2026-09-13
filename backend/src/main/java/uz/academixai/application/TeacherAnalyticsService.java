@@ -23,6 +23,7 @@ import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.progress.domain.XpHistoryEntry;
 import uz.academixai.progress.infrastructure.persistence.XpHistoryEntity;
 import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
+import uz.academixai.school.application.port.in.TeacherAccess;
 
 /**
  * academix_tz.md §2.3 "O'quvchi progressi"/"Sinf taqqoslash" — both scoped to "faqat o'z sinfi"
@@ -38,7 +39,7 @@ public class TeacherAnalyticsService {
   private static final int RECENT_SUBMISSIONS_LIMIT = 10;
   private static final int TOP_BOTTOM_LIMIT = 5;
 
-  private final TeacherContextService teacherContextService;
+  private final TeacherAccess teacherAccess;
   private final StudentProfileRepository studentProfileRepository;
   private final UserRepository userRepository;
   private final HomeworkSubmissionRepository submissionRepository;
@@ -47,14 +48,14 @@ public class TeacherAnalyticsService {
   private final SchoolClassRepository classRepository;
 
   public TeacherAnalyticsService(
-      TeacherContextService teacherContextService,
+      TeacherAccess teacherAccess,
       StudentProfileRepository studentProfileRepository,
       UserRepository userRepository,
       HomeworkSubmissionRepository submissionRepository,
       XpHistoryRepository xpHistoryRepository,
       GradeRepository gradeRepository,
       SchoolClassRepository classRepository) {
-    this.teacherContextService = teacherContextService;
+    this.teacherAccess = teacherAccess;
     this.studentProfileRepository = studentProfileRepository;
     this.userRepository = userRepository;
     this.submissionRepository = submissionRepository;
@@ -82,7 +83,7 @@ public class TeacherAnalyticsService {
             .orElseThrow(TeacherAnalyticsService::studentNotFound);
     // Side-effecting authorization check — throws ERR_NOT_ASSIGNED if this teacher isn't
     // assigned to the student's class ("faqat o'z sinfi").
-    teacherContextService.classStudents(schoolId, teacherId, profile.classId());
+    teacherAccess.requireAssignedToClass(schoolId, teacherId, profile.classId());
 
     UserEntity user =
         userRepository.findById(studentId).orElseThrow(TeacherAnalyticsService::studentNotFound);
@@ -119,7 +120,7 @@ public class TeacherAnalyticsService {
       List<SubjectStat> submissionRateBySubject) {}
 
   public ClassAnalytics classAnalytics(UUID schoolId, UUID teacherId, UUID classId) {
-    teacherContextService.classStudents(schoolId, teacherId, classId);
+    teacherAccess.requireAssignedToClass(schoolId, teacherId, classId);
 
     SchoolClass schoolClass =
         classRepository

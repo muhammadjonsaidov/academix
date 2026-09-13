@@ -6,12 +6,12 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import uz.academixai.application.SchoolContextResolver;
+import uz.academixai.identity.application.port.out.AccessTokenIssuer;
 import uz.academixai.identity.application.port.out.AccountRepository;
+import uz.academixai.identity.application.port.out.LoginAttemptLimiter;
+import uz.academixai.identity.application.port.out.RefreshSessionStore;
+import uz.academixai.identity.application.port.out.SchoolContextLookup;
 import uz.academixai.identity.domain.Account;
-import uz.academixai.infrastructure.ratelimit.RedisRateLimiter;
-import uz.academixai.infrastructure.security.JwtService;
-import uz.academixai.infrastructure.security.RefreshTokenStore;
 import uz.academixai.interfaces.web.ApiException;
 
 /** Authentication and self-service account use cases. */
@@ -24,27 +24,30 @@ public class AuthenticationService {
 
   private final AccountRepository accounts;
   private final PasswordEncoder passwordEncoder;
-  private final JwtService jwtService;
-  private final RefreshTokenStore refreshTokenStore;
-  private final SchoolContextResolver schoolContextResolver;
-  private final RedisRateLimiter rateLimiter;
+  private final AccessTokenIssuer tokenIssuer;
+  private final RefreshSessionStore refreshSessionStore;
+  private final SchoolContextLookup schoolContextLookup;
+  private final LoginAttemptLimiter loginAttemptLimiter;
 
   public AuthenticationService(
       AccountRepository accounts,
       PasswordEncoder passwordEncoder,
-      JwtService jwtService,
-      RefreshTokenStore refreshTokenStore,
-      SchoolContextResolver schoolContextResolver,
-      RedisRateLimiter rateLimiter) {
+      AccessTokenIssuer tokenIssuer,
+      RefreshSessionStore refreshSessionStore,
+      SchoolContextLookup schoolContextLookup,
+      LoginAttemptLimiter loginAttemptLimiter) {
     this.accounts = accounts;
     this.passwordEncoder = passwordEncoder;
-    this.jwtService = jwtService;
-    this.refreshTokenStore = refreshTokenStore;
-    this.schoolContextResolver = schoolContextResolver;
-    this.rateLimiter = rateLimiter;
+    this.tokenIssuer = tokenIssuer;
+    this.refreshSessionStore = refreshSessionStore;
+    this.schoolContextLookup = schoolContextLookup;
+    this.loginAttemptLimiter = loginAttemptLimiter;
   }
 
   public record LoginResult(String accessToken, String refreshToken, Account account) {}
+
+  /** Access token plus a replacement refresh token created during rotation. */
+  public record RefreshResult(String accessToken, String refreshToken) {}
 
   public LoginResult login(String phone, String rawPassword) {
     enforceNotBlocked(phone);
@@ -54,19 +57,19 @@ public class AuthenticationService {
       throw invalidCredentials();
     }
 
-    rateLimiter.reset(loginAttemptsKey(phone));
+    loginAttemptLimiter.reset(loginAttemptsKey(phone));
     account = accounts.save(account.withLastLoginAt(LocalDateTime.now()));
-    UUID schoolId = schoolContextResolver.resolve(account.toUser()).orElse(null);
-    String accessToken = jwtService.issueAccessToken(account.id(), account.role(), schoolId);
-    var refresh = jwtService.issueRefreshToken(account.id());
-    refreshTokenStore.store(
-        refresh.jti(), account.id(), Duration.ofSeconds(jwtService.refreshTokenTtlSeconds()));
+    UUID schoolId = schoolContextLookup.resolve(account).orElse(null);
+    String accessToken = tokenIssuer.issueAccessToken(account.id(), account.role(), schoolId);
+    var refresh = tokenIssuer.issueRefreshToken(account.id());
+    refreshSessionStore.store(
+        refresh.jti(), account.id(), Duration.ofSeconds(tokenIssuer.refreshTokenTtlSeconds()));
     return new LoginResult(accessToken, refresh.token(), account);
   }
 
-  public String refresh(String refreshToken) {
+  public RefreshResult refresh(String refreshToken) {
     var claims = parseRefreshOrThrow(refreshToken);
-    if (!refreshTokenStore.isValid(claims.jti())) {
+    if (!refreshSessionStore.consume(claims.jti(), claims.userId())) {
       throw expiredToken();
     }
     Account account =
@@ -74,12 +77,18 @@ public class AuthenticationService {
             .findById(claims.userId())
             .filter(Account::active)
             .orElseThrow(AuthenticationService::expiredToken);
-    UUID schoolId = schoolContextResolver.resolve(account.toUser()).orElse(null);
-    return jwtService.issueAccessToken(account.id(), account.role(), schoolId);
+    UUID schoolId = schoolContextLookup.resolve(account).orElse(null);
+    // The old JTI was atomically consumed above. A replay now fails; the new JTI is stored first
+    // so a response never contains a refresh token that the server cannot validate.
+    var replacement = tokenIssuer.issueRefreshToken(account.id());
+    refreshSessionStore.store(
+        replacement.jti(), account.id(), Duration.ofSeconds(tokenIssuer.refreshTokenTtlSeconds()));
+    return new RefreshResult(
+        tokenIssuer.issueAccessToken(account.id(), account.role(), schoolId), replacement.token());
   }
 
   public void logout(UUID userId) {
-    refreshTokenStore.revokeAllForUser(userId);
+    refreshSessionStore.revokeAllForUser(userId);
   }
 
   public Account profile(UUID userId) {
@@ -108,20 +117,20 @@ public class AuthenticationService {
       throw invalidCredentials();
     }
     accounts.save(account.withPasswordHash(passwordEncoder.encode(newPassword)));
-    refreshTokenStore.revokeAllForUser(userId);
+    refreshSessionStore.revokeAllForUser(userId);
   }
 
-  private JwtService.RefreshTokenClaims parseRefreshOrThrow(String refreshToken) {
+  private AccessTokenIssuer.RefreshTokenClaims parseRefreshOrThrow(String refreshToken) {
     try {
-      return jwtService.parseRefreshToken(refreshToken);
+      return tokenIssuer.parseRefreshToken(refreshToken);
     } catch (Exception exception) {
       throw expiredToken();
     }
   }
 
   private void enforceNotBlocked(String phone) {
-    if (rateLimiter.isBlocked(loginBlockKey(phone))) {
-      throw rateLimiter.rateLimitExceeded(
+    if (loginAttemptLimiter.isBlocked(loginBlockKey(phone))) {
+      throw rateLimitExceeded(
           "Juda ko'p muvaffaqiyatsiz urinish. Hisobingiz vaqtincha bloklandi.",
           "15 daqiqadan keyin qayta urinib ko'ring yoki parolni tiklang.");
     }
@@ -129,9 +138,9 @@ public class AuthenticationService {
 
   private void recordFailedAttempt(String phone) {
     String attemptsKey = loginAttemptsKey(phone);
-    if (rateLimiter.record(attemptsKey, LOGIN_ATTEMPT_WINDOW) >= MAX_LOGIN_ATTEMPTS) {
-      rateLimiter.block(loginBlockKey(phone), LOGIN_BLOCK_DURATION);
-      rateLimiter.reset(attemptsKey);
+    if (loginAttemptLimiter.record(attemptsKey, LOGIN_ATTEMPT_WINDOW) >= MAX_LOGIN_ATTEMPTS) {
+      loginAttemptLimiter.block(loginBlockKey(phone), LOGIN_BLOCK_DURATION);
+      loginAttemptLimiter.reset(attemptsKey);
     }
   }
 
@@ -149,6 +158,10 @@ public class AuthenticationService {
         "ERR_INVALID_CREDENTIALS",
         "Telefon raqam yoki parol noto'g'ri.",
         "Ma'lumotlarni tekshirib qayta urinib ko'ring.");
+  }
+
+  private static ApiException rateLimitExceeded(String message, String mitigation) {
+    return new ApiException(HttpStatus.TOO_MANY_REQUESTS, "ERR_RATE_LIMIT", message, mitigation);
   }
 
   private static ApiException expiredToken() {

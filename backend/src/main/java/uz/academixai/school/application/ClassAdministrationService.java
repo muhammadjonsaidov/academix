@@ -1,4 +1,4 @@
-package uz.academixai.application;
+package uz.academixai.school.application;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -7,28 +7,25 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.SchoolClass;
-import uz.academixai.infrastructure.persistence.SchoolClassEntity;
-import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.school.application.port.out.ClassAdministrationRepository;
 
-/** academix_tz.md §2.2 "Sinflar" — admin CRUD over school_classes. */
+/** Class aggregate administration use cases for one school tenant. */
 @Service
-public class SchoolClassService {
+public class ClassAdministrationService {
 
-  private final SchoolClassRepository classRepository;
+  private final ClassAdministrationRepository classes;
 
-  public SchoolClassService(SchoolClassRepository classRepository) {
-    this.classRepository = classRepository;
+  public ClassAdministrationService(ClassAdministrationRepository classes) {
+    this.classes = classes;
   }
 
   public List<SchoolClass> list(UUID schoolId) {
-    return classRepository.findBySchoolIdOrderByGradeAscLetterAsc(schoolId).stream()
-        .map(SchoolClassEntity::toDomain)
-        .toList();
+    return classes.findBySchoolId(schoolId);
   }
 
   public SchoolClass create(UUID schoolId, int grade, String letter, UUID classTeacherId) {
-    if (classRepository.existsBySchoolIdAndGradeAndLetter(schoolId, grade, letter)) {
+    if (classes.existsBySchoolIdAndGradeAndLetter(schoolId, grade, letter)) {
       throw new ApiException(
           HttpStatus.CONFLICT,
           "ERR_CLASS_ALREADY_EXISTS",
@@ -36,7 +33,7 @@ public class SchoolClassService {
           "Boshqa harf yoki sinf raqamini tanlang.");
     }
 
-    SchoolClass schoolClass =
+    return classes.save(
         new SchoolClass(
             UUID.randomUUID(),
             schoolId,
@@ -46,34 +43,32 @@ public class SchoolClassService {
             classTeacherId,
             0,
             currentAcademicYear(),
-            true);
-    return classRepository.save(SchoolClassEntity.fromDomain(schoolClass)).toDomain();
+            true));
   }
 
   public SchoolClass update(
       UUID schoolId, UUID classId, int grade, String letter, UUID classTeacherId) {
-    SchoolClassEntity entity = requireOwned(schoolId, classId);
-    SchoolClass updated =
+    SchoolClass existing = requireOwned(schoolId, classId);
+    return classes.save(
         new SchoolClass(
-            entity.getId(),
+            existing.id(),
             schoolId,
             grade,
             letter,
             grade + "-" + letter,
             classTeacherId,
-            entity.getStudentCount(),
-            entity.getAcademicYear(),
-            entity.isActive());
-    return classRepository.save(SchoolClassEntity.fromDomain(updated)).toDomain();
+            existing.studentCount(),
+            existing.academicYear(),
+            existing.isActive()));
   }
 
   public void delete(UUID schoolId, UUID classId) {
-    SchoolClassEntity entity = requireOwned(schoolId, classId);
-    classRepository.delete(entity);
+    requireOwned(schoolId, classId);
+    classes.deleteById(classId);
   }
 
-  private SchoolClassEntity requireOwned(UUID schoolId, UUID classId) {
-    return classRepository
+  private SchoolClass requireOwned(UUID schoolId, UUID classId) {
+    return classes
         .findByIdAndSchoolId(classId, schoolId)
         .orElseThrow(
             () ->
@@ -84,8 +79,6 @@ public class SchoolClassService {
                     "ID ni tekshiring yoki ro'yxatni yangilang."));
   }
 
-  // No AcademicYear enum/formula is specified anywhere in the spec docs (known gap) — Uzbek
-  // school year runs September-August, so a July "today" is still last year's academic year.
   private static String currentAcademicYear() {
     LocalDate today = LocalDate.now();
     int startYear =

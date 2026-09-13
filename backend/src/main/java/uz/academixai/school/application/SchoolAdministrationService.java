@@ -1,35 +1,26 @@
-package uz.academixai.application;
+package uz.academixai.school.application;
 
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.School;
-import uz.academixai.infrastructure.persistence.SchoolClassRepository;
-import uz.academixai.infrastructure.persistence.SchoolEntity;
-import uz.academixai.infrastructure.persistence.SchoolRepository;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.school.application.port.out.SchoolAdministrationRepository;
 
-/** academix_tz.md §2.2 "Maktab" — GET/PUT /admin/school. */
+/** School aggregate administration use cases for the authenticated school admin. */
 @Service
-public class AdminSchoolService {
+public class SchoolAdministrationService {
 
-  private final SchoolRepository schoolRepository;
-  private final SchoolClassRepository classRepository;
+  private final SchoolAdministrationRepository schools;
 
-  public AdminSchoolService(
-      SchoolRepository schoolRepository, SchoolClassRepository classRepository) {
-    this.schoolRepository = schoolRepository;
-    this.classRepository = classRepository;
+  public SchoolAdministrationService(SchoolAdministrationRepository schools) {
+    this.schools = schools;
   }
 
   public School get(UUID schoolId) {
-    School school =
-        schoolRepository
-            .findById(schoolId)
-            .map(SchoolEntity::toDomain)
-            .orElseThrow(AdminSchoolService::notFound);
-    // schools.total_classes is a stored column no service ever writes (same never-written
-    // trap as school_classes.student_count, see CLAUDE.md) — compute live instead.
+    School school = schools.findById(schoolId).orElseThrow(SchoolAdministrationService::notFound);
+    // The denormalized total_classes column is not authoritative. Read the live value at the
+    // aggregate boundary so every adapter returns the same number.
     return new School(
         school.id(),
         school.name(),
@@ -38,7 +29,7 @@ public class AdminSchoolService {
         school.district(),
         school.phone(),
         school.email(),
-        (int) classRepository.countBySchoolIdAndIsActiveTrue(schoolId),
+        (int) schools.countActiveClasses(schoolId),
         school.isActive(),
         school.subscribedAt(),
         school.subscriptionEndsAt(),
@@ -66,7 +57,7 @@ public class AdminSchoolService {
             existing.adminId(),
             existing.monthlyAiCallLimit(),
             existing.currentMonthAiUsage());
-    return schoolRepository.save(SchoolEntity.fromDomain(updated)).toDomain();
+    return schools.save(updated);
   }
 
   private static ApiException notFound() {

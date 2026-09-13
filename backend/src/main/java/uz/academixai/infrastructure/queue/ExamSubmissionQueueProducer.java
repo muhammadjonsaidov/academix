@@ -1,40 +1,27 @@
 package uz.academixai.infrastructure.queue;
 
 import java.util.UUID;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import uz.academixai.infrastructure.outbox.OutboxService;
 
-/**
- * Publishes to {@code exam.submissions.queue}. Same afterCommit-deferral and schoolId-in-message
- * reasoning as {@link HomeworkSubmissionQueueProducer} — see that class's Javadoc.
- */
+/** Writes an exam-submission event to the transactional outbox for durable delivery. */
 @Component
 public class ExamSubmissionQueueProducer {
 
-  private final RabbitTemplate rabbitTemplate;
+  private final OutboxService outbox;
 
-  public ExamSubmissionQueueProducer(RabbitTemplate rabbitTemplate) {
-    this.rabbitTemplate = rabbitTemplate;
+  public ExamSubmissionQueueProducer(OutboxService outbox) {
+    this.outbox = outbox;
   }
 
   public void publish(UUID examSubmissionId, UUID schoolId) {
-    if (TransactionSynchronizationManager.isSynchronizationActive()) {
-      TransactionSynchronizationManager.registerSynchronization(
-          new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-              doPublish(examSubmissionId, schoolId);
-            }
-          });
-    } else {
-      doPublish(examSubmissionId, schoolId);
-    }
-  }
-
-  private void doPublish(UUID examSubmissionId, UUID schoolId) {
-    rabbitTemplate.convertAndSend(
-        ExamQueueConfig.SUBMISSIONS_QUEUE, new SubmissionQueueMessage(examSubmissionId, schoolId));
+    outbox.enqueue(
+        schoolId,
+        "ExamSubmission",
+        examSubmissionId,
+        "ExamSubmissionAccepted",
+        ExamQueueConfig.SUBMISSIONS_QUEUE,
+        "submission",
+        new SubmissionQueueMessage(examSubmissionId, schoolId));
   }
 }

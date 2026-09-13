@@ -49,7 +49,7 @@ public class ExamSubmissionWriter {
             examId,
             studentId,
             imageUrl,
-            SubmissionStatus.AI_PROCESSING,
+            SubmissionStatus.SUBMITTED,
             false,
             LocalDateTime.now());
     ExamSubmission saved =

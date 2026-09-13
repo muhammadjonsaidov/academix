@@ -7,6 +7,7 @@ set -Eeuo pipefail
 readonly DEPLOY_REVISION="${1:?Usage: deploy-vps.sh <git-sha>}"
 readonly APP_DIR="${ACADEMIX_APP_DIR:-/home/ubuntu/academixai/academix}"
 readonly COMPOSE_FILE="$APP_DIR/infra/docker-compose.yml"
+readonly PRODUCTION_COMPOSE_FILE="$APP_DIR/infra/docker-compose.production.yml"
 readonly TUNNEL_COMPOSE_FILE="$APP_DIR/infra/docker-compose.tunnel.yml"
 readonly ENV_FILE="$APP_DIR/infra/.env"
 readonly LOCK_FILE="$APP_DIR/.deploy.lock"
@@ -17,13 +18,13 @@ log() {
 }
 
 compose() {
-  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$TUNNEL_COMPOSE_FILE" "$@"
+  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$PRODUCTION_COMPOSE_FILE" -f "$TUNNEL_COMPOSE_FILE" "$@"
 }
 
 wait_for_healthy_stack() {
   local elapsed=0
 
-  until curl --fail --silent --show-error http://127.0.0.1:8080/actuator/health \
+  until compose exec -T backend wget -qO- http://127.0.0.1:8080/actuator/health \
       | grep --quiet '"status":"UP"'; do
     if (( elapsed >= HEALTH_TIMEOUT_SECONDS )); then
       log "backend health check did not succeed within ${HEALTH_TIMEOUT_SECONDS}s"
@@ -33,7 +34,7 @@ wait_for_healthy_stack() {
     elapsed=$((elapsed + 5))
   done
 
-  curl --fail --silent --show-error --head http://127.0.0.1:3000/ >/dev/null
+  compose exec -T frontend node -e "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
   compose ps --status running --services | grep --quiet '^telegram-bot$'
 }
 
@@ -52,6 +53,7 @@ deploy_revision() {
 main() {
   [[ -f "$ENV_FILE" ]] || { log "Missing production environment file: $ENV_FILE"; exit 1; }
   [[ -f "$COMPOSE_FILE" ]] || { log "Missing Compose file: $COMPOSE_FILE"; exit 1; }
+  [[ -f "$PRODUCTION_COMPOSE_FILE" ]] || { log "Missing production Compose file: $PRODUCTION_COMPOSE_FILE"; exit 1; }
   [[ -f "$TUNNEL_COMPOSE_FILE" ]] || { log "Missing tunnel Compose file: $TUNNEL_COMPOSE_FILE"; exit 1; }
 
   cd "$APP_DIR"

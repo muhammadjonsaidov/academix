@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import uz.academixai.domain.SubmissionStatus;
 
 public interface ExamSubmissionRepository extends JpaRepository<ExamSubmissionEntity, UUID> {
@@ -26,4 +29,14 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmissionEn
   int countByExamId(UUID examId);
 
   int countByExamIdAndStatus(UUID examId, SubmissionStatus status);
+
+  /** Atomically claims a newly accepted exam image for the async AI worker. */
+  @Modifying
+  @Query(
+      "update ExamSubmissionEntity submission set submission.status = :claimed "
+          + "where submission.id = :submissionId and submission.status = :expected")
+  int claimForAi(
+      @Param("submissionId") UUID submissionId,
+      @Param("expected") SubmissionStatus expected,
+      @Param("claimed") SubmissionStatus claimed);
 }

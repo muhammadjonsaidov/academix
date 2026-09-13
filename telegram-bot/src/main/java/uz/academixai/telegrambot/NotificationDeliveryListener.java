@@ -31,6 +31,11 @@ public class NotificationDeliveryListener {
 
   @RabbitListener(queues = TelegramQueueConfig.NOTIFICATIONS_QUEUE)
   public void onNotification(TelegramNotificationMessage message) {
+    // Outbox delivery is at-least-once. Once a prior delivery persisted the success marker, a
+    // duplicate RabbitMQ message must not result in a second Telegram message.
+    if (notificationStatusRepository.isSentToTelegram(message.notificationId())) {
+      return;
+    }
     connectionRepository
         .findActiveChatId(message.userId())
         .ifPresentOrElse(

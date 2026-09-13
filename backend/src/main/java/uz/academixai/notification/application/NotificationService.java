@@ -54,6 +54,7 @@ public class NotificationService {
     this.objectMapper = objectMapper;
   }
 
+  @Transactional
   public void sendNotification(
       UUID userId, NotificationType type, String title, String body, Map<String, String> data) {
     // Preference gate. PSYCHOLOGICAL_ALERT bypasses it entirely — TZ §1.14's severity→notify

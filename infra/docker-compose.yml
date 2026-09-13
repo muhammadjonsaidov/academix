@@ -1,7 +1,7 @@
-# Full AcademiX AI stack — one command, everything up:
+# Full AcademiX AI application/infrastructure stack:
 #   docker compose up -d --build
-# Then open http://localhost:3000 and log in with the demo accounts
-# (infra/seed/demo-seed.sql header: ADMIN +998901234567 / Test1234!).
+# Demo data is deliberately opt-in and only for disposable development databases:
+#   docker compose --profile demo up -d --build
 #
 # The prod-only pieces (nginx/certbot TLS, postgres-backup, clamav) stay profile-gated:
 #   docker compose --profile prod up -d      # nginx+certbot+backup, no clamav
@@ -186,8 +186,9 @@ services:
       backend:
         condition: service_started
 
-  # One-shot: after Flyway has created the schema (backend healthy), apply the
-  # fresh-DB bootstrap + the demo seed. Idempotent, exits after running.
+  # DEVELOPMENT/DEMO ONLY. This creates known Test1234! accounts and must never run
+  # from a normal or production invocation. After Flyway has created the schema it
+  # applies the fresh-DB bootstrap and the demo seed.
   seed:
     image: postgres:18-alpine
     environment:
@@ -205,6 +206,7 @@ services:
         psql -v ON_ERROR_STOP=1 -h postgres -U ${DATABASE_USERNAME:-academix} -d academix -f /demo-seed.sql
         echo "Seed complete — demo logins ready."
     restart: "no"
+    profiles: ["demo"]
     depends_on:
       backend:
         condition: service_healthy

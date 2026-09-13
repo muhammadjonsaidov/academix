@@ -116,6 +116,13 @@ public class AIAnalysisService {
   }
 
   public void analyzeSubmission(UUID submissionId) {
+    // The transactional outbox guarantees at-least-once delivery. Claiming the state transition in
+    // SQL makes a broker redelivery harmless rather than spending the AI budget twice.
+    if (submissionRepository.claimForAi(
+            submissionId, SubmissionStatus.SUBMITTED, SubmissionStatus.AI_PROCESSING)
+        == 0) {
+      return;
+    }
     HomeworkSubmissionEntity subEntity =
         submissionRepository
             .findById(submissionId)
@@ -124,7 +131,6 @@ public class AIAnalysisService {
                     new IllegalStateException(
                         "Queue message for unknown submissionId " + submissionId));
     HomeworkSubmission submission = subEntity.toDomain();
-    updateStatus(submission, SubmissionStatus.AI_PROCESSING);
 
     ExtractedContent content;
     try {

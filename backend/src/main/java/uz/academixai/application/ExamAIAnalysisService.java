@@ -108,6 +108,13 @@ public class ExamAIAnalysisService {
   }
 
   public void analyzeExamSubmission(UUID examSubmissionId) {
+    // See AIAnalysisService: outbox delivery is at-least-once, so only one worker may claim the
+    // SUBMITTED -> AI_PROCESSING transition and make external AI calls.
+    if (submissionRepository.claimForAi(
+            examSubmissionId, SubmissionStatus.SUBMITTED, SubmissionStatus.AI_PROCESSING)
+        == 0) {
+      return;
+    }
     ExamSubmissionEntity subEntity =
         submissionRepository
             .findById(examSubmissionId)
@@ -116,7 +123,6 @@ public class ExamAIAnalysisService {
                     new IllegalStateException(
                         "Queue message for unknown examSubmissionId " + examSubmissionId));
     ExamSubmission submission = subEntity.toDomain();
-    updateStatus(submission, SubmissionStatus.AI_PROCESSING, submission.flaggedForReview());
 
     String extractedText;
     HandwritingCheckResult handwritingResult;

@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -268,7 +270,7 @@ class RoleAccessIntegrationTest {
     // would 401 before ever reaching AuthService. (A login with wrong credentials legitimately
     // answers 401 ERR_INVALID_CREDENTIALS, so the negative form of this test is unusable — the
     // positive flow is the real proof.)
-    String loginBody =
+    var loginResult =
         mockMvc
             .perform(
                 post("/api/v1/auth/login")
@@ -281,17 +283,20 @@ class RoleAccessIntegrationTest {
                             + "\"}"))
             .andExpect(status().isOk())
             .andReturn()
-            .getResponse()
-            .getContentAsString();
+            .getResponse();
 
-    // refresh: use the refresh token issued by that login, still no Authorization header.
-    String refreshToken = loginBody.replaceAll(".*\"refreshToken\":\"([^\"]+)\".*", "$1");
-    assertThat(refreshToken).as("login response carries a refreshToken").isNotBlank();
+    // Refresh credentials are intentionally not in the JSON body. The HttpOnly cookie is the
+    // only browser-visible transport, so this catches an accidental regression that exposes a
+    // seven-day token to JavaScript.
+    assertThat(loginResult.getContentAsString()).doesNotContain("refreshToken");
+    String refreshCookie =
+        loginResult.getHeaders(HttpHeaders.SET_COOKIE).stream()
+            .filter(header -> header.startsWith("academix_refresh="))
+            .findFirst()
+            .map(header -> header.substring("academix_refresh=".length()).split(";", 2)[0])
+            .orElseThrow();
     mockMvc
-        .perform(
-            post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
+        .perform(post("/api/v1/auth/refresh").cookie(new Cookie("academix_refresh", refreshCookie)))
         .andExpect(status().isOk());
 
     // The remaining public endpoints answer business responses (never a security 401) even
