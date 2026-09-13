@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.application.StudentDashboardService;
-import uz.academixai.application.StudentSubmissionService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.interfaces.web.PageResponse;
+import uz.academixai.learning.application.port.in.StudentHomeworkQuery;
 import uz.academixai.progress.application.StudentProgressService;
 
 /** academix_tz.md §2.4 "Vazifalar" / "Topshirilgan ishlar tarixi" — read-only, exact contract. */
@@ -19,12 +19,12 @@ import uz.academixai.progress.application.StudentProgressService;
 @PreAuthorize("hasRole('STUDENT')")
 public class StudentHomeworkController {
 
-  private final StudentSubmissionService submissionService;
+  private final StudentHomeworkQuery submissionService;
   private final StudentDashboardService dashboardService;
   private final StudentProgressService progressService;
 
   public StudentHomeworkController(
-      StudentSubmissionService submissionService,
+      StudentHomeworkQuery submissionService,
       StudentDashboardService dashboardService,
       StudentProgressService progressService) {
     this.submissionService = submissionService;

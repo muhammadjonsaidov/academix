@@ -32,6 +32,13 @@ public class JpaHomeworkAssignmentStore implements HomeworkAssignmentStore {
   }
 
   @Override
+  public List<HomeworkAssignment> findBySchoolIdAndClassId(UUID schoolId, UUID classId) {
+    return repository.findBySchoolIdAndClassIdOrderByDeadlineAtDesc(schoolId, classId).stream()
+        .map(HomeworkAssignmentEntity::toDomain)
+        .toList();
+  }
+
+  @Override
   public Optional<HomeworkAssignment> findByIdAndSchoolId(UUID assignmentId, UUID schoolId) {
     return repository
         .findByIdAndSchoolId(assignmentId, schoolId)

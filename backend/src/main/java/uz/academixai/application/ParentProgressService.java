@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import uz.academixai.application.StudentDashboardService.DashboardBadge;
-import uz.academixai.application.StudentSubmissionService.StudentHomeworkItem;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.infrastructure.persistence.AIFeedbackEntity;
@@ -25,6 +24,8 @@ import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.SubjectEntity;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
+import uz.academixai.learning.application.port.in.StudentHomeworkQuery;
+import uz.academixai.learning.application.port.in.StudentHomeworkQuery.HomeworkItem;
 import uz.academixai.progress.infrastructure.persistence.XpHistoryEntity;
 import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 
@@ -51,7 +52,7 @@ public class ParentProgressService {
   private final GradeRepository gradeRepository;
   private final AIFeedbackRepository feedbackRepository;
   private final XpHistoryRepository xpHistoryRepository;
-  private final StudentSubmissionService studentSubmissionService;
+  private final StudentHomeworkQuery studentHomeworkQuery;
   private final StudentDashboardService studentDashboardService;
 
   public ParentProgressService(
@@ -63,7 +64,7 @@ public class ParentProgressService {
       GradeRepository gradeRepository,
       AIFeedbackRepository feedbackRepository,
       XpHistoryRepository xpHistoryRepository,
-      StudentSubmissionService studentSubmissionService,
+      StudentHomeworkQuery studentHomeworkQuery,
       StudentDashboardService studentDashboardService) {
     this.parentLinkService = parentLinkService;
     this.studentProfileRepository = studentProfileRepository;
@@ -73,7 +74,7 @@ public class ParentProgressService {
     this.gradeRepository = gradeRepository;
     this.feedbackRepository = feedbackRepository;
     this.xpHistoryRepository = xpHistoryRepository;
-    this.studentSubmissionService = studentSubmissionService;
+    this.studentHomeworkQuery = studentHomeworkQuery;
     this.studentDashboardService = studentDashboardService;
   }
 
@@ -160,14 +161,14 @@ public class ParentProgressService {
     return new Progress(subjectProgress, monthlyXpChart, badges);
   }
 
-  public List<StudentHomeworkItem> homework(UUID parentUserId, UUID studentId) {
+  public List<HomeworkItem> homework(UUID parentUserId, UUID studentId) {
     parentLinkService.requireLinkedChild(parentUserId, studentId);
     UUID schoolId =
         studentProfileRepository
             .findByUserId(studentId)
             .map(StudentProfileEntity::getSchoolId)
             .orElseThrow();
-    return studentSubmissionService.listHomework(schoolId, studentId);
+    return studentHomeworkQuery.listHomework(schoolId, studentId);
   }
 
   public List<HomeworkSubmission> submissions(UUID parentUserId, UUID studentId) {
@@ -177,7 +178,7 @@ public class ParentProgressService {
             .findByUserId(studentId)
             .map(StudentProfileEntity::getSchoolId)
             .orElseThrow();
-    return studentSubmissionService.listSubmissions(schoolId, studentId);
+    return studentHomeworkQuery.listSubmissions(schoolId, studentId);
   }
 
   public record GradeItem(UUID submissionId, String subject, int score, int fivePointGrade) {}

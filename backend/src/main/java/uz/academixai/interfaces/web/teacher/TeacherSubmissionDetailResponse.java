@@ -2,7 +2,7 @@ package uz.academixai.interfaces.web.teacher;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.application.TeacherSubmissionService.SubmissionWithFeedback;
+import uz.academixai.learning.application.port.in.TeacherSubmissionQuery.SubmissionWithFeedback;
 
 /** academix_tz.md §2.3 — GET /teacher/submissions/{submissionId}. */
 public record TeacherSubmissionDetailResponse(
@@ -27,6 +27,6 @@ public record TeacherSubmissionDetailResponse(
         submission.status().name(),
         submission.imageUrl(),
         TeacherAiFeedbackResponse.from(item.feedback()),
-        item.grade() == null ? null : TeacherGradeResponse.from(item.grade().toDomain()));
+        TeacherGradeResponse.from(item.grade()));
   }
 }

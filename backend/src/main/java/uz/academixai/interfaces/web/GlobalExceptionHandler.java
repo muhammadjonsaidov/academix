@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
   // handler below as a raw 500 ERR_INTERNAL (confirmed by a real 11.5MB photo upload
   // against the default 10MB request cap). A too-large file is a client mistake, not a
   // server failure — same ERR_INVALID_FILE code already used for other upload validation
-  // (SyllabusService, StudentSubmissionService, ExamSubmissionService).
+  // (SyllabusService and Learning submission workflows).
   @ExceptionHandler(MaxUploadSizeExceededException.class)
   public ResponseEntity<ApiErrorResponse> handleMaxUploadSizeExceeded(
       MaxUploadSizeExceededException e) {

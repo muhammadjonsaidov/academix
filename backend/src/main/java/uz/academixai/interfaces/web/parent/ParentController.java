@@ -20,8 +20,8 @@ import uz.academixai.application.ParentDashboardService;
 import uz.academixai.application.ParentLinkService;
 import uz.academixai.application.ParentProgressService;
 import uz.academixai.application.ParentReportService;
-import uz.academixai.application.StudentSubmissionService.StudentHomeworkItem;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.learning.application.port.in.StudentHomeworkQuery.HomeworkItem;
 import uz.academixai.reporting.adapter.in.web.ReportResponse;
 import uz.academixai.reporting.application.ReportService.ReportDownload;
 
@@ -111,7 +111,7 @@ public class ParentController {
   }
 
   @GetMapping("/children/{studentId}/homework")
-  public List<StudentHomeworkItem> homework(
+  public List<HomeworkItem> homework(
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID studentId) {
     return parentProgressService.homework(principal.userId(), studentId);
   }

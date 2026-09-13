@@ -12,6 +12,8 @@ public interface HomeworkAssignmentStore {
 
   List<HomeworkAssignment> findBySchoolIdAndTeacherId(UUID schoolId, UUID teacherId);
 
+  List<HomeworkAssignment> findBySchoolIdAndClassId(UUID schoolId, UUID classId);
+
   Optional<HomeworkAssignment> findByIdAndSchoolId(UUID assignmentId, UUID schoolId);
 
   void delete(HomeworkAssignment assignment);

@@ -12,5 +12,7 @@ public interface ExamStore {
 
   List<Exam> findBySchoolIdAndTeacherId(UUID schoolId, UUID teacherId);
 
+  List<Exam> findBySchoolIdAndClassId(UUID schoolId, UUID classId);
+
   Optional<Exam> findByIdAndSchoolId(UUID examId, UUID schoolId);
 }

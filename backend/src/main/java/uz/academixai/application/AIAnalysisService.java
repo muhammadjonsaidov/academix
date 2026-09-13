@@ -49,10 +49,10 @@ import uz.academixai.progress.application.XPService;
  * per TZ §4's XP table ("0% yoki EMPTY_SUBMISSION → 0 XP, Uziladi"). AI_SKIPPED does <i>not</i>
  * award XP here — TZ §4 is explicit that XP only happens "AI_SKIPPED holatida — faqat o'qituvchi
  * qo'lda baholagach" (only once a teacher manually grades it), handled in
- * TeacherSubmissionService.grade() instead. Grading criteria come from {@link
- * GradingCriteriaService} (Sprint 3, TZ §1.19/§2.3) when the teacher has configured them for the
- * assignment's subject, falling back to the spec's own documented default set (the exact
- * 3-criterion example from TZ §3.2) when unconfigured — TZ §1.19 explicitly allows this fallback.
+ * HomeworkGradingService.grade() instead. Grading criteria come from {@link GradingCriteriaService}
+ * (Sprint 3, TZ §1.19/§2.3) when the teacher has configured them for the assignment's subject,
+ * falling back to the spec's own documented default set (the exact 3-criterion example from TZ
+ * §3.2) when unconfigured — TZ §1.19 explicitly allows this fallback.
  */
 @Service
 public class AIAnalysisService {

@@ -32,6 +32,13 @@ public class JpaExamStore implements ExamStore {
   }
 
   @Override
+  public List<Exam> findBySchoolIdAndClassId(UUID schoolId, UUID classId) {
+    return repository.findBySchoolIdAndClassIdOrderByExamDateDesc(schoolId, classId).stream()
+        .map(ExamEntity::toDomain)
+        .toList();
+  }
+
+  @Override
   public Optional<Exam> findByIdAndSchoolId(UUID examId, UUID schoolId) {
     return repository.findByIdAndSchoolId(examId, schoolId).map(ExamEntity::toDomain);
   }

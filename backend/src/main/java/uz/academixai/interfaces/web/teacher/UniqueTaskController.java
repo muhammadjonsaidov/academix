@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.UniqueTaskReviewService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.learning.application.port.in.UniqueTaskReview;
 
 /**
  * academix_tz.md §2.3 "Unique vazifalarni ko'rish va tasdiqlash" — exact contract, don't drift
@@ -24,9 +24,9 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 @PreAuthorize("hasRole('TEACHER')")
 public class UniqueTaskController {
 
-  private final UniqueTaskReviewService reviewService;
+  private final UniqueTaskReview reviewService;
 
-  public UniqueTaskController(UniqueTaskReviewService reviewService) {
+  public UniqueTaskController(UniqueTaskReview reviewService) {
     this.reviewService = reviewService;
   }
 

@@ -150,11 +150,32 @@ The remaining global `application`, `domain`, `infrastructure` and `interfaces` 
 code and are not the target layout. They are migrated context by context; a big-bang package move is
 not permitted.
 
-`learning` owns the teacher homework- and exam-management slices. Their controllers depend on
-`HomeworkManagement` and `ExamManagement` input ports; the use cases depend on their stores and
-read-model ports plus School's published `TeacherAccess` API. Exam AI-budget lookup and unique-task
-generation are explicit compatibility adapters. The JPA schemas, student submission, review and AI
-grading move in subsequent slices.
+`learning` owns the teacher homework-, exam-management, exam-submission and unique-task review
+slices. Their controllers depend on `HomeworkManagement`, `ExamManagement`,
+`ExamSubmissionWorkflow` and `UniqueTaskReview` input ports; the use cases depend on stores and
+read-model ports plus School's published `TeacherAccess` API. Exam AI-budget lookup and the
+underlying AI provider remain explicit compatibility adapters. Unique-task generation and review
+are owned by Learning.
+
+Student homework submission acceptance is also owned by Learning: the HTTP adapter maps a multipart
+file to an immutable command payload, then the use case validates type/size, authorizes School
+membership, applies quota and antivirus policies through ports, stores the image and writes the
+transactional-outbox event. Student homework cards, detail, history, feedback and grade queries now
+also use Learning's `StudentHomeworkQuery` API; dashboard and parent read models consume that same
+published contract. Teacher submission listing/detail views use `TeacherSubmissionQuery`, while
+`HomeworkGrading` owns final-grade writes, status changes and the Progress update. Both legacy
+submission services have been deleted.
+
+Exam-paper bulk upload, review, manual grading and approve-all are also owned by Learning's
+`ExamSubmissionWorkflow`. The HTTP adapter converts multipart data to immutable payloads; the
+workflow applies quota, file-safety and object-storage policies through ports. Each accepted paper
+uses its own transaction to preserve partial success for a batch, while the submission record and
+AI-processing event are committed together through the transactional outbox. The legacy
+`ExamSubmissionService` and `ExamSubmissionWriter` have been deleted.
+
+Student exam cards and result detail are exposed through Learning's `StudentExamQuery` port. It
+authorizes the student's School membership through a published lookup and returns only domain read
+models, so the web adapter never reaches JPA entities or persistence repositories.
 
 ## Ordered implementation plan
 

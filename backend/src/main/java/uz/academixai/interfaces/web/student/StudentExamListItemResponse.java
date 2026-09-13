@@ -2,9 +2,9 @@ package uz.academixai.interfaces.web.student;
 
 import java.time.LocalDate;
 import java.util.UUID;
-import uz.academixai.application.StudentExamService.ExamListItem;
+import uz.academixai.learning.application.port.in.StudentExamQuery.ExamListItem;
 
-/** academix_tz.md gap-fill (see StudentExamService) — GET /student/exams. */
+/** academix_tz.md gap-fill — GET /student/exams. */
 public record StudentExamListItemResponse(
     UUID examId,
     String subject,

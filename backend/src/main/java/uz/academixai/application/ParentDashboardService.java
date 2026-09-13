@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import uz.academixai.application.StudentDashboardService.RecentGrade;
-import uz.academixai.application.StudentSubmissionService.StudentHomeworkItem;
 import uz.academixai.domain.ParentStudentLink;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.infrastructure.persistence.GradeEntity;
@@ -17,6 +16,8 @@ import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserRepository;
+import uz.academixai.learning.application.port.in.StudentHomeworkQuery;
+import uz.academixai.learning.application.port.in.StudentHomeworkQuery.HomeworkItem;
 
 /**
  * academix_tz.md §2.5 "Parent API" — {@code GET /parent/dashboard}, {@code GET /parent/children},
@@ -38,7 +39,7 @@ public class ParentDashboardService {
   private final SchoolClassRepository classRepository;
   private final HomeworkSubmissionRepository submissionRepository;
   private final GradeRepository gradeRepository;
-  private final StudentSubmissionService studentSubmissionService;
+  private final StudentHomeworkQuery studentHomeworkQuery;
 
   public ParentDashboardService(
       ParentLinkService parentLinkService,
@@ -47,14 +48,14 @@ public class ParentDashboardService {
       SchoolClassRepository classRepository,
       HomeworkSubmissionRepository submissionRepository,
       GradeRepository gradeRepository,
-      StudentSubmissionService studentSubmissionService) {
+      StudentHomeworkQuery studentHomeworkQuery) {
     this.parentLinkService = parentLinkService;
     this.userRepository = userRepository;
     this.studentProfileRepository = studentProfileRepository;
     this.classRepository = classRepository;
     this.submissionRepository = submissionRepository;
     this.gradeRepository = gradeRepository;
-    this.studentSubmissionService = studentSubmissionService;
+    this.studentHomeworkQuery = studentHomeworkQuery;
   }
 
   public record ChildSummary(
@@ -79,9 +80,7 @@ public class ParentDashboardService {
   }
 
   public record ChildOverview(
-      ChildSummary summary,
-      List<StudentHomeworkItem> pendingHomework,
-      List<RecentGrade> recentGrades) {}
+      ChildSummary summary, List<HomeworkItem> pendingHomework, List<RecentGrade> recentGrades) {}
 
   private static final int RECENT_GRADES_LIMIT = 5;
 
@@ -95,13 +94,13 @@ public class ParentDashboardService {
             .orElse(false);
     ChildSummary summary = buildSummary(studentId, consentGiven);
     // Same class-less-student guard as buildSummary — filter on classId, not just schoolId.
-    List<StudentHomeworkItem> pendingHomework =
+    List<HomeworkItem> pendingHomework =
         studentProfileRepository
             .findByUserId(studentId)
             .filter(p -> p.getClassId() != null)
             .map(
                 p ->
-                    studentSubmissionService.listHomework(p.getSchoolId(), studentId).stream()
+                    studentHomeworkQuery.listHomework(p.getSchoolId(), studentId).stream()
                         .filter(h -> "PENDING".equals(h.submissionStatus()))
                         .toList())
             .orElse(List.of());
@@ -143,7 +142,7 @@ public class ParentDashboardService {
     int pendingHomeworkCount =
         profile
             .filter(p -> p.getClassId() != null)
-            .map(p -> studentSubmissionService.listHomework(p.getSchoolId(), studentId))
+            .map(p -> studentHomeworkQuery.listHomework(p.getSchoolId(), studentId))
             .map(
                 list ->
                     (int) list.stream().filter(h -> "PENDING".equals(h.submissionStatus())).count())

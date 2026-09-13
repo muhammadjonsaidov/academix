@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import uz.academixai.application.StudentSubmissionService.StudentHomeworkItem;
 import uz.academixai.domain.StudentProfile;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.infrastructure.persistence.GradeEntity;
@@ -17,6 +16,8 @@ import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.learning.application.port.in.StudentHomeworkQuery;
+import uz.academixai.learning.application.port.in.StudentHomeworkQuery.HomeworkItem;
 import uz.academixai.progress.domain.Badge;
 import uz.academixai.progress.domain.BadgeCriteriaType;
 import uz.academixai.progress.infrastructure.persistence.BadgeEntity;
@@ -38,7 +39,7 @@ public class StudentDashboardService {
   private final StudentBadgeRepository studentBadgeRepository;
   private final HomeworkSubmissionRepository submissionRepository;
   private final GradeRepository gradeRepository;
-  private final StudentSubmissionService studentSubmissionService;
+  private final StudentHomeworkQuery studentHomeworkQuery;
   private final XpHistoryRepository xpHistoryRepository;
 
   public StudentDashboardService(
@@ -48,7 +49,7 @@ public class StudentDashboardService {
       StudentBadgeRepository studentBadgeRepository,
       HomeworkSubmissionRepository submissionRepository,
       GradeRepository gradeRepository,
-      StudentSubmissionService studentSubmissionService,
+      StudentHomeworkQuery studentHomeworkQuery,
       XpHistoryRepository xpHistoryRepository) {
     this.userRepository = userRepository;
     this.studentProfileRepository = studentProfileRepository;
@@ -56,7 +57,7 @@ public class StudentDashboardService {
     this.studentBadgeRepository = studentBadgeRepository;
     this.submissionRepository = submissionRepository;
     this.gradeRepository = gradeRepository;
-    this.studentSubmissionService = studentSubmissionService;
+    this.studentHomeworkQuery = studentHomeworkQuery;
     this.xpHistoryRepository = xpHistoryRepository;
   }
 
@@ -73,7 +74,7 @@ public class StudentDashboardService {
       int currentStreak,
       int maxStreak,
       List<DashboardBadge> badges,
-      List<StudentHomeworkItem> pendingHomework,
+      List<HomeworkItem> pendingHomework,
       List<RecentGrade> recentGrades,
       int xpToNextBadge) {}
 
@@ -113,8 +114,8 @@ public class StudentDashboardService {
             .toList();
     List<Badge> earnedBadges = badges.stream().map(DashboardBadge::badge).toList();
 
-    List<StudentHomeworkItem> pendingHomework =
-        studentSubmissionService.listHomework(schoolId, studentId).stream()
+    List<HomeworkItem> pendingHomework =
+        studentHomeworkQuery.listHomework(schoolId, studentId).stream()
             .filter(h -> "PENDING".equals(h.submissionStatus()))
             .toList();
 

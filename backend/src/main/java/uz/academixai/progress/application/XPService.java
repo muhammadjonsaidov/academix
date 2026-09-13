@@ -24,7 +24,7 @@ import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 
 /**
  * academix_tz.md §4 XPService. XP/streak only fire on AI_DONE/GRADED (anti-gaming, never on
- * SUBMITTED) — enforced by callers (AIAnalysisService, TeacherSubmissionService), not this class.
+ * SUBMITTED) — enforced by callers (AIAnalysisService, HomeworkGradingService), not this class.
  *
  * <p><b>Idempotency judgment call (see ROADMAP.md Sprint 4):</b> the spec's own method signature
  * takes {@code submissionId}, not {@code studentId} — {@link #calculateAndAwardXP} uses that to

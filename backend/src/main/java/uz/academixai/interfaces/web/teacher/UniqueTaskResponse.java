@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.teacher;
 
 import java.util.UUID;
-import uz.academixai.application.UniqueTaskReviewService.UniqueTaskWithStudent;
+import uz.academixai.learning.application.port.in.UniqueTaskReview.TaskWithStudent;
 
 public record UniqueTaskResponse(
     UUID taskId,
@@ -12,7 +12,7 @@ public record UniqueTaskResponse(
     boolean flaggedForReview,
     boolean fallbackToStandard) {
 
-  public static UniqueTaskResponse from(UniqueTaskWithStudent item) {
+  public static UniqueTaskResponse from(TaskWithStudent item) {
     var task = item.task();
     return new UniqueTaskResponse(
         task.id(),
