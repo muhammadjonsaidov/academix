@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.AuthService;
 import uz.academixai.application.PasswordResetService;
+import uz.academixai.identity.application.AuthenticationService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.infrastructure.security.JwtService;
 
@@ -36,7 +36,7 @@ public class AuthController {
   private static final String COOKIE_NAME = "academix_auth";
   private static final String REFRESH_COOKIE_NAME = "academix_refresh";
 
-  private final AuthService authService;
+  private final AuthenticationService authenticationService;
   private final JwtService jwtService;
   private final PasswordResetService passwordResetService;
 
@@ -50,11 +50,11 @@ public class AuthController {
   private final String cookieDomain;
 
   public AuthController(
-      AuthService authService,
+      AuthenticationService authenticationService,
       JwtService jwtService,
       PasswordResetService passwordResetService,
       @Value("${academix.cookie-domain:}") String cookieDomain) {
-    this.authService = authService;
+    this.authenticationService = authenticationService;
     this.jwtService = jwtService;
     this.passwordResetService = passwordResetService;
     this.cookieDomain = cookieDomain == null || cookieDomain.isBlank() ? null : cookieDomain;
@@ -62,10 +62,10 @@ public class AuthController {
 
   @PostMapping("/login")
   public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-    var result = authService.login(request.phone(), request.password());
+    var result = authenticationService.login(request.phone(), request.password());
     var body =
         new LoginResponse(
-            result.accessToken(), result.refreshToken(), UserSummary.from(result.user()));
+            result.accessToken(), result.refreshToken(), UserSummary.from(result.account()));
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, authCookie(result.accessToken()).toString())
         .header(HttpHeaders.SET_COOKIE, refreshCookie(result.refreshToken()).toString())
@@ -80,7 +80,7 @@ public class AuthController {
         request != null && request.refreshToken() != null && !request.refreshToken().isBlank()
             ? request.refreshToken()
             : refreshCookie;
-    String accessToken = authService.refresh(refreshToken);
+    String accessToken = authenticationService.refresh(refreshToken);
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, authCookie(accessToken).toString())
         .body(new RefreshResponse(accessToken));
@@ -89,7 +89,7 @@ public class AuthController {
   @PostMapping("/logout")
   public ResponseEntity<LogoutResponse> logout(
       @AuthenticationPrincipal AcademixPrincipal principal) {
-    authService.logout(principal.userId());
+    authenticationService.logout(principal.userId());
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, clearedAuthCookie().toString())
         .header(HttpHeaders.SET_COOKIE, clearedRefreshCookie().toString())
@@ -98,7 +98,7 @@ public class AuthController {
 
   @GetMapping("/profile")
   public ProfileResponse profile(@AuthenticationPrincipal AcademixPrincipal principal) {
-    return ProfileResponse.from(authService.profile(principal.userId()));
+    return ProfileResponse.from(authenticationService.profile(principal.userId()));
   }
 
   @PutMapping("/profile")
@@ -106,7 +106,7 @@ public class AuthController {
       @AuthenticationPrincipal AcademixPrincipal principal,
       @RequestBody UpdateProfileRequest request) {
     return ProfileResponse.from(
-        authService.updateProfile(
+        authenticationService.updateProfile(
             principal.userId(), request.firstName(), request.lastName(), request.email()));
   }
 
@@ -114,7 +114,8 @@ public class AuthController {
   public ResponseEntity<Void> changePassword(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @RequestBody ChangePasswordRequest request) {
-    authService.changePassword(principal.userId(), request.oldPassword(), request.newPassword());
+    authenticationService.changePassword(
+        principal.userId(), request.oldPassword(), request.newPassword());
     return ResponseEntity.ok().build();
   }
 
