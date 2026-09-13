@@ -1,28 +1,48 @@
 name: Continuous Deployment
 
+# Deploy only after the CI run for a push to main has succeeded. This prevents a
+# second workflow triggered by the same push from deploying code that failed CI.
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
 
+permissions:
+  contents: read
+
+# Production has one Compose stack. Serialising deployments prevents two runs
+# from checking out/rebuilding the same working tree at the same time.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 jobs:
-  deploy-backend:
-    name: Deploy Backend to VPS
+  deploy:
+    name: Deploy verified main commit to VPS
+    # workflow_run can also be caused by a PR. Only a successful push to main
+    # is allowed to reach the server.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
+    environment:
+      name: production
+
     steps:
-      - name: SSH through runner and deploy
+      - name: Deploy and verify
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ubuntu
           key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          command_timeout: 20m
           script: |
-            cd ~/academix
-            git pull origin main
-
-            export SDKMAN_DIR="$HOME/.sdkman"
-            [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-
-            cd backend
-            ./gradlew bootJar -x test
-
-            sudo systemctl restart academix
+            cd /home/ubuntu/academixai/academix
+            git fetch --quiet origin main
+            git cat-file -e '${{ github.event.workflow_run.head_sha }}^{commit}'
+            git show '${{ github.event.workflow_run.head_sha }}:scripts/deploy-vps.sh' > /tmp/academix-deploy-vps.sh
+            bash /tmp/academix-deploy-vps.sh '${{ github.event.workflow_run.head_sha }}'
+            rm -f /tmp/academix-deploy-vps.sh
