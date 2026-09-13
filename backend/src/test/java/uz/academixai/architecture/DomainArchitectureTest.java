@@ -77,6 +77,16 @@ class DomainArchitectureTest {
           .because("Progress XP policy must use its persistence ports, not JPA adapters directly");
 
   @ArchTest
+  static final ArchRule studentDashboardMustDependOnPortsNotInfrastructure =
+      noClasses()
+          .that()
+          .haveFullyQualifiedName("uz.academixai.progress.application.StudentDashboardService")
+          .should()
+          .dependOnClassesThat()
+          .resideInAnyPackage("uz.academixai.infrastructure..", "uz.academixai.application..")
+          .because("Progress dashboard reads must use Progress and Learning ports");
+
+  @ArchTest
   static final ArchRule intelligenceApplicationMustDependOnPortsNotInfrastructure =
       noClasses()
           .that()

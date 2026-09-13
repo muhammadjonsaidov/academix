@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
-import uz.academixai.application.StudentDashboardService.DashboardBadge;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.infrastructure.persistence.AIFeedbackEntity;
@@ -26,6 +25,8 @@ import uz.academixai.infrastructure.persistence.SubjectEntity;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.learning.application.port.in.StudentHomeworkQuery;
 import uz.academixai.learning.application.port.in.StudentHomeworkQuery.HomeworkItem;
+import uz.academixai.progress.application.port.in.StudentDashboard;
+import uz.academixai.progress.application.port.in.StudentDashboard.DashboardBadge;
 import uz.academixai.progress.infrastructure.persistence.XpHistoryEntity;
 import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 
@@ -53,7 +54,7 @@ public class ParentProgressService {
   private final AIFeedbackRepository feedbackRepository;
   private final XpHistoryRepository xpHistoryRepository;
   private final StudentHomeworkQuery studentHomeworkQuery;
-  private final StudentDashboardService studentDashboardService;
+  private final StudentDashboard studentDashboardService;
 
   public ParentProgressService(
       ParentLinkService parentLinkService,
@@ -65,7 +66,7 @@ public class ParentProgressService {
       AIFeedbackRepository feedbackRepository,
       XpHistoryRepository xpHistoryRepository,
       StudentHomeworkQuery studentHomeworkQuery,
-      StudentDashboardService studentDashboardService) {
+      StudentDashboard studentDashboardService) {
     this.parentLinkService = parentLinkService;
     this.studentProfileRepository = studentProfileRepository;
     this.submissionRepository = submissionRepository;

@@ -2,7 +2,7 @@ package uz.academixai.interfaces.web.student;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.application.StudentDashboardService.DashboardBadge;
+import uz.academixai.progress.application.port.in.StudentDashboard.DashboardBadge;
 import uz.academixai.progress.domain.Badge;
 
 public record BadgeResponse(

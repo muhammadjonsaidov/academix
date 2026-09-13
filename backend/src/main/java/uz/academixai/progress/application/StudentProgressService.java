@@ -6,10 +6,10 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import uz.academixai.application.ParentProgressService;
 import uz.academixai.application.ParentProgressService.SubjectProgress;
-import uz.academixai.application.StudentDashboardService;
-import uz.academixai.application.StudentDashboardService.DashboardBadge;
-import uz.academixai.application.StudentDashboardService.XpHistoryItem;
 import uz.academixai.infrastructure.persistence.GradeRepository;
+import uz.academixai.progress.application.port.in.StudentDashboard;
+import uz.academixai.progress.application.port.in.StudentDashboard.DashboardBadge;
+import uz.academixai.progress.application.port.in.StudentDashboard.XpHistoryItem;
 
 /**
  * academix_tz.md §2.4 {@code GET /student/progress} — exact response shape. {@code streakHistory}
@@ -21,12 +21,12 @@ import uz.academixai.infrastructure.persistence.GradeRepository;
 public class StudentProgressService {
 
   private final ParentProgressService parentProgressService;
-  private final StudentDashboardService studentDashboardService;
+  private final StudentDashboard studentDashboardService;
   private final GradeRepository gradeRepository;
 
   public StudentProgressService(
       ParentProgressService parentProgressService,
-      StudentDashboardService studentDashboardService,
+      StudentDashboard studentDashboardService,
       GradeRepository gradeRepository) {
     this.parentProgressService = parentProgressService;
     this.studentDashboardService = studentDashboardService;

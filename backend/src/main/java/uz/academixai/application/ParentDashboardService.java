@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
-import uz.academixai.application.StudentDashboardService.RecentGrade;
 import uz.academixai.domain.ParentStudentLink;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.infrastructure.persistence.GradeEntity;
@@ -18,6 +17,7 @@ import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserRepository;
 import uz.academixai.learning.application.port.in.StudentHomeworkQuery;
 import uz.academixai.learning.application.port.in.StudentHomeworkQuery.HomeworkItem;
+import uz.academixai.progress.application.port.in.StudentDashboard.RecentGrade;
 
 /**
  * academix_tz.md §2.5 "Parent API" — {@code GET /parent/dashboard}, {@code GET /parent/children},

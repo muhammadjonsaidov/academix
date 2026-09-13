@@ -146,6 +146,12 @@ Learning, AI and legacy dashboard services currently consume the Progress applic
 read repositories. These are migration seams; the Learning-to-Progress write path will be replaced
 by a `SubmissionGraded` event when the Learning context is extracted.
 
+The student dashboard, earned badges and XP history are now owned by Progress' published
+`StudentDashboard` API. Its use case reads its own persistence port and Learning's homework query,
+while student and parent HTTP adapters consume only the published result records. Parent progress
+remains the next Progress migration slice, but already depends on this API rather than a global
+dashboard service.
+
 The remaining global `application`, `domain`, `infrastructure` and `interfaces` packages are legacy
 code and are not the target layout. They are migrated context by context; a big-bang package move is
 not permitted.

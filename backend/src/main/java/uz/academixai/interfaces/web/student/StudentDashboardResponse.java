@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.student;
 
 import java.util.List;
-import uz.academixai.application.StudentDashboardService.Dashboard;
+import uz.academixai.progress.application.port.in.StudentDashboard.Dashboard;
 
 public record StudentDashboardResponse(
     ProfileSummary profile,

@@ -4,7 +4,7 @@ import java.util.List;
 import uz.academixai.application.ParentProgressService.MonthlyXp;
 import uz.academixai.application.ParentProgressService.Progress;
 import uz.academixai.application.ParentProgressService.SubjectProgress;
-import uz.academixai.application.StudentDashboardService.DashboardBadge;
+import uz.academixai.progress.application.port.in.StudentDashboard.DashboardBadge;
 
 /** academix_tz.md §2.5 — GET /parent/children/{studentId}/progress, exact top-level fields. */
 public record ParentProgressResponse(

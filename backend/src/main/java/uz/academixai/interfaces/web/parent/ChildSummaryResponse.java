@@ -2,7 +2,7 @@ package uz.academixai.interfaces.web.parent;
 
 import java.util.UUID;
 import uz.academixai.application.ParentDashboardService.ChildSummary;
-import uz.academixai.application.StudentDashboardService.RecentGrade;
+import uz.academixai.progress.application.port.in.StudentDashboard.RecentGrade;
 
 public record ChildSummaryResponse(
     UUID studentId,
