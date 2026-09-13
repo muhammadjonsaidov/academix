@@ -1,10 +1,12 @@
-package uz.academixai.application;
+package uz.academixai.progress.application;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import uz.academixai.application.ParentProgressService;
 import uz.academixai.application.ParentProgressService.SubjectProgress;
+import uz.academixai.application.StudentDashboardService;
 import uz.academixai.application.StudentDashboardService.DashboardBadge;
 import uz.academixai.application.StudentDashboardService.XpHistoryItem;
 import uz.academixai.infrastructure.persistence.GradeRepository;

@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.persistence;
+package uz.academixai.progress.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -7,8 +7,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.UUID;
-import uz.academixai.domain.Badge;
-import uz.academixai.domain.BadgeCriteriaType;
+import uz.academixai.progress.domain.Badge;
+import uz.academixai.progress.domain.BadgeCriteriaType;
 
 /** JPA mapping for {@code badges} (migration V20). Maps to/from {@link Badge}. */
 @Entity

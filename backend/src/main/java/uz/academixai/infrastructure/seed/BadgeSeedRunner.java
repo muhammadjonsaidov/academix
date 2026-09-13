@@ -5,10 +5,10 @@ import java.util.UUID;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
-import uz.academixai.domain.Badge;
-import uz.academixai.domain.BadgeCriteriaType;
-import uz.academixai.infrastructure.persistence.BadgeEntity;
-import uz.academixai.infrastructure.persistence.BadgeRepository;
+import uz.academixai.progress.domain.Badge;
+import uz.academixai.progress.domain.BadgeCriteriaType;
+import uz.academixai.progress.infrastructure.persistence.BadgeEntity;
+import uz.academixai.progress.infrastructure.persistence.BadgeRepository;
 
 /**
  * academix_tz.md §4 references badges but defines no catalog anywhere — new, judgment call (see

@@ -1,4 +1,4 @@
-package uz.academixai.domain;
+package uz.academixai.progress.domain;
 
 import java.util.UUID;
 

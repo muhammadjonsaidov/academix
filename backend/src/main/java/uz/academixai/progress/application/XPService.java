@@ -1,4 +1,4 @@
-package uz.academixai.application;
+package uz.academixai.progress.application;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -6,21 +6,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
-import uz.academixai.domain.Badge;
 import uz.academixai.domain.HomeworkSubmission;
-import uz.academixai.domain.StudentBadge;
 import uz.academixai.domain.StudentProfile;
-import uz.academixai.domain.XpHistoryEntry;
-import uz.academixai.infrastructure.persistence.BadgeEntity;
-import uz.academixai.infrastructure.persistence.BadgeRepository;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionEntity;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
-import uz.academixai.infrastructure.persistence.StudentBadgeEntity;
-import uz.academixai.infrastructure.persistence.StudentBadgeRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
-import uz.academixai.infrastructure.persistence.XpHistoryEntity;
-import uz.academixai.infrastructure.persistence.XpHistoryRepository;
+import uz.academixai.progress.domain.Badge;
+import uz.academixai.progress.domain.StudentBadge;
+import uz.academixai.progress.domain.XpHistoryEntry;
+import uz.academixai.progress.infrastructure.persistence.BadgeEntity;
+import uz.academixai.progress.infrastructure.persistence.BadgeRepository;
+import uz.academixai.progress.infrastructure.persistence.StudentBadgeEntity;
+import uz.academixai.progress.infrastructure.persistence.StudentBadgeRepository;
+import uz.academixai.progress.infrastructure.persistence.XpHistoryEntity;
+import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 
 /**
  * academix_tz.md §4 XPService. XP/streak only fire on AI_DONE/GRADED (anti-gaming, never on

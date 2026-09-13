@@ -38,10 +38,10 @@ import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
-import uz.academixai.infrastructure.persistence.XpHistoryEntity;
-import uz.academixai.infrastructure.persistence.XpHistoryRepository;
 import uz.academixai.notification.application.NotificationService;
 import uz.academixai.notification.domain.NotificationType;
+import uz.academixai.progress.infrastructure.persistence.XpHistoryEntity;
+import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 
 /**
  * academix_tz.md §1.14/§3.3/§4 PsychologyService — nightly silent behavior analysis + the strict

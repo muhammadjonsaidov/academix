@@ -106,6 +106,20 @@ reporting/
 `ReportService` API. Its data ownership will move to the Reporting context when the Parent-facing
 read model is migrated.
 
+`progress` now owns the student achievement model:
+
+```
+progress/
+  domain/                 Badge, BadgeCriteriaType, StudentBadge, XpHistoryEntry
+  application/            XPService, StudentProgressService
+  infrastructure/
+    persistence/          badge, earned-badge and XP-history JPA entities/repositories
+```
+
+Learning, AI and legacy dashboard services currently consume the Progress application API or its
+read repositories. These are migration seams; the Learning-to-Progress write path will be replaced
+by a `SubmissionGraded` event when the Learning context is extracted.
+
 The remaining global `application`, `domain`, `infrastructure` and `interfaces` packages are legacy
 code and are not the target layout. They are migrated context by context; a big-bang package move is
 not permitted.

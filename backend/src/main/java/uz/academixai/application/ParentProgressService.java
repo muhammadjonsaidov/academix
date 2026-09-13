@@ -25,8 +25,8 @@ import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.SubjectEntity;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
-import uz.academixai.infrastructure.persistence.XpHistoryEntity;
-import uz.academixai.infrastructure.persistence.XpHistoryRepository;
+import uz.academixai.progress.infrastructure.persistence.XpHistoryEntity;
+import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 
 /**
  * academix_tz.md §2.5 — {@code GET /parent/children/{studentId}/progress}, {@code .../homework},

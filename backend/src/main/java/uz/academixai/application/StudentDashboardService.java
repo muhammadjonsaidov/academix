@@ -7,24 +7,24 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.application.StudentSubmissionService.StudentHomeworkItem;
-import uz.academixai.domain.Badge;
-import uz.academixai.domain.BadgeCriteriaType;
 import uz.academixai.domain.StudentProfile;
 import uz.academixai.domain.SubmissionStatus;
-import uz.academixai.infrastructure.persistence.BadgeEntity;
-import uz.academixai.infrastructure.persistence.BadgeRepository;
 import uz.academixai.infrastructure.persistence.GradeEntity;
 import uz.academixai.infrastructure.persistence.GradeRepository;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
-import uz.academixai.infrastructure.persistence.StudentBadgeEntity;
-import uz.academixai.infrastructure.persistence.StudentBadgeRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
-import uz.academixai.infrastructure.persistence.XpHistoryEntity;
-import uz.academixai.infrastructure.persistence.XpHistoryRepository;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.progress.domain.Badge;
+import uz.academixai.progress.domain.BadgeCriteriaType;
+import uz.academixai.progress.infrastructure.persistence.BadgeEntity;
+import uz.academixai.progress.infrastructure.persistence.BadgeRepository;
+import uz.academixai.progress.infrastructure.persistence.StudentBadgeEntity;
+import uz.academixai.progress.infrastructure.persistence.StudentBadgeRepository;
+import uz.academixai.progress.infrastructure.persistence.XpHistoryEntity;
+import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 
 /** academix_tz.md §2.4 "GET /student/dashboard" — profile/badges/pendingHomework/recentGrades. */
 @Service

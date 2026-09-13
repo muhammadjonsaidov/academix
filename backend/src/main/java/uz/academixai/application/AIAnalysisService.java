@@ -37,6 +37,7 @@ import uz.academixai.infrastructure.persistence.SubjectEntity;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.infrastructure.realtime.RealtimeEventBus;
 import uz.academixai.infrastructure.storage.FileStorageService;
+import uz.academixai.progress.application.XPService;
 
 /**
  * academix_backend_tdd.md §6.4 — {@code AIAnalysisService.analyzeSubmission()}, called by the

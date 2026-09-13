@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.persistence;
+package uz.academixai.progress.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -6,7 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.XpHistoryEntry;
+import uz.academixai.progress.domain.XpHistoryEntry;
 
 /** JPA mapping for {@code xp_history} (migration V22). Maps to/from {@link XpHistoryEntry}. */
 @Entity

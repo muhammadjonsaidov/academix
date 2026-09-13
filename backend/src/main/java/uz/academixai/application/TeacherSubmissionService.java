@@ -18,6 +18,7 @@ import uz.academixai.infrastructure.persistence.HomeworkSubmissionEntity;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
 import uz.academixai.infrastructure.persistence.UserRepository;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.progress.application.XPService;
 
 /**
  * academix_tz.md §2.3 "Topshirilgan ishlarni ko'rish va baholash" — teacher views AI-graded

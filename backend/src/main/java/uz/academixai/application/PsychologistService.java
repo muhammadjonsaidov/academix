@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import uz.academixai.domain.PsychologicalSignal;
 import uz.academixai.domain.SignalSeverity;
 import uz.academixai.domain.WatchlistEntry;
-import uz.academixai.domain.XpHistoryEntry;
 import uz.academixai.infrastructure.persistence.ExamSubmissionRepository;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
 import uz.academixai.infrastructure.persistence.PsychologicalSignalEntity;
@@ -24,8 +23,9 @@ import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserRepository;
 import uz.academixai.infrastructure.persistence.WatchlistEntryEntity;
 import uz.academixai.infrastructure.persistence.WatchlistEntryRepository;
-import uz.academixai.infrastructure.persistence.XpHistoryRepository;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.progress.domain.XpHistoryEntry;
+import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 
 /**
  * academix_tz.md §2.6 "Psychologist API" — school-wide (not homeroom-limited, unlike the teacher

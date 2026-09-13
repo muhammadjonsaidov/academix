@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.SchoolClass;
 import uz.academixai.domain.StudentProfile;
-import uz.academixai.domain.XpHistoryEntry;
 import uz.academixai.infrastructure.persistence.GradeRepository;
 import uz.academixai.infrastructure.persistence.GradeRepository.ClassSubjectStatsRow;
 import uz.academixai.infrastructure.persistence.GradeRepository.StudentProgressRow;
@@ -20,9 +19,10 @@ import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
-import uz.academixai.infrastructure.persistence.XpHistoryEntity;
-import uz.academixai.infrastructure.persistence.XpHistoryRepository;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.progress.domain.XpHistoryEntry;
+import uz.academixai.progress.infrastructure.persistence.XpHistoryEntity;
+import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 
 /**
  * academix_tz.md §2.3 "O'quvchi progressi"/"Sinf taqqoslash" — both scoped to "faqat o'z sinfi"
