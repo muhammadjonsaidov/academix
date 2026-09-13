@@ -26,23 +26,20 @@ jobs:
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'main'
-    runs-on: ubuntu-latest
+    # This VPS is reachable only through the private Tailscale network. Running
+    # the job on the server avoids exposing SSH publicly and lets Compose build
+    # and restart the stack locally.
+    runs-on: [self-hosted, Linux, X64, academix-production]
     environment:
       name: production
 
     steps:
       - name: Deploy and verify
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ubuntu
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: 22
-          command_timeout: 20m
-          script: |
-            cd /home/ubuntu/academixai/academix
-            git fetch --quiet origin main
-            git cat-file -e '${{ github.event.workflow_run.head_sha }}^{commit}'
-            git show '${{ github.event.workflow_run.head_sha }}:scripts/deploy-vps.sh' > /tmp/academix-deploy-vps.sh
-            bash /tmp/academix-deploy-vps.sh '${{ github.event.workflow_run.head_sha }}'
-            rm -f /tmp/academix-deploy-vps.sh
+        shell: bash
+        run: |
+          cd /home/ubuntu/academixai/academix
+          git fetch --quiet origin main
+          git cat-file -e '${{ github.event.workflow_run.head_sha }}^{commit}'
+          git show '${{ github.event.workflow_run.head_sha }}:scripts/deploy-vps.sh' > /tmp/academix-deploy-vps.sh
+          bash /tmp/academix-deploy-vps.sh '${{ github.event.workflow_run.head_sha }}'
+          rm -f /tmp/academix-deploy-vps.sh
