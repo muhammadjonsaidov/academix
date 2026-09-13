@@ -7,4 +7,6 @@ import uz.academixai.domain.SubmissionStatus;
 public interface AnalysisStatusNotifier {
 
   void notifyHomework(UUID teacherId, UUID studentId, UUID submissionId, SubmissionStatus status);
+
+  void notifyExam(UUID teacherId, UUID studentId, UUID submissionId, SubmissionStatus status);
 }

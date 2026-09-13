@@ -47,10 +47,7 @@ class HomeworkAiAnalysisServiceTest {
                 0));
     List<Float> awardedScores = new ArrayList<>();
     HomeworkAiAnalysisService service =
-        service(
-            store,
-            (id, student, score, late) -> awardedScores.add(score),
-            (teacher, student, submission, status) -> {});
+        service(store, (id, student, score, late) -> awardedScores.add(score), noopNotifier());
 
     service.analyze(submissionId);
 
@@ -67,8 +64,7 @@ class HomeworkAiAnalysisServiceTest {
     Store store = new Store(null);
     store.claimed = false;
     HomeworkAiAnalysisService service =
-        service(
-            store, (id, student, score, late) -> {}, (teacher, student, submission, status) -> {});
+        service(store, (id, student, score, late) -> {}, noopNotifier());
 
     service.analyze(UUID.randomUUID());
 
@@ -102,6 +98,18 @@ class HomeworkAiAnalysisServiceTest {
         new AiBudgetService(limits, counter),
         awards,
         notifications);
+  }
+
+  private static AnalysisStatusNotifier noopNotifier() {
+    return new AnalysisStatusNotifier() {
+      @Override
+      public void notifyHomework(
+          UUID teacherId, UUID studentId, UUID submissionId, SubmissionStatus status) {}
+
+      @Override
+      public void notifyExam(
+          UUID teacherId, UUID studentId, UUID submissionId, SubmissionStatus status) {}
+    };
   }
 
   private static final class Store implements HomeworkAnalysisStore {

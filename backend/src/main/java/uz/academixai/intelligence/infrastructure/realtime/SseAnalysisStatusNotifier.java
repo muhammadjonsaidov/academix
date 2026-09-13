@@ -23,9 +23,20 @@ public class SseAnalysisStatusNotifier implements AnalysisStatusNotifier {
   @Override
   public void notifyHomework(
       UUID teacherId, UUID studentId, UUID submissionId, SubmissionStatus status) {
+    notify(teacherId, studentId, submissionId, "HOMEWORK", status);
+  }
+
+  @Override
+  public void notifyExam(
+      UUID teacherId, UUID studentId, UUID submissionId, SubmissionStatus status) {
+    notify(teacherId, studentId, submissionId, "EXAM", status);
+  }
+
+  private void notify(
+      UUID teacherId, UUID studentId, UUID submissionId, String type, SubmissionStatus status) {
     Map<String, Object> payload = new HashMap<>();
     payload.put("submissionId", submissionId.toString());
-    payload.put("type", "HOMEWORK");
+    payload.put("type", type);
     payload.put("status", status.name());
     events.publishAfterCommit(teacherId, "ai.status", payload);
     events.publishAfterCommit(studentId, "ai.status", payload);

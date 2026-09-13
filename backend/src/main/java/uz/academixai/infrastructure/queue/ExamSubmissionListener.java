@@ -4,7 +4,7 @@ import jakarta.persistence.EntityManager;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-import uz.academixai.application.ExamAIAnalysisService;
+import uz.academixai.intelligence.application.ExamAiAnalysisService;
 
 /**
  * Consumes {@code exam.submissions.queue} — same {@code SET LOCAL app.current_school_id} pattern as
@@ -14,12 +14,12 @@ import uz.academixai.application.ExamAIAnalysisService;
 @Component
 public class ExamSubmissionListener {
 
-  private final ExamAIAnalysisService examAIAnalysisService;
+  private final ExamAiAnalysisService examAIAnalysisService;
   private final TransactionTemplate transactionTemplate;
   private final EntityManager entityManager;
 
   public ExamSubmissionListener(
-      ExamAIAnalysisService examAIAnalysisService,
+      ExamAiAnalysisService examAIAnalysisService,
       TransactionTemplate transactionTemplate,
       EntityManager entityManager) {
     this.examAIAnalysisService = examAIAnalysisService;
@@ -34,7 +34,7 @@ public class ExamSubmissionListener {
           entityManager
               .createNativeQuery("SET LOCAL app.current_school_id = '" + message.schoolId() + "'")
               .executeUpdate();
-          examAIAnalysisService.analyzeExamSubmission(message.submissionId());
+          examAIAnalysisService.analyze(message.submissionId());
         });
   }
 }
