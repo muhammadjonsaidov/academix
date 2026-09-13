@@ -1,9 +1,5 @@
-"use client";
-
-import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Bell,
   Bot,
@@ -22,21 +18,10 @@ import {
   Users,
   Workflow,
 } from "lucide-react";
-import { GradingDemo } from "@/components/landing/GradingDemo";
-import { Reveal } from "@/components/shared/Reveal";
+import { GradingDemoLoader } from "@/components/landing/GradingDemoLoader";
+import { HomeAuthRedirect } from "@/components/landing/HomeAuthRedirect";
 import { buttonVariants } from "@/components/ui/button";
-import { useCountUp } from "@/hooks/useCountUp";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores/useAuthStore";
-import type { Role } from "@/types/auth";
-
-const ROLE_DASHBOARD_PATH: Record<Role, string> = {
-  ADMIN: "/dashboard/admin",
-  TEACHER: "/dashboard/teacher",
-  STUDENT: "/dashboard/student",
-  PARENT: "/dashboard/parent",
-  PSYCHOLOGIST: "/dashboard/psychologist",
-};
 
 const AUDIENCES = [
   {
@@ -192,40 +177,12 @@ function SectionEyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Stats-band value with a scroll-triggered count-up — "5" → counts 5, "100%" →
- * counts 100 then appends "%", "24/7" → counts 24 then appends "/7". */
-function StatNumber({ raw }: { raw: string }) {
-  const match = /^(\d+)(.*)$/.exec(raw);
-  // Hook called unconditionally (before any early return) — the rules-of-hooks
-  // requirement. Non-numeric values get target 0 and never render the count.
-  const { ref, value } = useCountUp(match ? Number(match[1]) : 0);
-  if (!match) return <>{raw}</>;
-  return (
-    <span ref={ref}>
-      {Math.round(value)}
-      {match[2]}
-    </span>
-  );
-}
-
-// Public marketing root ("/"). If a session already exists in memory, bounce to that
-// role's dashboard — in an effect, never in the render body (see DashboardShell).
+// Public marketing root ("/"). Session redirects live in a small client island so the
+// rest of this marketing page can stay server-rendered and out of the hydration bundle.
 export default function HomePage() {
-  const router = useRouter();
-  const user = useAuthStore((state) => state.user);
-
-  useEffect(() => {
-    if (user) {
-      router.replace(ROLE_DASHBOARD_PATH[user.role]);
-    }
-  }, [user, router]);
-
-  if (user) {
-    return null;
-  }
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <HomeAuthRedirect />
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/60 bg-background/80 px-6 py-4 backdrop-blur-md lg:px-12">
         <span className="flex items-center gap-2.5">
           <Image src="/logo-mark.svg" alt="" width={32} height={29} priority />
@@ -325,7 +282,7 @@ export default function HomePage() {
                   <p className="mb-4 text-center text-xs font-medium tracking-wide text-muted-foreground uppercase">
                     Jonli demo — AI daftarni qanday tekshiradi
                   </p>
-                  <GradingDemo />
+                  <GradingDemoLoader />
                 </div>
               </div>
             </div>
@@ -339,7 +296,7 @@ export default function HomePage() {
                   <s.icon className="size-4" strokeWidth={1.75} />
                 </span>
                 <span className="text-ai-gradient font-heading text-3xl font-bold">
-                  <StatNumber raw={s.value} />
+                  {s.value}
                 </span>
                 <span className="text-xs text-muted-foreground">{s.label}</span>
               </div>
@@ -371,7 +328,7 @@ export default function HomePage() {
             </h2>
             <div className="grid gap-5 sm:grid-cols-3">
               {AUDIENCES.map((a, i) => (
-                <Reveal key={a.title} delay={i * 80} className="h-full">
+                <div key={a.title} className="animate-rise h-full" style={{ animationDelay: `${i * 80}ms` }}>
                   <div className="card-lift hover-glow flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-5">
                     <span className="flex size-10 items-center justify-center rounded-lg bg-ai-soft/60 text-ai">
                       <a.icon className="size-5" strokeWidth={1.75} />
@@ -379,7 +336,7 @@ export default function HomePage() {
                     <h3 className="font-heading text-base font-semibold">{a.title}</h3>
                     <p className="text-sm text-muted-foreground">{a.text}</p>
                   </div>
-                </Reveal>
+                </div>
               ))}
             </div>
           </div>
@@ -396,20 +353,18 @@ export default function HomePage() {
           </h2>
           <ol className="grid gap-5 sm:grid-cols-3">
             {STEPS.map((s, i) => (
-              <Reveal key={s.title} delay={i * 80} className="h-full">
-                <li className="card-lift hover-glow relative flex h-full flex-col gap-3 overflow-hidden rounded-xl border border-border bg-card p-5">
-                  <span
-                    className="bg-ai-gradient absolute -top-10 -right-10 size-24 rounded-full opacity-10 blur-2xl"
-                    aria-hidden
-                  />
-                  <span className="font-data text-ai-gradient text-sm font-bold">0{i + 1}</span>
-                  <span className="flex size-10 items-center justify-center rounded-lg bg-muted text-foreground">
-                    <s.icon className="size-5" strokeWidth={1.75} />
-                  </span>
-                  <h3 className="font-heading text-base font-semibold">{s.title}</h3>
-                  <p className="text-sm text-muted-foreground">{s.text}</p>
-                </li>
-              </Reveal>
+              <li key={s.title} className="animate-rise card-lift hover-glow relative flex h-full flex-col gap-3 overflow-hidden rounded-xl border border-border bg-card p-5" style={{ animationDelay: `${i * 80}ms` }}>
+                <span
+                  className="bg-ai-gradient absolute -top-10 -right-10 size-24 rounded-full opacity-10 blur-2xl"
+                  aria-hidden
+                />
+                <span className="font-data text-ai-gradient text-sm font-bold">0{i + 1}</span>
+                <span className="flex size-10 items-center justify-center rounded-lg bg-muted text-foreground">
+                  <s.icon className="size-5" strokeWidth={1.75} />
+                </span>
+                <h3 className="font-heading text-base font-semibold">{s.title}</h3>
+                <p className="text-sm text-muted-foreground">{s.text}</p>
+              </li>
             ))}
           </ol>
         </section>
@@ -422,7 +377,7 @@ export default function HomePage() {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {AUDIENCES_BENEFIT.map((f, i) => (
-              <Reveal key={f.roleLabel} delay={(i % 3) * 80} className="h-full">
+              <div key={f.roleLabel} className="animate-rise h-full" style={{ animationDelay: `${(i % 3) * 80}ms` }}>
                 <div
                   className={cn(
                     "card-lift hover-glow flex h-full flex-col gap-3 rounded-xl border border-border border-l-3 bg-card p-5",
@@ -460,7 +415,7 @@ export default function HomePage() {
                     ))}
                   </ul>
                 </div>
-              </Reveal>
+              </div>
             ))}
           </div>
         </section>
@@ -478,7 +433,7 @@ export default function HomePage() {
             </p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {TRUST.map((t, i) => (
-                <Reveal key={t.title} delay={(i % 4) * 80} className="h-full">
+                <div key={t.title} className="animate-rise h-full" style={{ animationDelay: `${(i % 4) * 80}ms` }}>
                   <div className="card-lift hover-glow flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-5">
                     <span className={cn("flex size-10 items-center justify-center rounded-lg", t.chip)}>
                       <t.icon className="size-5" strokeWidth={1.75} />
@@ -486,7 +441,7 @@ export default function HomePage() {
                     <h3 className="font-heading text-base font-semibold">{t.title}</h3>
                     <p className="text-sm text-muted-foreground">{t.text}</p>
                   </div>
-                </Reveal>
+                </div>
               ))}
             </div>
           </div>
@@ -494,7 +449,7 @@ export default function HomePage() {
 
         {/* Closing CTA */}
         <section className="mx-auto max-w-6xl px-6 py-16 lg:px-12">
-          <Reveal>
+          <div className="animate-rise">
             <div className="gradient-ring rounded-2xl">
               <div className="bg-dots relative isolate overflow-hidden rounded-[calc(1rem-2px)] border border-ai-soft/40 bg-card px-6 py-16 lg:px-12">
                 <div aria-hidden className="absolute inset-0 -z-10">
@@ -519,7 +474,7 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-          </Reveal>
+          </div>
         </section>
       </main>
 

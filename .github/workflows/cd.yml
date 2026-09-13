@@ -5,11 +5,11 @@ on:
     branches: [main]
 
 jobs:
-  deploy-backend:
-    name: Deploy Backend to VPS
+  deploy:
+    name: Deploy to VPS via Docker
     runs-on: ubuntu-latest
     steps:
-      - name: SSH through runner and deploy
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -18,11 +18,7 @@ jobs:
           script: |
             cd ~/academix
             git pull origin main
-
-            export SDKMAN_DIR="$HOME/.sdkman"
-            [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-
-            cd backend
-            ./gradlew bootJar -x test
-
-            sudo systemctl restart academix
+            
+            docker compose up -d --build
+            
+            docker image prune -f
