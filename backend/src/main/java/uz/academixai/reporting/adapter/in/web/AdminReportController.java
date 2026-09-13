@@ -1,4 +1,4 @@
-package uz.academixai.interfaces.web.admin;
+package uz.academixai.reporting.adapter.in.web;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.ReportService;
-import uz.academixai.application.ReportService.ReportDownload;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.reporting.application.ReportService;
+import uz.academixai.reporting.application.ReportService.ReportDownload;
 
 /** academix_tz.md §2.2 "Hisobotlar". */
 @RestController

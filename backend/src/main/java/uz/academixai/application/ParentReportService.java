@@ -3,14 +3,15 @@ package uz.academixai.application;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
-import uz.academixai.application.ReportService.ReportDownload;
-import uz.academixai.domain.Report;
-import uz.academixai.domain.ReportType;
 import uz.academixai.domain.StudentProfile;
-import uz.academixai.infrastructure.persistence.ReportEntity;
-import uz.academixai.infrastructure.persistence.ReportRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
+import uz.academixai.reporting.application.ReportService;
+import uz.academixai.reporting.application.ReportService.ReportDownload;
+import uz.academixai.reporting.domain.Report;
+import uz.academixai.reporting.domain.ReportType;
+import uz.academixai.reporting.infrastructure.persistence.ReportEntity;
+import uz.academixai.reporting.infrastructure.persistence.ReportRepository;
 
 /**
  * academix_tz.md §2.5 {@code GET /parent/children/{studentId}/quarter-report} + {@code

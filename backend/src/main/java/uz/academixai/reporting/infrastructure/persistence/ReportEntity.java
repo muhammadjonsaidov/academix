@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.persistence;
+package uz.academixai.reporting.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,8 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.Report;
-import uz.academixai.domain.ReportType;
+import uz.academixai.reporting.domain.Report;
+import uz.academixai.reporting.domain.ReportType;
 
 /** JPA mapping for {@code reports} (V36 migration). Maps to/from {@link Report}. */
 @Entity

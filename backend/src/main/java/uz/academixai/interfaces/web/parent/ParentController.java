@@ -20,10 +20,10 @@ import uz.academixai.application.ParentDashboardService;
 import uz.academixai.application.ParentLinkService;
 import uz.academixai.application.ParentProgressService;
 import uz.academixai.application.ParentReportService;
-import uz.academixai.application.ReportService.ReportDownload;
 import uz.academixai.application.StudentSubmissionService.StudentHomeworkItem;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
-import uz.academixai.interfaces.web.admin.ReportResponse;
+import uz.academixai.reporting.adapter.in.web.ReportResponse;
+import uz.academixai.reporting.application.ReportService.ReportDownload;
 
 /** academix_tz.md §2.5 "Parent API" — exact paths, some response shapes deviate. */
 @RestController

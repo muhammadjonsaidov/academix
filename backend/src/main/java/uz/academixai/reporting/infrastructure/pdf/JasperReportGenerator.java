@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.reports;
+package uz.academixai.reporting.infrastructure.pdf;
 
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;

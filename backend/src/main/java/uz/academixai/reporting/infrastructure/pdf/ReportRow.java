@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.reports;
+package uz.academixai.reporting.infrastructure.pdf;
 
 /**
  * Plain JavaBean, deliberately NOT a record — {@code JRBeanCollectionDataSource} binds JRXML {@code

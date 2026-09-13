@@ -1,9 +1,9 @@
-package uz.academixai.interfaces.web.admin;
+package uz.academixai.reporting.adapter.in.web;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.Report;
-import uz.academixai.domain.ReportType;
+import uz.academixai.reporting.domain.Report;
+import uz.academixai.reporting.domain.ReportType;
 
 public record ReportResponse(
     UUID id,

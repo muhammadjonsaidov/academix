@@ -90,6 +90,22 @@ notification/
 is an explicit transitional dependency; it will become a published `PsychologicalAlertRaised`
 event when the Wellbeing context is migrated.
 
+`reporting` is the second fully vertical migration:
+
+```
+reporting/
+  domain/                 Report, ReportType
+  application/            ReportService
+  infrastructure/
+    persistence/          report JPA entity and repository
+    pdf/                  Jasper PDF generator and report-row model
+  adapter/in/web/         report REST controller and DTOs
+```
+
+`ParentReportService` is still legacy application code and consumes Reporting's public
+`ReportService` API. Its data ownership will move to the Reporting context when the Parent-facing
+read model is migrated.
+
 The remaining global `application`, `domain`, `infrastructure` and `interfaces` packages are legacy
 code and are not the target layout. They are migrated context by context; a big-bang package move is
 not permitted.

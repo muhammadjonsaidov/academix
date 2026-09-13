@@ -1,11 +1,11 @@
-package uz.academixai.infrastructure.persistence;
+package uz.academixai.reporting.infrastructure.persistence;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
-import uz.academixai.domain.ReportType;
+import uz.academixai.reporting.domain.ReportType;
 
 public interface ReportRepository extends JpaRepository<ReportEntity, UUID> {
 

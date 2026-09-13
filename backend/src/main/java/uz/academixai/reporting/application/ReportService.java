@@ -1,4 +1,4 @@
-package uz.academixai.application;
+package uz.academixai.reporting.application;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -6,23 +6,23 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import uz.academixai.domain.Report;
-import uz.academixai.domain.ReportType;
 import uz.academixai.infrastructure.persistence.GradeRepository;
 import uz.academixai.infrastructure.persistence.GradeRepository.ClassProgressRow;
 import uz.academixai.infrastructure.persistence.GradeRepository.StudentProgressRow;
 import uz.academixai.infrastructure.persistence.GradeRepository.SubjectProgressRow;
-import uz.academixai.infrastructure.persistence.ReportEntity;
-import uz.academixai.infrastructure.persistence.ReportRepository;
 import uz.academixai.infrastructure.persistence.SchoolClassEntity;
 import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.SchoolRepository;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
-import uz.academixai.infrastructure.reports.JasperReportGenerator;
-import uz.academixai.infrastructure.reports.ReportRow;
 import uz.academixai.infrastructure.storage.FileStorageService;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.reporting.domain.Report;
+import uz.academixai.reporting.domain.ReportType;
+import uz.academixai.reporting.infrastructure.pdf.JasperReportGenerator;
+import uz.academixai.reporting.infrastructure.pdf.ReportRow;
+import uz.academixai.reporting.infrastructure.persistence.ReportEntity;
+import uz.academixai.reporting.infrastructure.persistence.ReportRepository;
 
 /**
  * academix_tz.md's {@code ReportService} pseudocode ({@code generateStudentReport}/{@code
