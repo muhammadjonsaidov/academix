@@ -92,6 +92,7 @@ class BehaviorAnalysisServiceTest {
             new BehaviorActivityLookup.Activity(
                 List.of(LocalDateTime.now().minusHours(1)),
                 10,
+                List.of(),
                 LocalDate.now(),
                 List.of("yordam kerak"));
     EvidencePayloadSerializer evidence = value -> "json:" + value;

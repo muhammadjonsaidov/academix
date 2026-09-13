@@ -183,8 +183,8 @@ application API. Homework OCR, grading, plagiarism and handwriting orchestration
 `HomeworkAiAnalysisService`: its provider, object-storage, Learning-persistence, Progress and SSE
 dependencies are all ports. Its queue contract and graceful `AI_SKIPPED` behavior are preserved.
 `ExamAiAnalysisService` uses the same provider-neutral OCR/grading/handwriting boundaries while
-keeping exam-only review flags and its separate budget. Tutor chat and psychology analysis remain
-the next Intelligence slices. Tutor chat is now a complete Intelligence vertical slice:
+keeping exam-only review flags and its separate budget. Tutor chat is a complete Intelligence
+vertical slice:
 `TutorChatService` owns subject parsing, assignment relevance, budget, answer-leak guardrails and
 bounded history. Its AI provider, rate limit, assignment lookup and persistence dependencies are
 outbound ports, so the student HTTP adapter calls only the published `TutorChat` API. Psychology
@@ -195,8 +195,11 @@ folded into Intelligence merely because a signal-analysis adapter calls an AI pr
 published `BehaviorAnalysis` API; the service reads privacy-minimized activity metadata, validates
 provider signal candidates, persists immutable signals and applies the severity-to-alert matrix
 through ports. The RLS-aware activity adapter establishes school scope inside the scheduler's own
-transaction. Psychologist dashboard, resolution, watchlist and reports remain legacy use cases and
-will move together in the next Wellbeing slice.
+transaction. `PsychologistWorkspaceService` now owns the psychologist dashboard, signal list/detail,
+resolution, manipulation marking, watchlist and monthly report use cases. Its controller depends
+only on the published `PsychologistWorkspace` API; school-scoped JPA queries and student display
+data are adapters. This preserves every existing psychologist REST endpoint while completing the
+Wellbeing public workspace migration.
 
 ## Ordered implementation plan
 

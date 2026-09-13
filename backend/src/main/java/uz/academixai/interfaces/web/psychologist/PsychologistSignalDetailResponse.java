@@ -5,9 +5,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import uz.academixai.application.PsychologistService.BehaviorProfile;
-import uz.academixai.application.PsychologistService.SignalDetail;
 import uz.academixai.progress.domain.XpHistoryEntry;
+import uz.academixai.wellbeing.application.port.in.PsychologistWorkspace.BehaviorProfile;
+import uz.academixai.wellbeing.application.port.in.PsychologistWorkspace.SignalDetail;
 
 /**
  * academix_tz.md §2.6 — GET /psychologist/signals/{signalId}, exact shape. {@code

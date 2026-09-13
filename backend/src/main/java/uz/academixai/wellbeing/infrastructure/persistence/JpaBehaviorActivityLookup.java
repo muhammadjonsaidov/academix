@@ -14,6 +14,7 @@ import uz.academixai.infrastructure.persistence.ExamSubmissionRepository;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
+import uz.academixai.progress.domain.XpHistoryEntry;
 import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 import uz.academixai.wellbeing.application.port.out.BehaviorActivityLookup;
 
@@ -68,12 +69,12 @@ public class JpaBehaviorActivityLookup implements BehaviorActivityLookup {
                   .map(submission -> submission.toDomain().uploadedAt())
                   .filter(time -> time.isAfter(since))
                   .forEach(submissionTimes::add);
-              long recentXp =
+              List<XpHistoryEntry> recentXpHistory =
                   xpHistory.findByStudentIdOrderByOccurredAtDesc(studentId).stream()
                       .map(entry -> entry.toDomain())
                       .filter(entry -> entry.occurredAt().isAfter(since))
-                      .mapToLong(entry -> entry.xp())
-                      .sum();
+                      .toList();
+              long recentXp = recentXpHistory.stream().mapToLong(XpHistoryEntry::xp).sum();
               List<String> recentChatMessages =
                   chatMessages
                       .findByStudentIdOrderByCreatedAtDesc(studentId, Limit.of(maxChatMessages))
@@ -85,6 +86,7 @@ public class JpaBehaviorActivityLookup implements BehaviorActivityLookup {
               return new Activity(
                   submissionTimes,
                   recentXp,
+                  recentXpHistory,
                   students
                       .findByUserId(studentId)
                       .map(StudentProfileEntity::toDomain)
