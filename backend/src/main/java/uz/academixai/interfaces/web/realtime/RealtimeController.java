@@ -10,14 +10,14 @@ import uz.academixai.infrastructure.realtime.RealtimeEventBus;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 
 /**
- * {@code GET /api/v1/realtime/events} — long-lived SSE stream, one per browser tab. The
- * frontend connects via {@code EventSource} and passes the JWT as a {@code ?token=} query param
- * (EventSource cannot set an {@code Authorization} header; {@code JwtAuthenticationFilter}
- * accepts the query param on this path only — short-lived access token, scoped trade-off).
+ * {@code GET /api/v1/realtime/events} — long-lived SSE stream, one per browser tab. The frontend
+ * connects via {@code EventSource} and passes the JWT as a {@code ?token=} query param (EventSource
+ * cannot set an {@code Authorization} header; {@code JwtAuthenticationFilter} accepts the query
+ * param on this path only — short-lived access token, scoped trade-off).
  *
- * <p>SecurityConfig's {@code anyRequest().authenticated()} already gates this endpoint; the
- * {@code principal == null} branch is belt-and-braces for a hypothetical filter bypass and
- * just completes the stream instead of erroring.
+ * <p>SecurityConfig's {@code anyRequest().authenticated()} already gates this endpoint; the {@code
+ * principal == null} branch is belt-and-braces for a hypothetical filter bypass and just completes
+ * the stream instead of erroring.
  */
 @RestController
 @RequestMapping("/api/v1/realtime")

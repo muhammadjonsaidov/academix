@@ -56,7 +56,8 @@ public class SecurityConfig {
     // so this matters less there, but local dev breaks completely without it.
     CorsConfiguration config = new CorsConfiguration();
     // Comma-separated so local dev (http://localhost:3000) and a deployed frontend
-    // (e.g. a Vercel domain) can coexist: FRONTEND_URL="http://localhost:3000,https://academix.vercel.app"
+    // (e.g. a Vercel domain) can coexist:
+    // FRONTEND_URL="http://localhost:3000,https://academix.vercel.app"
     config.setAllowedOrigins(
         java.util.Arrays.stream(frontendUrl.split(","))
             .map(String::trim)
