@@ -5,8 +5,11 @@ import uz.academixai.application.AdminDashboardService.Dashboard;
 
 /** academix_tz.md §2.2 {@code GET /admin/dashboard} — exact response shape. */
 public record AdminDashboardResponse(
+    int totalClasses,
     int totalStudents,
     int totalTeachers,
+    int totalSubjects,
+    int totalAssignments,
     int activeToday,
     double homeworkSubmissionRate,
     List<ClassProgressResponse> classProgressList,
@@ -17,8 +20,11 @@ public record AdminDashboardResponse(
 
   public static AdminDashboardResponse from(Dashboard dashboard) {
     return new AdminDashboardResponse(
+        dashboard.totalClasses(),
         dashboard.totalStudents(),
         dashboard.totalTeachers(),
+        dashboard.totalSubjects(),
+        dashboard.totalAssignments(),
         dashboard.activeToday(),
         dashboard.homeworkSubmissionRate(),
         dashboard.classProgressList().stream().map(ClassProgressResponse::from).toList(),

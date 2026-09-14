@@ -13,6 +13,8 @@ public interface ClassSubjectTeacherRepository
 
   List<ClassSubjectTeacherEntity> findBySchoolId(UUID schoolId);
 
+  long countBySchoolId(UUID schoolId);
+
   Optional<ClassSubjectTeacherEntity> findByIdAndSchoolId(UUID id, UUID schoolId);
 
   List<ClassSubjectTeacherEntity> findBySchoolIdAndTeacherId(UUID schoolId, UUID teacherId);

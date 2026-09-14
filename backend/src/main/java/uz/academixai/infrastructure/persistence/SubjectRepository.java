@@ -11,6 +11,8 @@ public interface SubjectRepository extends JpaRepository<SubjectEntity, UUID> {
 
   List<SubjectEntity> findBySchoolIdOrderByName(UUID schoolId);
 
+  long countBySchoolId(UUID schoolId);
+
   Optional<SubjectEntity> findByIdAndSchoolId(UUID id, UUID schoolId);
 
   /**
