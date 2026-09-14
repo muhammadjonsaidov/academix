@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState, type FormEvent } from "react";
 import { Link2, UserPlus, Users } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { fieldClass, FormField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,13 +103,11 @@ export default function AdminParentsPage() {
   return (
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
-        <div>
-          <h2 className="font-heading text-xl font-semibold">Ota-onalar / Vasiylar</h2>
-          <p className="text-sm text-muted-foreground">
-            Ota-ona hisoblarini yarating, boshlang&apos;ich parol bering va farzandlariga
-            bog&apos;lang. Ular keyin parolni o&apos;zlari almashtirishi mumkin.
-          </p>
-        </div>
+        <PageHeader
+          title="Ota-onalar / Vasiylar"
+          description="Ota-ona hisoblarini yarating, boshlang'ich parol bering va farzandlariga bog'lang. Ular keyin parolni o'zlari almashtirishi mumkin."
+          eyebrow="Hamkorlik"
+        />
 
         <Card>
           <CardHeader>

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { validatePassword } from "@/lib/password-policy";
 import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { PaginationControl } from "@/components/shared/PaginationControl";
@@ -230,18 +231,17 @@ export default function AdminStudentsPage() {
   return (
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="font-heading text-xl font-semibold">O&apos;quvchilar</h2>
-            <p className="text-sm text-muted-foreground">
-              O&apos;quvchilarni qo&apos;shing yoki Excel orqali ommaviy import qiling.
-            </p>
-          </div>
-          <Button variant="outline" render={<Link href="/dashboard/admin/students/import" />}>
-            <FileSpreadsheet className="size-4" strokeWidth={1.75} />
-            Excel orqali ommaviy import
-          </Button>
-        </div>
+        <PageHeader
+          title="O'quvchilar"
+          description="O'quvchilarni qo'shing yoki Excel orqali ommaviy import qiling."
+          eyebrow="Maktab"
+          actions={
+            <Button variant="outline" render={<Link href="/dashboard/admin/students/import" />}>
+              <FileSpreadsheet className="size-4" strokeWidth={1.75} />
+              Excel orqali ommaviy import
+            </Button>
+          }
+        />
 
         <Card>
           <CardHeader>

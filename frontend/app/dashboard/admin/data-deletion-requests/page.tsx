@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ShieldOff } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -57,13 +58,11 @@ export default function AdminDataDeletionRequestsPage() {
   return (
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
-        <div>
-          <h2 className="font-heading text-xl font-semibold">O&apos;chirish so&apos;rovlari</h2>
-          <p className="text-sm text-muted-foreground">
-            Ota-onalar tomonidan yuborilgan ma&apos;lumotlarni o&apos;chirish so&apos;rovlarini
-            ko&apos;rib chiqing va tasdiqlang.
-          </p>
-        </div>
+        <PageHeader
+          title="O'chirish so'rovlari"
+          description="Ota-onalar tomonidan yuborilgan ma'lumotlarni o'chirish so'rovlarini ko'rib chiqing va tasdiqlang."
+          eyebrow="Maxfiylik"
+        />
 
         <Card>
           <CardHeader>

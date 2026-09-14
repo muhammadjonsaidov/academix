@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { BookPlus, Link2, Trash2, X } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -133,12 +134,11 @@ export default function AdminAssignmentsPage() {
   return (
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
-        <div>
-          <h2 className="font-heading text-xl font-semibold">Biriktirishlar</h2>
-          <p className="text-sm text-muted-foreground">
-            O&apos;qituvchini sinf va fanga biriktiring.
-          </p>
-        </div>
+        <PageHeader
+          title="Biriktirishlar"
+          description="O'qituvchini sinf va fanga biriktiring."
+          eyebrow="O'quv jarayoni"
+        />
 
         <Card>
           <CardHeader>

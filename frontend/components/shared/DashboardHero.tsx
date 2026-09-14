@@ -52,7 +52,7 @@ export function DashboardHero({
               {eyebrow}
             </span>
           </div>
-          <h2 className="font-heading text-2xl font-semibold tracking-tight sm:text-[1.7rem]">{title}</h2>
+          <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-[1.7rem]">{title}</h1>
           <p className="max-w-xl text-sm text-muted-foreground">{description}</p>
         </div>
         {actions ? (
