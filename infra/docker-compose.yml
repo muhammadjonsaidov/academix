@@ -159,6 +159,7 @@ services:
       DATABASE_APP_PASSWORD: ${DATABASE_APP_PASSWORD:-academix_app_local_dev_only}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-academix}
