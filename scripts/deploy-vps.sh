@@ -10,6 +10,8 @@ readonly COMPOSE_FILE="$APP_DIR/infra/docker-compose.yml"
 readonly PRODUCTION_COMPOSE_FILE="$APP_DIR/infra/docker-compose.production.yml"
 readonly TUNNEL_COMPOSE_FILE="$APP_DIR/infra/docker-compose.tunnel.yml"
 readonly ENV_FILE="$APP_DIR/infra/.env"
+readonly RUNTIME_DIR="$APP_DIR/infra/.runtime"
+readonly SEAWEEDFS_CONFIG_FILE="$RUNTIME_DIR/seaweedfs-s3-config.json"
 readonly LOCK_FILE="$APP_DIR/.deploy.lock"
 readonly HEALTH_TIMEOUT_SECONDS="${HEALTH_TIMEOUT_SECONDS:-240}"
 
@@ -18,7 +20,65 @@ log() {
 }
 
 compose() {
-  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$PRODUCTION_COMPOSE_FILE" -f "$TUNNEL_COMPOSE_FILE" "$@"
+  SEAWEEDFS_CONFIG_FILE="$SEAWEEDFS_CONFIG_FILE" \
+    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$PRODUCTION_COMPOSE_FILE" -f "$TUNNEL_COMPOSE_FILE" "$@"
+}
+
+environment_value() {
+  local key="$1"
+  sed -n "s/^${key}=//p" "$ENV_FILE" | tail -n 1
+}
+
+validate_production_environment() {
+  local invalid_keys=()
+  local key value forbidden
+
+  while IFS=':' read -r key forbidden; do
+    value="$(environment_value "$key")"
+    if [[ -z "$value" || "$value" == "$forbidden" ]]; then
+      invalid_keys+=("$key")
+    fi
+  done <<'EOF'
+JWT_SECRET:local-dev-only-placeholder-not-for-production-use
+DATABASE_PASSWORD:academix
+DATABASE_APP_PASSWORD:academix_app_local_dev_only
+REDIS_PASSWORD:
+RABBITMQ_PASSWORD:academix_local_dev
+SEAWEEDFS_ACCESS_KEY:local-dev-access-key
+SEAWEEDFS_SECRET_KEY:local-dev-secret-key
+EOF
+
+  if (( ${#invalid_keys[@]} > 0 )); then
+    log "Production environment has missing or unsafe secrets: ${invalid_keys[*]}"
+    return 1
+  fi
+}
+
+prepare_runtime_configuration() {
+  local access_key secret_key temporary_file
+  access_key="$(environment_value SEAWEEDFS_ACCESS_KEY)"
+  secret_key="$(environment_value SEAWEEDFS_SECRET_KEY)"
+
+  umask 077
+  mkdir -p "$RUNTIME_DIR"
+  temporary_file="$(mktemp "$RUNTIME_DIR/seaweedfs-s3-config.XXXXXX")"
+  cat > "$temporary_file" <<EOF
+{
+  "identities": [
+    {
+      "name": "academix",
+      "credentials": [
+        {
+          "accessKey": "$access_key",
+          "secretKey": "$secret_key"
+        }
+      ],
+      "actions": ["Admin", "Read", "Write"]
+    }
+  ]
+}
+EOF
+  mv "$temporary_file" "$SEAWEEDFS_CONFIG_FILE"
 }
 
 wait_for_healthy_stack() {
@@ -52,6 +112,8 @@ deploy_revision() {
     return 1
   }
   [[ -f "$TUNNEL_COMPOSE_FILE" ]] || { log "Missing tunnel Compose file: $TUNNEL_COMPOSE_FILE"; return 1; }
+  validate_production_environment
+  prepare_runtime_configuration
   compose up --detach --build --remove-orphans
   wait_for_healthy_stack
 }

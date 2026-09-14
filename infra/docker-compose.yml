@@ -42,6 +42,16 @@ services:
 
   redis:
     image: redis:8.8.0
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        if [ -n "$$REDIS_PASSWORD" ]; then
+          exec redis-server --requirepass "$$REDIS_PASSWORD"
+        fi
+        exec redis-server
     ports:
       - "6379:6379"
 
@@ -66,13 +76,15 @@ services:
     # always signs (SigV4) when given credentials, so the backend's S3Client can't talk to an
     # unconfigured SeaweedFS at all. Fixed by giving it a real identity matching the backend's
     # SEAWEEDFS_ACCESS_KEY/SECRET_KEY defaults (see application.yml) via seaweedfs-config/s3-config.json.
+    # Production substitutes a host-generated, permission-restricted config through
+    # SEAWEEDFS_CONFIG_FILE; local development keeps the checked-in dev config.
     command: server -s3 -s3.config=/etc/seaweedfs/s3-config.json -dir=/data
     ports:
       - "8333:8333" # S3 API
       - "9333:9333" # master UI
     volumes:
       - seaweedfs-data:/data
-      - ./seaweedfs-config/s3-config.json:/etc/seaweedfs/s3-config.json:ro
+      - ${SEAWEEDFS_CONFIG_FILE:-./seaweedfs-config/s3-config.json}:/etc/seaweedfs/s3-config.json:ro
 
   backend:
     build:

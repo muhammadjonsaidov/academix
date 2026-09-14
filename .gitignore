@@ -45,6 +45,7 @@ npm-debug.log*
 # Local infra state
 infra/postgres-data/
 infra/backups/
+infra/.runtime/
 
 # Agent working folders — local tooling state, not project code
 .claude/
