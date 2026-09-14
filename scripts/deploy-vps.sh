@@ -115,6 +115,12 @@ deploy_revision() {
   validate_production_environment
   prepare_runtime_configuration
   compose up --detach --build --remove-orphans
+  # nginx resolves Docker service names only when its worker starts. When a
+  # rebuilt backend gets a new container IP, an unchanged nginx-dev container
+  # would otherwise keep proxying to the old address and return 502 until its
+  # next restart. Recreate only the ingress after the stack is up so every
+  # deployment points it at the current backend/frontend containers.
+  compose up --detach --force-recreate nginx-dev
   wait_for_healthy_stack
 }
 
