@@ -46,15 +46,18 @@ deploy_revision() {
   git fetch --quiet origin main
   git cat-file -e "${revision}^{commit}"
   git checkout --quiet --detach "$revision"
+  [[ -f "$COMPOSE_FILE" ]] || { log "Missing Compose file: $COMPOSE_FILE"; return 1; }
+  [[ -f "$PRODUCTION_COMPOSE_FILE" ]] || {
+    log "Missing production Compose file: $PRODUCTION_COMPOSE_FILE"
+    return 1
+  }
+  [[ -f "$TUNNEL_COMPOSE_FILE" ]] || { log "Missing tunnel Compose file: $TUNNEL_COMPOSE_FILE"; return 1; }
   compose up --detach --build --remove-orphans
   wait_for_healthy_stack
 }
 
 main() {
   [[ -f "$ENV_FILE" ]] || { log "Missing production environment file: $ENV_FILE"; exit 1; }
-  [[ -f "$COMPOSE_FILE" ]] || { log "Missing Compose file: $COMPOSE_FILE"; exit 1; }
-  [[ -f "$PRODUCTION_COMPOSE_FILE" ]] || { log "Missing production Compose file: $PRODUCTION_COMPOSE_FILE"; exit 1; }
-  [[ -f "$TUNNEL_COMPOSE_FILE" ]] || { log "Missing tunnel Compose file: $TUNNEL_COMPOSE_FILE"; exit 1; }
 
   cd "$APP_DIR"
   exec 9>"$LOCK_FILE"
