@@ -121,8 +121,7 @@ public class AuthController {
     // Always the same response regardless of outcome — see PasswordResetService's Javadoc
     // (anti-enumeration: a caller can't tell "no account" or "sent" apart).
     return new ForgotPasswordResponse(
-        true,
-        "Agar bu emailga bog'langan hisob mavjud bo'lsa, tiklash havolasi yuborildi.");
+        true, "Agar bu emailga bog'langan hisob mavjud bo'lsa, tiklash havolasi yuborildi.");
   }
 
   @PostMapping("/reset-password")

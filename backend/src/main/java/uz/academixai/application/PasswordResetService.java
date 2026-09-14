@@ -22,9 +22,9 @@ import uz.academixai.interfaces.web.ApiException;
  * password_reset_token:{token}} key, single-use, deleted on consumption.
  *
  * <p><b>Anti-enumeration by design</b>: {@link #forgotPassword} always returns success and never
- * reveals whether the email address belongs to an active account. A caller cannot distinguish
- * "no such account" from "email genuinely sent" from the response alone; only real email
- * delivery (or its absence) tells them anything.
+ * reveals whether the email address belongs to an active account. A caller cannot distinguish "no
+ * such account" from "email genuinely sent" from the response alone; only real email delivery (or
+ * its absence) tells them anything.
  *
  * <p>Rate limit: plain Redis INCR+EXPIRE, same pattern (and same reasoning: Bucket4j is on the
  * classpath but unwired anywhere in this codebase) as {@link TelegramLinkService}.
