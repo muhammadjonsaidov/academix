@@ -11,7 +11,7 @@ readonly PRODUCTION_COMPOSE_FILE="$APP_DIR/infra/docker-compose.production.yml"
 readonly TUNNEL_COMPOSE_FILE="$APP_DIR/infra/docker-compose.tunnel.yml"
 readonly ENV_FILE="$APP_DIR/infra/.env"
 readonly RUNTIME_DIR="$APP_DIR/infra/.runtime"
-readonly SEAWEEDFS_CONFIG_FILE="$RUNTIME_DIR/seaweedfs-s3-config.json"
+readonly SEAWEEDFS_RUNTIME_CONFIG_FILE="$RUNTIME_DIR/seaweedfs-s3-config.json"
 readonly LOCK_FILE="$APP_DIR/.deploy.lock"
 readonly HEALTH_TIMEOUT_SECONDS="${HEALTH_TIMEOUT_SECONDS:-240}"
 
@@ -20,7 +20,7 @@ log() {
 }
 
 compose() {
-  SEAWEEDFS_CONFIG_FILE="$SEAWEEDFS_CONFIG_FILE" \
+  env SEAWEEDFS_CONFIG_FILE="$SEAWEEDFS_RUNTIME_CONFIG_FILE" \
     docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$PRODUCTION_COMPOSE_FILE" -f "$TUNNEL_COMPOSE_FILE" "$@"
 }
 
@@ -78,7 +78,7 @@ prepare_runtime_configuration() {
   ]
 }
 EOF
-  mv "$temporary_file" "$SEAWEEDFS_CONFIG_FILE"
+  mv "$temporary_file" "$SEAWEEDFS_RUNTIME_CONFIG_FILE"
 }
 
 wait_for_healthy_stack() {
