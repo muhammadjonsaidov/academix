@@ -65,6 +65,7 @@ public class InitialSetupService {
     validate(firstName, "Ism");
     validate(lastName, "Familiya");
     validate(phone, "Telefon raqam");
+    validate(email, "Email");
     validate(password, "Parol");
     validate(schoolName, "Maktab nomi");
     validate(region, "Viloyat");
@@ -80,7 +81,7 @@ public class InitialSetupService {
             firstName.trim(),
             lastName.trim(),
             phone.trim(),
-            blankToNull(email),
+            email.trim(),
             passwordEncoder.encode(password),
             Role.ADMIN,
             true,
@@ -97,7 +98,7 @@ public class InitialSetupService {
             region.trim(),
             district.trim(),
             phone.trim(),
-            blankToNull(email),
+            email.trim(),
             0,
             true,
             now,

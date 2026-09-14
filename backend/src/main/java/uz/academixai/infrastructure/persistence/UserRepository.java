@@ -10,6 +10,8 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
   Optional<UserEntity> findByPhone(String phone);
 
+  Optional<UserEntity> findFirstByEmailIgnoreCase(String email);
+
   boolean existsByPhone(String phone);
 
   List<UserEntity> findByRoleAndSchoolIdOrderByLastNameAscFirstNameAsc(Role role, UUID schoolId);

@@ -159,12 +159,11 @@ export default function InitialSetupPage() {
                   autoComplete="tel"
                 />
                 <Field
-                  label="Email (ixtiyoriy)"
+                  label="Email"
                   value={form.email}
                   onChange={(value) => setField("email", value)}
                   type="email"
                   autoComplete="email"
-                  required={false}
                 />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
