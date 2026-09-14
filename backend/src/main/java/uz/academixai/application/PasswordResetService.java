@@ -8,6 +8,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import uz.academixai.identity.application.PasswordPolicy;
 import uz.academixai.infrastructure.mail.PasswordResetMailSender;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
@@ -68,6 +69,7 @@ public class PasswordResetService {
   }
 
   public void resetPassword(String token, String newPassword) {
+    PasswordPolicy.requireValid(newPassword);
     String key = tokenKey(token);
     String userId = redis.opsForValue().get(key);
     if (userId == null) {

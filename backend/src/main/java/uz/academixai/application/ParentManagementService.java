@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.Role;
 import uz.academixai.domain.User;
+import uz.academixai.identity.application.PasswordPolicy;
 import uz.academixai.infrastructure.persistence.ParentStudentLinkRepository;
 import uz.academixai.infrastructure.persistence.ParentStudentLinkRepository.ChildRow;
 import uz.academixai.infrastructure.persistence.UserEntity;
@@ -67,13 +68,7 @@ public class ParentManagementService {
     // but note password reset is email-based, so a parent without an email can only recover
     // their account through the admin re-setting a password.
     requireNotBlank(password, "Boshlang'ich parol majburiy.");
-    if (password.length() < 8) {
-      throw new ApiException(
-          HttpStatus.BAD_REQUEST,
-          "ERR_VALIDATION",
-          "Parol kamida 8 belgidan iborat bo'lishi kerak.",
-          "Uzunroq parol kiriting.");
-    }
+    PasswordPolicy.requireValid(password);
     if (userRepository.existsByPhone(phone)) {
       throw new ApiException(
           HttpStatus.CONFLICT,

@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import uz.academixai.domain.Role;
 import uz.academixai.domain.StudentProfile;
+import uz.academixai.identity.application.PasswordPolicy;
 import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
@@ -83,13 +84,7 @@ public class StudentManagementService {
       UUID classId,
       String studentNumber,
       LocalDate birthDate) {
-    if (password != null && !password.isBlank() && password.length() < 8) {
-      throw new ApiException(
-          HttpStatus.BAD_REQUEST,
-          "ERR_VALIDATION",
-          "Parol kamida 8 belgidan iborat bo'lishi kerak.",
-          "Uzunroq parol kiriting.");
-    }
+    if (password != null && !password.isBlank()) PasswordPolicy.requireValid(password);
     if (userRepository.existsByPhone(phone)) {
       throw new ApiException(
           HttpStatus.CONFLICT,

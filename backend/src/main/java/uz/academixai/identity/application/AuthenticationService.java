@@ -116,6 +116,7 @@ public class AuthenticationService {
     if (!passwordEncoder.matches(oldPassword, account.passwordHash())) {
       throw invalidCredentials();
     }
+    PasswordPolicy.requireValid(newPassword);
     accounts.save(account.withPasswordHash(passwordEncoder.encode(newPassword)));
     refreshSessionStore.revokeAllForUser(userId);
   }

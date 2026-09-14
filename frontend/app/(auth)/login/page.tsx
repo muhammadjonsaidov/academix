@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,18 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [setupAvailable, setSetupAvailable] = useState(false);
+
+  useEffect(() => {
+    axios
+      .get<{ available: boolean }>(
+        `${process.env.NEXT_PUBLIC_API_URL ?? "/api/v1"}/onboarding/status`,
+      )
+      .then(({ data }) => setSetupAvailable(data.available))
+      .catch(() => {
+        // A login screen must remain usable even if the optional setup-status check is unavailable.
+      });
+  }, []);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -41,7 +54,8 @@ export default function LoginPage() {
       // non-JSON response (e.g. an HTML 404 when the API base URL is misconfigured)
       // used to be swallowed into the same message, which made a broken frontend↔backend
       // connection look like a wrong password — that exact confusion is what this guard fixes.
-      const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
+      const apiError = (err as { response?: { data?: ApiErrorResponse } })
+        .response?.data;
       setError(
         apiError?.message ??
           "Serverga ulanib bo'lmadi. Tarmoqni tekshirib qayta urinib ko'ring.",
@@ -61,7 +75,13 @@ export default function LoginPage() {
 
       <div className="animate-rise w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <Image src="/logo-mark.svg" alt="AcademiX AI" width={64} height={59} priority />
+          <Image
+            src="/logo-mark.svg"
+            alt="AcademiX AI"
+            width={64}
+            height={59}
+            priority
+          />
           <h1 className="font-heading text-xl font-semibold">
             AcademiX <span className="text-ai-gradient">AI</span>
           </h1>
@@ -73,7 +93,9 @@ export default function LoginPage() {
 
         <Card className="shadow-lg">
           <CardHeader className="border-b-0 pb-0">
-            <p className="text-sm font-medium text-foreground">Tizimga kirish</p>
+            <p className="text-sm font-medium text-foreground">
+              Tizimga kirish
+            </p>
             <p className="text-sm text-muted-foreground">
               Telefon raqamingiz va parolingizni kiriting
             </p>
@@ -120,7 +142,9 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? "Parolni yashirish" : "Parolni ko'rsatish"}
+                    aria-label={
+                      showPassword ? "Parolni yashirish" : "Parolni ko'rsatish"
+                    }
                     aria-pressed={showPassword}
                     className="absolute top-1/2 right-1.5 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-muted/60 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
                   >
@@ -149,6 +173,19 @@ export default function LoginPage() {
                 {isSubmitting ? "Kirilmoqda..." : "Kirish"}
               </Button>
             </form>
+            {setupAvailable ? (
+              <div className="mt-5 border-t border-border pt-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Yangi maktab uchun platformami?
+                </p>
+                <Link
+                  href="/setup"
+                  className="mt-1 inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Birinchi administratorni yarating
+                </Link>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       </div>

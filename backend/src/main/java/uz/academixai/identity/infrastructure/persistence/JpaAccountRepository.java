@@ -29,6 +29,11 @@ public class JpaAccountRepository implements AccountRepository {
   }
 
   @Override
+  public long count() {
+    return users.count();
+  }
+
+  @Override
   public Account save(Account account) {
     UserEntity entity =
         new UserEntity(

@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.Role;
 import uz.academixai.domain.User;
+import uz.academixai.identity.application.PasswordPolicy;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
 import uz.academixai.infrastructure.security.TempPasswordGenerator;
@@ -50,13 +51,7 @@ public class PsychologistManagementService {
       String email,
       String password) {
     boolean hasPassword = password != null && !password.isBlank();
-    if (hasPassword && password.length() < 8) {
-      throw new ApiException(
-          HttpStatus.BAD_REQUEST,
-          "ERR_VALIDATION",
-          "Parol kamida 8 belgidan iborat bo'lishi kerak.",
-          "Uzunroq parol kiriting.");
-    }
+    if (hasPassword) PasswordPolicy.requireValid(password);
     if (userRepository.existsByPhone(phone)) {
       throw new ApiException(
           HttpStatus.CONFLICT,

@@ -11,5 +11,8 @@ public interface AccountRepository {
 
   Optional<Account> findById(UUID id);
 
+  /** Used only by the one-time product bootstrap. */
+  long count();
+
   Account save(Account account);
 }
