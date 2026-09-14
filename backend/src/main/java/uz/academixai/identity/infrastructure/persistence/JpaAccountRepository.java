@@ -24,6 +24,11 @@ public class JpaAccountRepository implements AccountRepository {
   }
 
   @Override
+  public Optional<Account> findByEmail(String email) {
+    return users.findFirstByEmailIgnoreCase(email).map(JpaAccountRepository::toAccount);
+  }
+
+  @Override
   public Optional<Account> findById(UUID id) {
     return users.findById(id).map(JpaAccountRepository::toAccount);
   }

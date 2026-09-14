@@ -9,6 +9,8 @@ public interface AccountRepository {
 
   Optional<Account> findByPhone(String phone);
 
+  Optional<Account> findByEmail(String email);
+
   Optional<Account> findById(UUID id);
 
   /** Used only by the one-time product bootstrap. */

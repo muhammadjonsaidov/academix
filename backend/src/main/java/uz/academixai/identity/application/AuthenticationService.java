@@ -2,6 +2,8 @@ package uz.academixai.identity.application;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -49,15 +51,17 @@ public class AuthenticationService {
   /** Access token plus a replacement refresh token created during rotation. */
   public record RefreshResult(String accessToken, String refreshToken) {}
 
-  public LoginResult login(String phone, String rawPassword) {
-    enforceNotBlocked(phone);
-    Account account = accounts.findByPhone(phone).filter(Account::active).orElse(null);
+  public LoginResult login(String identifier, String rawPassword) {
+    String normalizedIdentifier = normalizeIdentifier(identifier);
+    enforceNotBlocked(normalizedIdentifier);
+    Account account =
+        findAccountByIdentifier(normalizedIdentifier).filter(Account::active).orElse(null);
     if (account == null || !passwordEncoder.matches(rawPassword, account.passwordHash())) {
-      recordFailedAttempt(phone);
+      recordFailedAttempt(normalizedIdentifier);
       throw invalidCredentials();
     }
 
-    loginAttemptLimiter.reset(loginAttemptsKey(phone));
+    loginAttemptLimiter.reset(loginAttemptsKey(normalizedIdentifier));
     account = accounts.save(account.withLastLoginAt(LocalDateTime.now()));
     UUID schoolId = schoolContextLookup.resolve(account).orElse(null);
     String accessToken = tokenIssuer.issueAccessToken(account.id(), account.role(), schoolId);
@@ -129,35 +133,46 @@ public class AuthenticationService {
     }
   }
 
-  private void enforceNotBlocked(String phone) {
-    if (loginAttemptLimiter.isBlocked(loginBlockKey(phone))) {
+  private void enforceNotBlocked(String identifier) {
+    if (loginAttemptLimiter.isBlocked(loginBlockKey(identifier))) {
       throw rateLimitExceeded(
           "Juda ko'p muvaffaqiyatsiz urinish. Hisobingiz vaqtincha bloklandi.",
           "15 daqiqadan keyin qayta urinib ko'ring yoki parolni tiklang.");
     }
   }
 
-  private void recordFailedAttempt(String phone) {
-    String attemptsKey = loginAttemptsKey(phone);
+  private void recordFailedAttempt(String identifier) {
+    String attemptsKey = loginAttemptsKey(identifier);
     if (loginAttemptLimiter.record(attemptsKey, LOGIN_ATTEMPT_WINDOW) >= MAX_LOGIN_ATTEMPTS) {
-      loginAttemptLimiter.block(loginBlockKey(phone), LOGIN_BLOCK_DURATION);
+      loginAttemptLimiter.block(loginBlockKey(identifier), LOGIN_BLOCK_DURATION);
       loginAttemptLimiter.reset(attemptsKey);
     }
   }
 
-  private static String loginAttemptsKey(String phone) {
-    return "login_attempts:" + phone;
+  private Optional<Account> findAccountByIdentifier(String identifier) {
+    return identifier.contains("@")
+        ? accounts.findByEmail(identifier)
+        : accounts.findByPhone(identifier);
   }
 
-  private static String loginBlockKey(String phone) {
-    return "login_block:" + phone;
+  private static String normalizeIdentifier(String identifier) {
+    String normalized = identifier == null ? "" : identifier.trim();
+    return normalized.contains("@") ? normalized.toLowerCase(Locale.ROOT) : normalized;
+  }
+
+  private static String loginAttemptsKey(String identifier) {
+    return "login_attempts:" + identifier;
+  }
+
+  private static String loginBlockKey(String identifier) {
+    return "login_block:" + identifier;
   }
 
   private static ApiException invalidCredentials() {
     return new ApiException(
         HttpStatus.UNAUTHORIZED,
         "ERR_INVALID_CREDENTIALS",
-        "Telefon raqam yoki parol noto'g'ri.",
+        "Telefon raqam, email yoki parol noto'g'ri.",
         "Ma'lumotlarni tekshirib qayta urinib ko'ring.");
   }
 

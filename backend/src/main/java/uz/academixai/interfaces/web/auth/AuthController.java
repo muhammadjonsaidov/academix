@@ -62,7 +62,7 @@ public class AuthController {
 
   @PostMapping("/login")
   public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-    var result = authenticationService.login(request.phone(), request.password());
+    var result = authenticationService.login(request.identifier(), request.password());
     var body = new LoginResponse(result.accessToken(), UserSummary.from(result.account()));
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, authCookie(result.accessToken()).toString())

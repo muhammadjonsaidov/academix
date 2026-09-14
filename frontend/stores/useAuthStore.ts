@@ -7,7 +7,7 @@ interface AuthState {
   user: UserSummary | null;
   profile: Profile | null;
   isAuthenticated: boolean;
-  login: (phone: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   logout: () => void;
   setAccessToken: (token: string) => void;
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
@@ -31,10 +31,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
   isAuthenticated: false,
 
-  login: async (phone, password) => {
+  login: async (identifier, password) => {
     const { data } = await axios.post<LoginResponse>(
       `${API_BASE_URL}/auth/login`,
-      { phone, password },
+      { identifier, password },
       { withCredentials: true },
     );
     set({

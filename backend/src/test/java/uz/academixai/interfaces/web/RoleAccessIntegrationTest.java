@@ -108,6 +108,7 @@ class RoleAccessIntegrationTest {
 
   // Real user for the public auth-flow test — login needs an actual row to answer 200.
   private static final String AUTH_PHONE = "+998900009999";
+  private static final String AUTH_EMAIL = "auth.user@academix.uz";
   private static final String AUTH_PASSWORD = "password123";
 
   @BeforeAll
@@ -122,7 +123,7 @@ class RoleAccessIntegrationTest {
             "Auth",
             "User",
             AUTH_PHONE,
-            null,
+            AUTH_EMAIL,
             passwordEncoder.encode(AUTH_PASSWORD),
             Role.STUDENT,
             true,
@@ -276,7 +277,7 @@ class RoleAccessIntegrationTest {
                 post("/api/v1/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        "{\"phone\":\""
+                        "{\"identifier\":\""
                             + AUTH_PHONE
                             + "\",\"password\":\""
                             + AUTH_PASSWORD
@@ -284,6 +285,20 @@ class RoleAccessIntegrationTest {
             .andExpect(status().isOk())
             .andReturn()
             .getResponse();
+
+    // A case-insensitive email address belonging to the same account is an equally valid login
+    // identifier. This is the public contract used by the login page and by account recovery.
+    mockMvc
+        .perform(
+            post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"identifier\":\""
+                        + AUTH_EMAIL.toUpperCase(java.util.Locale.ROOT)
+                        + "\",\"password\":\""
+                        + AUTH_PASSWORD
+                        + "\"}"))
+        .andExpect(status().isOk());
 
     // Refresh credentials are intentionally not in the JSON body. The HttpOnly cookie is the
     // only browser-visible transport, so this catches an accidental regression that exposes a
