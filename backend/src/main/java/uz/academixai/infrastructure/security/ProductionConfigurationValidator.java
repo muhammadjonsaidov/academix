@@ -10,9 +10,9 @@ import org.springframework.stereotype.Component;
 /**
  * Refuses to run a production process with repository-local development credentials.
  *
- * <p>This is deliberately profile-scoped rather than a Docker-only check: Railway, an IDE launch
- * configuration, and any future orchestrator must get the same protection as Docker Compose. The
- * values are never logged; the exception names only the invalid configuration keys.
+ * <p>This is deliberately profile-scoped rather than a Docker-only check: a hosted platform, an IDE
+ * launch configuration, and any future orchestrator must get the same protection as Docker Compose.
+ * The values are never logged; the exception names only the invalid configuration keys.
  */
 @Component
 @Profile("prod")

@@ -24,10 +24,10 @@ public class FileStorageService {
 
   private static final Logger log = LoggerFactory.getLogger(FileStorageService.class);
 
-  // Deploy environments with scale-to-zero (Railway trial's mandatory App Sleeping) routinely have
+  // Deploy environments with scale-to-zero routinely have
   // SeaweedFS asleep at backend boot; the first S3 call is exactly what wakes it, but the wake
   // takes seconds — a single fail-fast attempt here killed the whole Spring context and forced a
-  // full ~60s boot-restart cycle per race (confirmed by real Railway deploy logs). 12 x 5s covers
+  // full ~60s boot-restart cycle per race (confirmed by real hosted deploy logs). 12 x 5s covers
   // any realistic wake latency; a genuinely down/misconfigured SeaweedFS still fails the boot,
   // just a minute later.
   private static final int BUCKET_CHECK_MAX_ATTEMPTS = 12;

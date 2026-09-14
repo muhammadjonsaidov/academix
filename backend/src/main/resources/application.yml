@@ -17,7 +17,7 @@ spring:
     username: ${DATABASE_APP_USERNAME:academix_app}
     password: ${DATABASE_APP_PASSWORD:academix_app_local_dev_only}
     hikari:
-      # Default is 10; small deploys (Railway trial: Postgres tuned to max_connections=30 shared
+      # Default is 10; small deploys with constrained Postgres connection budgets
       # with Flyway + telegram-bot) want this lower. Local dev keeps the Hikari default.
       maximum-pool-size: ${DB_POOL_SIZE:10}
 
@@ -27,7 +27,7 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/academix}
     user: ${DATABASE_USERNAME:academix}
     password: ${DATABASE_PASSWORD:academix}
-    # Scale-to-zero deploys (Railway trial) have Postgres asleep at backend boot; the first
+    # Scale-to-zero deploys can have Postgres asleep at backend boot; the first
     # connection attempt wakes it but takes seconds. Without retries, Flyway's single fail-fast
     # attempt killed the whole boot (confirmed by real deploy logs). No effect on local dev
     # (pg already up → zero retries used).
@@ -38,7 +38,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      # Empty = no AUTH (local dev). Any networked deploy (e.g. Railway private networking)
+      # Empty = no AUTH (local dev). Any networked deploy
       # must set REDIS_PASSWORD and start redis-server with --requirepass.
       password: ${REDIS_PASSWORD:}
 
@@ -47,7 +47,7 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     # RabbitMQ's built-in guest/guest only accepts connections from localhost (loopback) — it
     # works in local dev and silently CANNOT work the moment the broker is reached over a real
-    # network (Docker service name, Railway private networking, ...). Any networked deploy must
+    # network (Docker service name, private networking, ...). Any networked deploy must
     # create its own user (RABBITMQ_DEFAULT_USER/PASS on the broker) and set these to match.
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
@@ -94,9 +94,9 @@ management:
   health:
     mail:
       # The mail health contributor opens a real SMTP connection to smtp.gmail.com on every
-      # /actuator/health call. Providers that block outbound SMTP (Railway does) make that hang
+      # /actuator/health call. Providers that block outbound SMTP make that hang
       # ~130s until socket timeout, which fails the platform healthcheck and marks an otherwise
-      # healthy deploy dead — confirmed by a real Railway deploy. Email is graceful-degradation
+      # healthy deploy dead — confirmed by a real hosted deploy. Email is graceful-degradation
       # in this app (see PasswordResetService) and must never gate liveness.
       enabled: false
 

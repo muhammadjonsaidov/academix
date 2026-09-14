@@ -98,7 +98,7 @@ public class RealtimeEventBus {
   }
 
   /**
-   * Keeps idle connections alive through proxies that close silent streams (Railway's edge, nginx
+   * Keeps idle connections alive through proxies that close silent streams (an edge proxy, nginx
    * with short proxy_read_timeout, ...). Comment lines are valid SSE and invisible to EventSource's
    * message listeners, so this adds no client-side noise.
    */
