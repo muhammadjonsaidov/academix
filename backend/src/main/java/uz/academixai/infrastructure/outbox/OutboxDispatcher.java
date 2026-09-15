@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import uz.academixai.infrastructure.queue.SubmissionQueueMessage;
+import uz.academixai.infrastructure.queue.SyllabusIngestionMessage;
 import uz.academixai.infrastructure.queue.TelegramNotificationMessage;
 
 /** Polls committed outbox records. A failed publish remains durable and is retried with backoff. */
@@ -21,6 +22,7 @@ public class OutboxDispatcher {
   private static final int BATCH_SIZE = 50;
   private static final String SUBMISSION_PAYLOAD = "submission";
   private static final String TELEGRAM_PAYLOAD = "telegramNotification";
+  private static final String SYLLABUS_INGESTION_PAYLOAD = "syllabusIngestion";
 
   private final OutboxEventRepository events;
   private final RabbitTemplate rabbitTemplate;
@@ -55,6 +57,10 @@ public class OutboxDispatcher {
               event.getDestination(),
               objectMapper.readValue(event.getPayload(), SubmissionQueueMessage.class));
       case TELEGRAM_PAYLOAD -> publishTelegram(event);
+      case SYLLABUS_INGESTION_PAYLOAD ->
+          rabbitTemplate.convertAndSend(
+              event.getDestination(),
+              objectMapper.readValue(event.getPayload(), SyllabusIngestionMessage.class));
       default ->
           throw new IllegalArgumentException(
               "Unsupported outbox payload type: " + event.getPayloadType());

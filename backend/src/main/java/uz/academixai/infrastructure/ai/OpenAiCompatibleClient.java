@@ -13,6 +13,7 @@ import org.springframework.web.client.RestClient;
 import uz.academixai.application.port.out.ai.AiGradingResult;
 import uz.academixai.application.port.out.ai.AiProvider;
 import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
+import uz.academixai.application.port.out.ai.EmbeddingProvider;
 import uz.academixai.application.port.out.ai.GradingCriterion;
 import uz.academixai.application.port.out.ai.PsychologyAnalysisResult;
 import uz.academixai.application.port.out.ai.PsychologySignalCandidate;
@@ -32,7 +33,7 @@ import uz.academixai.domain.StepAnalysis;
  */
 @Component
 @EnableConfigurationProperties(OpenAiCompatibleProperties.class)
-public class OpenAiCompatibleClient implements AiProvider {
+public class OpenAiCompatibleClient implements AiProvider, EmbeddingProvider {
 
   private static final String SYSTEM_PROMPT =
       """
@@ -56,7 +57,9 @@ public class OpenAiCompatibleClient implements AiProvider {
   private static final String LESSON_PLAN_SYSTEM_PROMPT =
       """
       Sen maktab o'qituvchisi uchun dars rejasi tuzuvchi yordamchisan. Berilgan fan, sinf, mavzu \
-      va (agar mavjud bo'lsa) darslik matni asosida bitta dars uchun aniq, amaliy reja tuz.
+      va darslikdan semantik qidiruv orqali tanlangan manba parchalari asosida bitta dars uchun \
+      aniq, amaliy reja tuz. Manba parchalari berilgan bo'lsa, faqat ularga mos fakt va \
+      tushunchalardan foydalan; manbada yo'q mavzuni uydirma.
 
       Javobni FAQAT quyidagi JSON formatida qaytar, boshqa matn qo'shma:
       {
@@ -80,7 +83,9 @@ public class OpenAiCompatibleClient implements AiProvider {
       """
       Sen maktab o'qituvchisi uchun har bir o'quvchiga alohida, bir xil qiyinlik darajasidagi \
       unique topshiriq tuzuvchi yordamchisan. Berilgan standart topshiriq asosida, xuddi shu \
-      mavzu va qiyinlik darajasida, lekin BOSHQA raqamlar/holat bilan yangi topshiriq tuz.
+      mavzu va qiyinlik darajasida, lekin BOSHQA raqamlar/holat bilan yangi topshiriq tuz. \
+      Agar darslik konteksti berilgan bo'lsa, topshiriqning mavzusi va atamalarini shu manbaga \
+      qat'iy mosla; manbada yo'q bilimni qo'shma.
 
       Javobni FAQAT quyidagi JSON formatida qaytar, boshqa matn qo'shma:
       {"taskContent": "..."}""";
@@ -343,6 +348,70 @@ public class OpenAiCompatibleClient implements AiProvider {
         .body(requestBody)
         .retrieve()
         .body(tools.jackson.databind.JsonNode.class);
+  }
+
+  /**
+   * OpenAI-compatible embeddings endpoint. Batches are deliberately capped at ten because the
+   * configured DashScope-compatible default accepts at most ten text rows per call; other providers
+   * normally accept this conservative batch size too.
+   */
+  @Override
+  @CircuitBreaker(name = "aiProvider", fallbackMethod = "embedDocumentsFallback")
+  public List<float[]> embedDocuments(List<String> texts) {
+    if (texts == null || texts.isEmpty()) {
+      return List.of();
+    }
+    if (texts.size() > 10) {
+      throw new IllegalArgumentException("Embedding batch may contain at most 10 texts");
+    }
+    tools.jackson.databind.JsonNode response =
+        restClient
+            .post()
+            .uri(properties.baseUrl() + "/embeddings")
+            .header("Authorization", "Bearer " + properties.apiKey())
+            .body(
+                Map.of(
+                    "model", properties.modelEmbedding(),
+                    "input", texts,
+                    "dimensions", properties.embeddingDimensions()))
+            .retrieve()
+            .body(tools.jackson.databind.JsonNode.class);
+    List<float[]> vectors = new ArrayList<>();
+    for (tools.jackson.databind.JsonNode item : response.path("data")) {
+      vectors.add(toFloatVector(item.path("embedding")));
+    }
+    if (vectors.size() != texts.size()) {
+      throw new AiProviderUnavailableException(
+          "AI provider returned incomplete embedding data", null);
+    }
+    return vectors;
+  }
+
+  @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
+  private List<float[]> embedDocumentsFallback(List<String> texts, Throwable cause) {
+    throw new AiProviderUnavailableException("AI provider embeddings unavailable", cause);
+  }
+
+  @Override
+  public float[] embedQuery(String text) {
+    return embedDocuments(List.of(text)).getFirst();
+  }
+
+  private float[] toFloatVector(tools.jackson.databind.JsonNode embedding) {
+    if (!embedding.isArray() || embedding.isEmpty()) {
+      throw new AiProviderUnavailableException("AI provider returned an empty embedding", null);
+    }
+    if (embedding.size() != properties.embeddingDimensions()) {
+      throw new AiProviderUnavailableException(
+          "AI provider returned %d embedding dimensions; expected %d"
+              .formatted(embedding.size(), properties.embeddingDimensions()),
+          null);
+    }
+    float[] values = new float[embedding.size()];
+    for (int index = 0; index < embedding.size(); index++) {
+      values[index] = (float) embedding.get(index).asDouble();
+    }
+    return values;
   }
 
   private static String completionContent(tools.jackson.databind.JsonNode response) {

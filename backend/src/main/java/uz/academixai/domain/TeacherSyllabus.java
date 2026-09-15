@@ -17,4 +17,7 @@ public record TeacherSyllabus(
     FileType fileType,
     String extractedContent,
     boolean isProcessed,
+    SyllabusProcessingStatus processingStatus,
+    String processingError,
+    LocalDateTime processedAt,
     LocalDateTime uploadedAt) {}

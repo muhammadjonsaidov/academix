@@ -15,8 +15,13 @@ public class LegacyUniqueTaskAi implements UniqueTaskAi {
   }
 
   @Override
-  public String generate(String subjectAndGrade, String standardDescription) {
-    return provider.generateUniqueTask(subjectAndGrade, standardDescription);
+  public String generate(
+      String subjectAndGrade, String standardDescription, String syllabusContext) {
+    return provider.generateUniqueTask(
+        subjectAndGrade,
+        syllabusContext == null || syllabusContext.isBlank()
+            ? standardDescription
+            : standardDescription + "\n\nDarslikdan olingan kontekst:\n" + syllabusContext);
   }
 
   @Override

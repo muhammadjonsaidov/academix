@@ -8,24 +8,26 @@ import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import uz.academixai.domain.FileType;
 import uz.academixai.domain.TeacherSyllabus;
+import uz.academixai.infrastructure.outbox.OutboxService;
 import uz.academixai.infrastructure.persistence.TeacherSyllabusEntity;
 import uz.academixai.infrastructure.persistence.TeacherSyllabusRepository;
+import uz.academixai.infrastructure.persistence.UserRepository;
+import uz.academixai.infrastructure.queue.SyllabusIngestionMessage;
+import uz.academixai.infrastructure.queue.SyllabusIngestionQueueConfig;
 import uz.academixai.infrastructure.storage.FileStorageService;
 import uz.academixai.interfaces.web.ApiException;
 
 /**
  * academix_tz.md §1.17/§2.3 "Darslik yuklash".
  *
- * <p><b>Scope note (deliberate, see ROADMAP.md):</b> {@code extractedContent}/{@code isProcessed}
- * ("AI tomonidan chiqarilgan matn") need a text-extraction pipeline this codebase doesn't have —
- * Google Vision covers images, but PDF/DOCX text extraction needs a separate library not yet on the
- * classpath (Apache POI here is xlsx-only, from bulk-import). Deferred rather than half-built:
- * every upload lands with {@code isProcessed=false}, {@code extractedContent=null}. Lesson-plan
- * generation (Sprint 3, TZ §2.3) doesn't block on this — its request body already carries {@code
- * topic} directly from the teacher.
+ * <p>The upload is intentionally decoupled from extraction/embedding: the object and durable outbox
+ * event commit atomically, then a worker indexes it into {@code syllabus_chunks}. This keeps the
+ * teacher request fast and prevents a RabbitMQ outage from turning a real upload into a silent,
+ * permanent non-AI file.
  */
 @Service
 public class SyllabusService {
@@ -40,13 +42,21 @@ public class SyllabusService {
 
   private final TeacherSyllabusRepository repository;
   private final FileStorageService fileStorageService;
+  private final UserRepository users;
+  private final OutboxService outbox;
 
   public SyllabusService(
-      TeacherSyllabusRepository repository, FileStorageService fileStorageService) {
+      TeacherSyllabusRepository repository,
+      FileStorageService fileStorageService,
+      UserRepository users,
+      OutboxService outbox) {
     this.repository = repository;
     this.fileStorageService = fileStorageService;
+    this.users = users;
+    this.outbox = outbox;
   }
 
+  @Transactional
   public TeacherSyllabus upload(
       UUID teacherId, UUID subjectId, UUID classId, String title, MultipartFile file) {
     if (file == null || file.isEmpty()) {
@@ -79,8 +89,20 @@ public class SyllabusService {
             fileType,
             null,
             false,
+            uz.academixai.domain.SyllabusProcessingStatus.PENDING,
+            null,
+            null,
             LocalDateTime.now());
-    return repository.save(TeacherSyllabusEntity.fromDomain(syllabus)).toDomain();
+    TeacherSyllabus saved = repository.save(TeacherSyllabusEntity.fromDomain(syllabus)).toDomain();
+    outbox.enqueue(
+        users.findById(teacherId).map(user -> user.getSchoolId()).orElse(null),
+        "TeacherSyllabus",
+        saved.id(),
+        "SyllabusUploaded",
+        SyllabusIngestionQueueConfig.INGESTION_QUEUE,
+        "syllabusIngestion",
+        new SyllabusIngestionMessage(saved.id()));
+    return saved;
   }
 
   public List<TeacherSyllabus> list(UUID teacherId, UUID subjectId, UUID classId) {

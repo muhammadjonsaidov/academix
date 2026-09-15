@@ -12,6 +12,7 @@ import uz.academixai.application.port.out.ai.AiProvider;
 import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
 import uz.academixai.domain.LessonPlan;
 import uz.academixai.domain.LessonPlanContent;
+import uz.academixai.domain.SyllabusProcessingStatus;
 import uz.academixai.infrastructure.persistence.LessonPlanEntity;
 import uz.academixai.infrastructure.persistence.LessonPlanRepository;
 import uz.academixai.infrastructure.persistence.SchoolClassEntity;
@@ -43,18 +44,21 @@ public class LessonPlanService {
   private final SubjectRepository subjectRepository;
   private final SchoolClassRepository classRepository;
   private final AiProvider aiClient;
+  private final SyllabusKnowledgeService syllabusKnowledge;
 
   public LessonPlanService(
       LessonPlanRepository lessonPlanRepository,
       TeacherSyllabusRepository syllabusRepository,
       SubjectRepository subjectRepository,
       SchoolClassRepository classRepository,
-      AiProvider aiClient) {
+      AiProvider aiClient,
+      SyllabusKnowledgeService syllabusKnowledge) {
     this.lessonPlanRepository = lessonPlanRepository;
     this.syllabusRepository = syllabusRepository;
     this.subjectRepository = subjectRepository;
     this.classRepository = classRepository;
     this.aiClient = aiClient;
+    this.syllabusKnowledge = syllabusKnowledge;
   }
 
   public LessonPlan generate(
@@ -70,9 +74,34 @@ public class LessonPlanService {
                         "Darslik topilmadi.",
                         "syllabusId ni tekshiring."));
     UUID subjectId = syllabus.toDomain().subjectId();
+    if (!syllabus.getClassId().equals(classId)) {
+      throw new ApiException(
+          HttpStatus.BAD_REQUEST,
+          "ERR_SYLLABUS_CLASS_MISMATCH",
+          "Darslik tanlangan sinfga tegishli emas.",
+          "Darslik va sinfni bir xil qilib tanlang.");
+    }
+    if (syllabus.getProcessingStatus() != SyllabusProcessingStatus.READY) {
+      throw new ApiException(
+          HttpStatus.CONFLICT,
+          "ERR_SYLLABUS_NOT_READY",
+          syllabus.getProcessingStatus() == SyllabusProcessingStatus.FAILED
+              ? "Darslik AI uchun tayyorlanmadi. Uni qayta yuklang."
+              : "Darslik hali AI uchun tayyorlanmoqda.",
+          "Darslik tayyor bo'lgach qayta urinib ko'ring.");
+    }
     String subjectAndGrade = subjectAndGrade(subjectId, classId);
-
-    var content = callGenerate(subjectAndGrade, topic, syllabus.toDomain().extractedContent());
+    String groundedContext =
+        String.join(
+            "\n\n---\n\n", syllabusKnowledge.relevantForSyllabus(teacherId, syllabusId, topic, 6));
+    if (groundedContext.isBlank()) {
+      throw new ApiException(
+          HttpStatus.CONFLICT,
+          "ERR_SYLLABUS_NOT_READY",
+          "Darslikdan AI uchun kontekst topilmadi.",
+          "Darslikni qayta yuklang.");
+    }
+    var content = callGenerate(subjectAndGrade, topic, groundedContext);
 
     LessonPlan plan =
         new LessonPlan(

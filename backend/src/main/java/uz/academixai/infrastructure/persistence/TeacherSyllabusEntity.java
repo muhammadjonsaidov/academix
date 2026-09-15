@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import uz.academixai.domain.FileType;
+import uz.academixai.domain.SyllabusProcessingStatus;
 import uz.academixai.domain.TeacherSyllabus;
 
 /**
@@ -46,6 +47,16 @@ public class TeacherSyllabusEntity {
   @Column(name = "is_processed", nullable = false)
   private boolean isProcessed;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "processing_status", nullable = false)
+  private SyllabusProcessingStatus processingStatus;
+
+  @Column(name = "processing_error")
+  private String processingError;
+
+  @Column(name = "processed_at")
+  private LocalDateTime processedAt;
+
   @Column(name = "uploaded_at", nullable = false)
   private LocalDateTime uploadedAt;
 
@@ -61,6 +72,9 @@ public class TeacherSyllabusEntity {
       FileType fileType,
       String extractedContent,
       boolean isProcessed,
+      SyllabusProcessingStatus processingStatus,
+      String processingError,
+      LocalDateTime processedAt,
       LocalDateTime uploadedAt) {
     this.id = id;
     this.teacherId = teacherId;
@@ -71,6 +85,9 @@ public class TeacherSyllabusEntity {
     this.fileType = fileType;
     this.extractedContent = extractedContent;
     this.isProcessed = isProcessed;
+    this.processingStatus = processingStatus;
+    this.processingError = processingError;
+    this.processedAt = processedAt;
     this.uploadedAt = uploadedAt;
   }
 
@@ -85,6 +102,9 @@ public class TeacherSyllabusEntity {
         domain.fileType(),
         domain.extractedContent(),
         domain.isProcessed(),
+        domain.processingStatus(),
+        domain.processingError(),
+        domain.processedAt(),
         domain.uploadedAt());
   }
 
@@ -99,6 +119,9 @@ public class TeacherSyllabusEntity {
         fileType,
         extractedContent,
         isProcessed,
+        processingStatus,
+        processingError,
+        processedAt,
         uploadedAt);
   }
 
@@ -108,5 +131,45 @@ public class TeacherSyllabusEntity {
 
   public UUID getTeacherId() {
     return teacherId;
+  }
+
+  public UUID getSubjectId() {
+    return subjectId;
+  }
+
+  public UUID getClassId() {
+    return classId;
+  }
+
+  public String getFileUrl() {
+    return fileUrl;
+  }
+
+  public FileType getFileType() {
+    return fileType;
+  }
+
+  public SyllabusProcessingStatus getProcessingStatus() {
+    return processingStatus;
+  }
+
+  public void markProcessing() {
+    processingStatus = SyllabusProcessingStatus.PROCESSING;
+    processingError = null;
+  }
+
+  public void markReady(String content, LocalDateTime completedAt) {
+    extractedContent = content;
+    isProcessed = true;
+    processingStatus = SyllabusProcessingStatus.READY;
+    processingError = null;
+    processedAt = completedAt;
+  }
+
+  public void markFailed(String message) {
+    isProcessed = false;
+    processingStatus = SyllabusProcessingStatus.FAILED;
+    processingError =
+        message == null ? "Noma'lum xato" : message.substring(0, Math.min(1000, message.length()));
   }
 }

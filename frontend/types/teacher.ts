@@ -121,6 +121,7 @@ export interface GradeSubmissionRequest {
 }
 
 export type FileType = "PDF" | "DOCX" | "IMAGE";
+export type SyllabusProcessingStatus = "PENDING" | "PROCESSING" | "READY" | "FAILED";
 
 export interface Syllabus {
   id: string;
@@ -130,6 +131,9 @@ export interface Syllabus {
   fileUrl: string;
   fileType: FileType;
   isProcessed: boolean;
+  processingStatus: SyllabusProcessingStatus;
+  processingError: string | null;
+  processedAt: string | null;
   uploadedAt: string;
 }
 

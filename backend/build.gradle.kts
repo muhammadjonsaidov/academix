@@ -70,6 +70,11 @@ dependencies {
 	// Bulk import: .xlsx parsing (POST /admin/students/bulk-import/*)
 	implementation("org.apache.poi:poi-ooxml:5.5.1")
 
+	// Syllabus knowledge pipeline: extract selectable text from uploaded PDFs before chunking and
+	// embedding it. PDFBox is deliberately server-side; files are never sent to a third party just
+	// to read their text.
+	implementation("org.apache.pdfbox:pdfbox:3.0.6")
+
 	// Semester report PDFs (POST /admin/reports/generate) — LGPL, chosen over iText for licensing
 	// reasons (academix_backend_tdd.md §"Supporting tooling"). Confirmed real on Maven Central.
 	// jasperreports-pdf is a SEPARATE required module in 7.x (PDF export was split out of the core

@@ -13,6 +13,7 @@ import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.out.ClassStudentQuery;
 import uz.academixai.learning.application.port.out.HomeworkAssignmentStore;
 import uz.academixai.learning.application.port.out.StudentUniqueTaskStore;
+import uz.academixai.learning.application.port.out.SyllabusKnowledgeLookup;
 import uz.academixai.learning.application.port.out.UniqueTaskAi;
 import uz.academixai.learning.application.port.out.UniqueTaskContentValidator;
 import uz.academixai.learning.application.port.out.UniqueTaskContextLookup;
@@ -31,6 +32,7 @@ public class UniqueTaskGenerationService implements UniqueTaskGenerator {
   private final UniqueTaskContextLookup contextLookup;
   private final UniqueTaskAi ai;
   private final UniqueTaskContentValidator validator;
+  private final SyllabusKnowledgeLookup syllabusKnowledge;
 
   public UniqueTaskGenerationService(
       HomeworkAssignmentStore assignments,
@@ -38,13 +40,15 @@ public class UniqueTaskGenerationService implements UniqueTaskGenerator {
       ClassStudentQuery classStudents,
       UniqueTaskContextLookup contextLookup,
       UniqueTaskAi ai,
-      UniqueTaskContentValidator validator) {
+      UniqueTaskContentValidator validator,
+      SyllabusKnowledgeLookup syllabusKnowledge) {
     this.assignments = assignments;
     this.tasks = tasks;
     this.classStudents = classStudents;
     this.contextLookup = contextLookup;
     this.ai = ai;
     this.validator = validator;
+    this.syllabusKnowledge = syllabusKnowledge;
   }
 
   @Override
@@ -52,11 +56,18 @@ public class UniqueTaskGenerationService implements UniqueTaskGenerator {
     HomeworkAssignment assignment = requireOwnedUniqueAssignment(schoolId, teacherId, assignmentId);
     UniqueTaskContextLookup.Context context =
         contextLookup.find(assignment.subjectId(), assignment.classId());
+    String syllabusContext =
+        String.join(
+            "\n\n---\n\n",
+            syllabusKnowledge.relevantForAssignment(
+                teacherId, assignment.subjectId(), assignment.classId(), assignment.description()));
     for (UUID studentId : classStudents.studentIds(schoolId, assignment.classId())) {
       if (tasks.findByAssignmentIdAndStudentId(assignmentId, studentId).isPresent()) {
         continue;
       }
-      tasks.save(generateForStudent(assignmentId, studentId, assignment.description(), context));
+      tasks.save(
+          generateForStudent(
+              assignmentId, studentId, assignment.description(), context, syllabusContext));
     }
   }
 
@@ -64,9 +75,10 @@ public class UniqueTaskGenerationService implements UniqueTaskGenerator {
       UUID assignmentId,
       UUID studentId,
       String standardDescription,
-      UniqueTaskContextLookup.Context context) {
+      UniqueTaskContextLookup.Context context,
+      String syllabusContext) {
     for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      String generated = tryGenerateAndVerify(standardDescription, context);
+      String generated = tryGenerateAndVerify(standardDescription, context, syllabusContext);
       if (generated != null) {
         return new StudentUniqueTask(
             UUID.randomUUID(),
@@ -93,10 +105,10 @@ public class UniqueTaskGenerationService implements UniqueTaskGenerator {
   }
 
   private String tryGenerateAndVerify(
-      String standardDescription, UniqueTaskContextLookup.Context context) {
+      String standardDescription, UniqueTaskContextLookup.Context context, String syllabusContext) {
     String generated;
     try {
-      generated = ai.generate(context.subjectAndGrade(), standardDescription);
+      generated = ai.generate(context.subjectAndGrade(), standardDescription, syllabusContext);
       if (generated == null || generated.isBlank()) {
         return null;
       }
