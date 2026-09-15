@@ -101,6 +101,11 @@ management:
       enabled: false
 
 academix:
+  db:
+    # NOLOGIN BYPASSRLS role created by migration V45. TenantScope.runAsSystem enters it with
+    # SET LOCAL ROLE for the cross-tenant units of work only (login lookup, outbox publisher,
+    # scheduled sweeps). See shared/tenancy/TenantScope.
+    system-role: ${ACADEMIX_DB_SYSTEM_ROLE:academix_system}
   # CORS — frontend and backend are different origins in local dev (see CLAUDE.md
   # "Reality checks": a real browser test silently failed with zero requests reaching
   # the backend before this existed; curl doesn't enforce CORS so it went undetected).

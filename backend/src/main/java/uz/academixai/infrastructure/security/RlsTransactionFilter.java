@@ -1,6 +1,5 @@
 package uz.academixai.infrastructure.security;
 
-import jakarta.persistence.EntityManager;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,31 +8,31 @@ import java.io.IOException;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.filter.OncePerRequestFilter;
+import uz.academixai.shared.tenancy.TenantScope;
 
 /**
- * Wraps the whole request in one transaction and runs {@code SET LOCAL app.current_school_id} once
- * at its start — every downstream repository call joins that same transaction (Spring's default
- * REQUIRED propagation), so one SET LOCAL covers the whole request. See CLAUDE.md "Backend
- * architecture" for why this is enforced at the DB layer, not app-level filtering.
+ * Establishes the requesting tenant's database scope for the whole request.
  *
- * <p>Runs after {@link JwtAuthenticationFilter} so the principal is already populated. Skips
- * entirely when there's no authenticated principal or no resolved schoolId (anonymous requests, and
- * — for now — TEACHER/STUDENT/PARENT, whose schoolId resolution isn't implemented yet; see {@code
- * SchoolContextResolver}). Sprint 1 doesn't touch any RLS-scoped table, so this is safe; must be
- * revisited before the Homework epic ships.
+ * <p>Runs after {@link JwtAuthenticationFilter} so the principal (and its {@code schoolId} claim)
+ * is already populated, then hands the request to {@link TenantScope#runAsTenant}: one transaction
+ * for the entire request, with {@code app.current_school_id}/{@code app.current_user_id} applied at
+ * its start. Every repository call downstream joins that same transaction (Spring's default {@code
+ * REQUIRED} propagation), so one scope covers the request — see CLAUDE.md "Backend architecture"
+ * for why this is enforced at the database layer, not by app-level filtering.
+ *
+ * <p>Requests with no principal, or with a principal that has no school (an admin during initial
+ * setup, before a school exists) are passed through unscoped. They can only reach endpoints that
+ * never touch an RLS-scoped table; anything else fails loudly at the database rather than quietly
+ * returning another tenant's rows.
  */
 @Component
 public class RlsTransactionFilter extends OncePerRequestFilter {
 
-  private final TransactionTemplate transactionTemplate;
-  private final EntityManager entityManager;
+  private final TenantScope tenantScope;
 
-  public RlsTransactionFilter(
-      TransactionTemplate transactionTemplate, EntityManager entityManager) {
-    this.transactionTemplate = transactionTemplate;
-    this.entityManager = entityManager;
+  public RlsTransactionFilter(TenantScope tenantScope) {
+    this.tenantScope = tenantScope;
   }
 
   @Override
@@ -41,7 +40,7 @@ public class RlsTransactionFilter extends OncePerRequestFilter {
       @NonNull HttpServletRequest request,
       @NonNull HttpServletResponse response,
       @NonNull FilterChain filterChain)
-      throws ServletException, IOException {
+      throws IOException, ServletException {
     var authentication = SecurityContextHolder.getContext().getAuthentication();
     if (!(authentication != null
             && authentication.getPrincipal() instanceof AcademixPrincipal principal)
@@ -51,17 +50,10 @@ public class RlsTransactionFilter extends OncePerRequestFilter {
     }
 
     try {
-      transactionTemplate.executeWithoutResult(
-          status -> {
-            // SET LOCAL does not accept JDBC bind parameters (Postgres parses SET commands
-            // separately from normal DML) — a parameterized "SET LOCAL ... = :x" is a syntax
-            // error, confirmed by a real failing test. Safe to inline directly: schoolId is a
-            // UUID object here, not raw user input, so its toString() is always the canonical
-            // hex-and-hyphens form with no characters that could break out of the literal.
-            entityManager
-                .createNativeQuery(
-                    "SET LOCAL app.current_school_id = '" + principal.schoolId() + "'")
-                .executeUpdate();
+      tenantScope.runAsTenant(
+          principal.schoolId(),
+          principal.userId(),
+          () -> {
             try {
               filterChain.doFilter(request, response);
             } catch (IOException | ServletException e) {

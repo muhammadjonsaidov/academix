@@ -14,8 +14,16 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.academixai.infrastructure.queue.SubmissionQueueMessage;
 import uz.academixai.infrastructure.queue.SyllabusIngestionMessage;
 import uz.academixai.infrastructure.queue.TelegramNotificationMessage;
+import uz.academixai.shared.tenancy.TenantScope;
 
-/** Polls committed outbox records. A failed publish remains durable and is retried with backoff. */
+/**
+ * Polls committed outbox records. A failed publish remains durable and is retried with backoff.
+ *
+ * <p><b>Cross-tenant by definition, so it runs as the system role.</b> The dispatcher exists to
+ * sweep every tenant's unpublished events, so there is no schoolId it could be scoped to; running
+ * it unscoped against an RLS-protected {@code outbox_events} would make it silently see zero
+ * pending rows and stop all event delivery. See {@link TenantScope#runAsSystem}.
+ */
 @Component
 public class OutboxDispatcher {
 
@@ -27,17 +35,26 @@ public class OutboxDispatcher {
   private final OutboxEventRepository events;
   private final RabbitTemplate rabbitTemplate;
   private final ObjectMapper objectMapper;
+  private final TenantScope tenantScope;
 
   public OutboxDispatcher(
-      OutboxEventRepository events, RabbitTemplate rabbitTemplate, ObjectMapper objectMapper) {
+      OutboxEventRepository events,
+      RabbitTemplate rabbitTemplate,
+      ObjectMapper objectMapper,
+      TenantScope tenantScope) {
     this.events = events;
     this.rabbitTemplate = rabbitTemplate;
     this.objectMapper = objectMapper;
+    this.tenantScope = tenantScope;
   }
 
   @Scheduled(fixedDelayString = "${academix.outbox.poll-interval-ms:1000}")
   @Transactional
   public void dispatchPending() {
+    tenantScope.runAsSystem(this::dispatchPendingInSystemScope);
+  }
+
+  private void dispatchPendingInSystemScope() {
     LocalDateTime now = LocalDateTime.now();
     List<OutboxEventEntity> pending = events.lockPending(now, PageRequest.of(0, BATCH_SIZE));
     for (OutboxEventEntity event : pending) {

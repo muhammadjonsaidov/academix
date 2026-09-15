@@ -1,13 +1,11 @@
 package uz.academixai.wellbeing.infrastructure.persistence;
 
-import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.support.TransactionTemplate;
 import uz.academixai.infrastructure.persistence.AiChatMessageEntity;
 import uz.academixai.infrastructure.persistence.AiChatMessageRepository;
 import uz.academixai.infrastructure.persistence.ExamSubmissionRepository;
@@ -16,13 +14,15 @@ import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.progress.domain.XpHistoryEntry;
 import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
+import uz.academixai.shared.tenancy.TenantScope;
 import uz.academixai.wellbeing.application.port.out.BehaviorActivityLookup;
 
 /**
  * RLS-aware adapter for the activity metadata used by a scheduled Wellbeing job.
  *
- * <p>The scheduler has no request transaction, so the adapter establishes the same local school
- * scope that HTTP requests receive from the RLS filter before querying protected tables.
+ * <p>The scheduler has no request transaction, so the adapter declares the student's own tenant
+ * scope through {@link TenantScope} — the same mechanism HTTP requests receive from the RLS filter
+ * — before querying protected tables.
  */
 @Repository
 public class JpaBehaviorActivityLookup implements BehaviorActivityLookup {
@@ -32,8 +32,7 @@ public class JpaBehaviorActivityLookup implements BehaviorActivityLookup {
   private final AiChatMessageRepository chatMessages;
   private final XpHistoryRepository xpHistory;
   private final StudentProfileRepository students;
-  private final TransactionTemplate transactions;
-  private final EntityManager entityManager;
+  private final TenantScope tenantScope;
 
   public JpaBehaviorActivityLookup(
       HomeworkSubmissionRepository homeworkSubmissions,
@@ -41,25 +40,22 @@ public class JpaBehaviorActivityLookup implements BehaviorActivityLookup {
       AiChatMessageRepository chatMessages,
       XpHistoryRepository xpHistory,
       StudentProfileRepository students,
-      TransactionTemplate transactions,
-      EntityManager entityManager) {
+      TenantScope tenantScope) {
     this.homeworkSubmissions = homeworkSubmissions;
     this.examSubmissions = examSubmissions;
     this.chatMessages = chatMessages;
     this.xpHistory = xpHistory;
     this.students = students;
-    this.transactions = transactions;
-    this.entityManager = entityManager;
+    this.tenantScope = tenantScope;
   }
 
   @Override
   public Activity find(UUID schoolId, UUID studentId, LocalDateTime since, int maxChatMessages) {
     Activity snapshot =
-        transactions.execute(
-            status -> {
-              entityManager
-                  .createNativeQuery("SET LOCAL app.current_school_id = '" + schoolId + "'")
-                  .executeUpdate();
+        tenantScope.callAsTenant(
+            schoolId,
+            studentId,
+            () -> {
               List<LocalDateTime> submissionTimes = new ArrayList<>();
               homeworkSubmissions.findByStudentIdOrderBySubmittedAtDesc(studentId).stream()
                   .map(submission -> submission.toDomain().submittedAt())
