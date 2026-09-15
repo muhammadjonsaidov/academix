@@ -3,7 +3,7 @@ package uz.academixai.interfaces.web.admin;
 import java.util.List;
 import java.util.UUID;
 import uz.academixai.domain.User;
-import uz.academixai.infrastructure.persistence.ParentStudentLinkRepository.ChildRow;
+import uz.academixai.family.application.port.out.ParentLinkStore.LinkedChild;
 
 public record ParentResponse(
     UUID id,
@@ -12,12 +12,16 @@ public record ParentResponse(
     String phone,
     String email,
     boolean isActive,
-    List<LinkedChild> children) {
+    List<ChildView> children) {
 
-  public record LinkedChild(
+  /**
+   * The admin list's own view shape (the API contract), deliberately not Family's {@link
+   * LinkedChild} domain-adjacent record.
+   */
+  public record ChildView(
       UUID studentId, String firstName, String lastName, String className, String relation) {}
 
-  public static ParentResponse from(User parent, List<ChildRow> children) {
+  public static ParentResponse from(User parent, List<LinkedChild> children) {
     return new ParentResponse(
         parent.id(),
         parent.firstName(),
@@ -27,13 +31,13 @@ public record ParentResponse(
         parent.isActive(),
         children.stream()
             .map(
-                c ->
-                    new LinkedChild(
-                        c.getStudentUserId(),
-                        c.getFirstName(),
-                        c.getLastName(),
-                        c.getClassName(),
-                        c.getRelation()))
+                child ->
+                    new ChildView(
+                        child.studentUserId(),
+                        child.firstName(),
+                        child.lastName(),
+                        child.className(),
+                        child.relation().name()))
             .toList());
   }
 }

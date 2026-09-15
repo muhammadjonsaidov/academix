@@ -1,4 +1,4 @@
-package uz.academixai.application;
+package uz.academixai.family.application;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -6,15 +6,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.Role;
 import uz.academixai.domain.User;
+import uz.academixai.family.application.port.out.ParentAccountStore;
+import uz.academixai.family.application.port.out.ParentAccountStore.ParentAccount;
+import uz.academixai.family.application.port.out.ParentLinkStore;
+import uz.academixai.family.application.port.out.ParentLinkStore.LinkedChild;
 import uz.academixai.identity.application.PasswordPolicy;
-import uz.academixai.infrastructure.persistence.ParentStudentLinkRepository;
-import uz.academixai.infrastructure.persistence.ParentStudentLinkRepository.ChildRow;
-import uz.academixai.infrastructure.persistence.UserEntity;
-import uz.academixai.infrastructure.persistence.UserRepository;
 import uz.academixai.interfaces.web.ApiException;
 
 /**
@@ -42,17 +41,12 @@ import uz.academixai.interfaces.web.ApiException;
 @Service
 public class ParentManagementService {
 
-  private final UserRepository userRepository;
-  private final ParentStudentLinkRepository linkRepository;
-  private final PasswordEncoder passwordEncoder;
+  private final ParentAccountStore accounts;
+  private final ParentLinkStore links;
 
-  public ParentManagementService(
-      UserRepository userRepository,
-      ParentStudentLinkRepository linkRepository,
-      PasswordEncoder passwordEncoder) {
-    this.userRepository = userRepository;
-    this.linkRepository = linkRepository;
-    this.passwordEncoder = passwordEncoder;
+  public ParentManagementService(ParentAccountStore accounts, ParentLinkStore links) {
+    this.accounts = accounts;
+    this.links = links;
   }
 
   public User create(
@@ -69,7 +63,7 @@ public class ParentManagementService {
     // their account through the admin re-setting a password.
     requireNotBlank(password, "Boshlang'ich parol majburiy.");
     PasswordPolicy.requireValid(password);
-    if (userRepository.existsByPhone(phone)) {
+    if (accounts.existsByPhone(phone)) {
       throw new ApiException(
           HttpStatus.CONFLICT,
           "ERR_DUPLICATE_PHONE",
@@ -77,34 +71,32 @@ public class ParentManagementService {
           "Boshqa telefon raqam kiriting yoki mavjud foydalanuvchini tekshiring.");
     }
 
-    UserEntity entity =
-        new UserEntity(
-            UUID.randomUUID(),
-            firstName,
-            lastName == null ? "" : lastName,
-            phone,
-            email == null || email.isBlank() ? null : email,
-            passwordEncoder.encode(password),
-            Role.PARENT,
-            true,
-            LocalDateTime.now(),
-            null,
-            schoolId);
-    return userRepository.save(entity).toDomain();
+    return toUser(
+        accounts.save(
+            new ParentAccount(
+                UUID.randomUUID(),
+                firstName,
+                lastName == null ? "" : lastName,
+                phone,
+                email == null || email.isBlank() ? null : email,
+                accounts.encodePassword(password),
+                Role.PARENT,
+                true,
+                LocalDateTime.now(),
+                null,
+                schoolId)));
   }
 
   /** Parents of this school with their actively-linked children (may be empty). */
   public List<ParentWithChildren> list(UUID schoolId) {
-    Map<UUID, List<ChildRow>> childrenByParent =
-        linkRepository.findActiveChildrenBySchool(schoolId).stream()
-            .collect(Collectors.groupingBy(ChildRow::getParentUserId));
-    return userRepository
-        .findByRoleAndSchoolIdOrderByLastNameAscFirstNameAsc(Role.PARENT, schoolId)
-        .stream()
+    Map<UUID, List<LinkedChild>> childrenByParent =
+        links.findActiveChildrenOfSchool(schoolId).stream()
+            .collect(Collectors.groupingBy(LinkedChild::parentUserId));
+    return accounts.findParentsOfSchool(schoolId).stream()
         .map(
-            e ->
+            account ->
                 new ParentWithChildren(
-                    e.toDomain(), childrenByParent.getOrDefault(e.getId(), List.of())))
+                    toUser(account), childrenByParent.getOrDefault(account.id(), List.of())))
         .toList();
   }
 
@@ -114,15 +106,27 @@ public class ParentManagementService {
    * "linked the parent, then it vanished — was it even created?" opacity.
    */
   public ParentCheck check(String phone) {
-    UserEntity user = userRepository.findByPhone(phone).orElse(null);
-    if (user == null) {
+    ParentAccount account = accounts.findByPhone(phone).orElse(null);
+    if (account == null) {
       return new ParentCheck(false, null, null, List.of());
     }
-    List<ChildRow> children =
-        user.getRole() == Role.PARENT
-            ? linkRepository.findActiveChildrenByParent(user.getId())
-            : List.of();
-    return new ParentCheck(true, user.getRole().name(), user.toDomain(), children);
+    List<LinkedChild> children =
+        account.role() == Role.PARENT ? links.findActiveChildrenOfParent(account.id()) : List.of();
+    return new ParentCheck(true, account.role().name(), toUser(account), children);
+  }
+
+  private static User toUser(ParentAccount account) {
+    return new User(
+        account.id(),
+        account.firstName(),
+        account.lastName(),
+        account.phone(),
+        account.email(),
+        account.passwordHash(),
+        account.role(),
+        account.isActive(),
+        account.createdAt(),
+        account.lastLoginAt());
   }
 
   private void requireNotBlank(String value, String message) {
@@ -132,7 +136,7 @@ public class ParentManagementService {
     }
   }
 
-  public record ParentWithChildren(User parent, List<ChildRow> children) {}
+  public record ParentWithChildren(User parent, List<LinkedChild> children) {}
 
-  public record ParentCheck(boolean exists, String role, User user, List<ChildRow> children) {}
+  public record ParentCheck(boolean exists, String role, User user, List<LinkedChild> children) {}
 }

@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.persistence;
+package uz.academixai.family.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,8 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.DataDeletionRequest;
-import uz.academixai.domain.DeletionRequestStatus;
+import uz.academixai.family.domain.DataDeletionRequest;
+import uz.academixai.family.domain.DeletionRequestStatus;
 
 /** JPA mapping for {@code data_deletion_requests} (backend_tdd.md §4.1 table 6). */
 @Entity

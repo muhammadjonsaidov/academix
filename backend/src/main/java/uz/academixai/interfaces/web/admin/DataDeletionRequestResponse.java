@@ -2,7 +2,7 @@ package uz.academixai.interfaces.web.admin;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.DataDeletionRequest;
+import uz.academixai.family.domain.DataDeletionRequest;
 
 public record DataDeletionRequestResponse(
     UUID id,

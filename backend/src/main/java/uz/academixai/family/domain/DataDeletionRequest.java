@@ -1,4 +1,4 @@
-package uz.academixai.domain;
+package uz.academixai.family.domain;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

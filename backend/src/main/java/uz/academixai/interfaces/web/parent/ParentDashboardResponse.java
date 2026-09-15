@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.parent;
 
 import java.util.List;
-import uz.academixai.application.ParentDashboardService.Dashboard;
+import uz.academixai.family.application.ParentDashboardService.Dashboard;
 
 /** academix_tz.md §2.5 — GET /parent/dashboard, exact shape. */
 public record ParentDashboardResponse(List<ChildSummaryResponse> children) {

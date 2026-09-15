@@ -2,7 +2,7 @@ package uz.academixai.interfaces.web.admin;
 
 import java.util.List;
 import java.util.UUID;
-import uz.academixai.application.ParentManagementService.ParentCheck;
+import uz.academixai.family.application.ParentManagementService.ParentCheck;
 
 /**
  * Pre-link phone lookup (GET /admin/parents/check?phone=...) so the admin sees whether the number
@@ -15,7 +15,7 @@ public record ParentCheckResponse(
     UUID userId,
     String firstName,
     String lastName,
-    List<ParentResponse.LinkedChild> children) {
+    List<ParentResponse.ChildView> children) {
 
   public static ParentCheckResponse from(ParentCheck check) {
     if (!check.exists()) {
@@ -29,13 +29,13 @@ public record ParentCheckResponse(
         check.user().lastName(),
         check.children().stream()
             .map(
-                c ->
-                    new ParentResponse.LinkedChild(
-                        c.getStudentUserId(),
-                        c.getFirstName(),
-                        c.getLastName(),
-                        c.getClassName(),
-                        c.getRelation()))
+                child ->
+                    new ParentResponse.ChildView(
+                        child.studentUserId(),
+                        child.firstName(),
+                        child.lastName(),
+                        child.className(),
+                        child.relation().name()))
             .toList());
   }
 }

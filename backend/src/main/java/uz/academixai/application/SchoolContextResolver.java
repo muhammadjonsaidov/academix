@@ -5,8 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import uz.academixai.domain.User;
-import uz.academixai.infrastructure.persistence.ParentStudentLinkEntity;
-import uz.academixai.infrastructure.persistence.ParentStudentLinkRepository;
+import uz.academixai.family.application.port.in.ParentChildAccess;
+import uz.academixai.family.domain.ParentStudentLink;
 import uz.academixai.infrastructure.persistence.SchoolRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserRepository;
@@ -31,17 +31,17 @@ public class SchoolContextResolver {
   private final SchoolRepository schoolRepository;
   private final UserRepository userRepository;
   private final StudentProfileRepository studentProfileRepository;
-  private final ParentStudentLinkRepository parentStudentLinkRepository;
+  private final ParentChildAccess parentLinks;
 
   public SchoolContextResolver(
       SchoolRepository schoolRepository,
       UserRepository userRepository,
       StudentProfileRepository studentProfileRepository,
-      ParentStudentLinkRepository parentStudentLinkRepository) {
+      ParentChildAccess parentLinks) {
     this.schoolRepository = schoolRepository;
     this.userRepository = userRepository;
     this.studentProfileRepository = studentProfileRepository;
-    this.parentStudentLinkRepository = parentStudentLinkRepository;
+    this.parentLinks = parentLinks;
   }
 
   public Optional<UUID> resolve(User user) {
@@ -56,10 +56,10 @@ public class SchoolContextResolver {
   }
 
   private Optional<UUID> resolveParent(UUID parentUserId) {
-    return parentStudentLinkRepository.findByParentUserIdAndIsActiveTrue(parentUserId).stream()
-        .sorted(Comparator.comparing(ParentStudentLinkEntity::getId))
+    return parentLinks.childrenOf(parentUserId).stream()
+        .sorted(Comparator.comparing(ParentStudentLink::id))
         .findFirst()
-        .flatMap(link -> studentProfileRepository.findByUserId(link.getStudentUserId()))
+        .flatMap(link -> studentProfileRepository.findByUserId(link.studentUserId()))
         .map(profile -> profile.getSchoolId());
   }
 }

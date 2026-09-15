@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.persistence;
+package uz.academixai.family.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,8 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.ParentRelation;
-import uz.academixai.domain.ParentStudentLink;
+import uz.academixai.family.domain.ParentRelation;
+import uz.academixai.family.domain.ParentStudentLink;
 
 /** JPA mapping for {@code parent_student_links} (backend_tdd.md §4.1 table 6). */
 @Entity

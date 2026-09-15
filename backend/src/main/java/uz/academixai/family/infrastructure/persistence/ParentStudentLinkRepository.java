@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.persistence;
+package uz.academixai.family.infrastructure.persistence;
 
 import java.util.List;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package uz.academixai.domain;
+package uz.academixai.family.domain;
 
 public enum DeletionRequestStatus {
   PENDING,

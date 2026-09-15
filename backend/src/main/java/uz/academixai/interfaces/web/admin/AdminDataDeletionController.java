@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.DataDeletionService;
+import uz.academixai.family.application.DataDeletionService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 
 /**

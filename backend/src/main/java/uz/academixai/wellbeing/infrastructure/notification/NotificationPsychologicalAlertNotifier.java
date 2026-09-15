@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 import uz.academixai.domain.Role;
 import uz.academixai.domain.SignalSeverity;
 import uz.academixai.domain.SignalType;
-import uz.academixai.infrastructure.persistence.ParentStudentLinkEntity;
-import uz.academixai.infrastructure.persistence.ParentStudentLinkRepository;
+import uz.academixai.family.application.port.in.ParentChildAccess;
+import uz.academixai.family.domain.ParentStudentLink;
 import uz.academixai.infrastructure.persistence.SchoolClassEntity;
 import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileEntity;
@@ -31,14 +31,14 @@ public class NotificationPsychologicalAlertNotifier implements PsychologicalAler
   private static final Logger log =
       LoggerFactory.getLogger(NotificationPsychologicalAlertNotifier.class);
 
-  private final ParentStudentLinkRepository parentLinks;
+  private final ParentChildAccess parentLinks;
   private final StudentProfileRepository students;
   private final SchoolClassRepository classes;
   private final UserRepository users;
   private final NotificationService notifications;
 
   public NotificationPsychologicalAlertNotifier(
-      ParentStudentLinkRepository parentLinks,
+      ParentChildAccess parentLinks,
       StudentProfileRepository students,
       SchoolClassRepository classes,
       UserRepository users,
@@ -52,10 +52,10 @@ public class NotificationPsychologicalAlertNotifier implements PsychologicalAler
 
   @Override
   public boolean notifyParents(UUID studentId, SignalType type, SignalSeverity severity) {
-    List<ParentStudentLinkEntity> links = parentLinks.findByStudentUserIdAndIsActiveTrue(studentId);
-    for (ParentStudentLinkEntity link : links) {
+    List<ParentStudentLink> links = parentLinks.parentsOf(studentId);
+    for (ParentStudentLink link : links) {
       send(
-          link.getParentUserId(),
+          link.parentUserId(),
           "Diqqat talab qiluvchi holat",
           "Farzandingizda e'tibor talab qiluvchi holat aniqlandi. Batafsil ma'lumot uchun"
               + " maktab psixologi bilan bog'laning.",

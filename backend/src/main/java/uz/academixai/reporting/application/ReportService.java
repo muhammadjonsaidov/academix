@@ -3,6 +3,7 @@ package uz.academixai.reporting.application;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -90,6 +91,21 @@ public class ReportService {
             generatedByUserId,
             LocalDateTime.now());
     return reportRepository.save(ReportEntity.fromDomain(report)).toDomain();
+  }
+
+  /**
+   * Newest report of this type for a target, if one was generated within {@code since}.
+   *
+   * <p>Published for Family's parent-facing quarter report, which reuses a fresh report instead of
+   * asking JasperReports to rebuild an identical PDF on every page view. Family must not read
+   * Reporting's tables to answer that question, so the rule lives here.
+   */
+  public Optional<Report> findRecent(
+      UUID schoolId, ReportType type, UUID targetId, LocalDateTime since) {
+    return reportRepository
+        .findFirstByTypeAndTargetIdAndGeneratedAtAfterOrderByGeneratedAtDesc(type, targetId, since)
+        .map(ReportEntity::toDomain)
+        .filter(report -> report.schoolId().equals(schoolId));
   }
 
   public List<Report> list(UUID schoolId) {

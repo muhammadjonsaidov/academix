@@ -208,6 +208,40 @@ only on the published `PsychologistWorkspace` API; school-scoped JPA queries and
 data are adapters. This preserves every existing psychologist REST endpoint while completing the
 Wellbeing public workspace migration.
 
+`family` now owns parental access, consent and data rights:
+
+```
+family/
+  domain/                 ParentStudentLink, ParentRelation, DataDeletionRequest,
+                          DeletionRequestStatus
+  application/            ParentLinkService, ParentManagementService, ParentDashboardService,
+                          ParentReportService, DataDeletionService
+    port/in/              ParentChildAccess (published: "is this really your child")
+    port/out/             ParentLinkStore, ParentAccountStore, ChildReadModel,
+                          DeletionRequestStore, MinorDataEraser
+  infrastructure/
+    persistence/          parent_student_links and data_deletion_requests entities/repositories
+    legacy/               LegacyParentAccountStore, LegacyChildReadModel, LegacyMinorDataEraser
+```
+
+Family owns its two tables outright. Everything it needs from elsewhere goes through a published API
+or a named compatibility adapter, so nothing in `family.application` reaches into the legacy tree:
+
+- Progress and Wellbeing consume the published `ParentChildAccess` instead of Family's
+  repositories — `LegacyParentChildAccess` (Progress) and the psychological-alert notifier
+  (Wellbeing) both had direct access before.
+- Wellbeing also read Progress' `XpHistoryRepository` directly; Progress now publishes
+  `StudentXpHistory`, which that adapter consumes.
+- `LegacyParentAccountStore` is Identity's `users` table until Identity owns it, and
+  `LegacyMinorDataEraser` performs backend_tdd.md §7.6's cross-context erasure (handwriting
+  vectors, psychological evidence) until Intelligence and Wellbeing publish erasure APIs.
+- The parent-facing quarter report asks Reporting's published `ReportService.findRecent` instead of
+  querying Reporting's report table itself.
+
+`ContextBoundaryTest` enforces the shape that made this worth doing: no context may depend on
+another context's `infrastructure` package. Before this migration that rule caught one live
+violation (Wellbeing → Progress).
+
 ## Ordered implementation plan
 
 1. Complete Identity ports for token issuance, sessions, rate limiting and school-context lookup.

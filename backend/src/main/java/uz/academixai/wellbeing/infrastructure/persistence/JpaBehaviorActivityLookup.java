@@ -12,8 +12,8 @@ import uz.academixai.infrastructure.persistence.ExamSubmissionRepository;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
+import uz.academixai.progress.application.port.in.StudentXpHistory;
 import uz.academixai.progress.domain.XpHistoryEntry;
-import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 import uz.academixai.shared.tenancy.TenantScope;
 import uz.academixai.wellbeing.application.port.out.BehaviorActivityLookup;
 
@@ -30,7 +30,7 @@ public class JpaBehaviorActivityLookup implements BehaviorActivityLookup {
   private final HomeworkSubmissionRepository homeworkSubmissions;
   private final ExamSubmissionRepository examSubmissions;
   private final AiChatMessageRepository chatMessages;
-  private final XpHistoryRepository xpHistory;
+  private final StudentXpHistory xpHistory;
   private final StudentProfileRepository students;
   private final TenantScope tenantScope;
 
@@ -38,7 +38,7 @@ public class JpaBehaviorActivityLookup implements BehaviorActivityLookup {
       HomeworkSubmissionRepository homeworkSubmissions,
       ExamSubmissionRepository examSubmissions,
       AiChatMessageRepository chatMessages,
-      XpHistoryRepository xpHistory,
+      StudentXpHistory xpHistory,
       StudentProfileRepository students,
       TenantScope tenantScope) {
     this.homeworkSubmissions = homeworkSubmissions;
@@ -66,8 +66,7 @@ public class JpaBehaviorActivityLookup implements BehaviorActivityLookup {
                   .filter(time -> time.isAfter(since))
                   .forEach(submissionTimes::add);
               List<XpHistoryEntry> recentXpHistory =
-                  xpHistory.findByStudentIdOrderByOccurredAtDesc(studentId).stream()
-                      .map(entry -> entry.toDomain())
+                  xpHistory.recentOf(studentId).stream()
                       .filter(entry -> entry.occurredAt().isAfter(since))
                       .toList();
               long recentXp = recentXpHistory.stream().mapToLong(XpHistoryEntry::xp).sum();

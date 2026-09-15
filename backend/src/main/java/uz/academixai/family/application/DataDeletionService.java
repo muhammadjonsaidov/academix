@@ -1,6 +1,5 @@
-package uz.academixai.application;
+package uz.academixai.family.application;
 
-import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -10,14 +9,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.academixai.domain.DataDeletionRequest;
-import uz.academixai.domain.DeletionRequestStatus;
-import uz.academixai.infrastructure.persistence.DataDeletionRequestEntity;
-import uz.academixai.infrastructure.persistence.DataDeletionRequestRepository;
-import uz.academixai.infrastructure.persistence.ParentStudentLinkRepository;
-import uz.academixai.infrastructure.persistence.StudentProfileEntity;
-import uz.academixai.infrastructure.persistence.StudentProfileRepository;
+import uz.academixai.domain.StudentProfile;
+import uz.academixai.family.application.port.out.ChildReadModel;
+import uz.academixai.family.application.port.out.DeletionRequestStore;
+import uz.academixai.family.application.port.out.MinorDataEraser;
+import uz.academixai.family.application.port.out.ParentLinkStore;
+import uz.academixai.family.domain.DataDeletionRequest;
+import uz.academixai.family.domain.DeletionRequestStatus;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.tenancy.TenantScope;
 
 /**
  * academix_tz.md §5.6 / §7.6 — retention for minors' biometric/psychological data. Real pseudocode
@@ -31,21 +31,25 @@ import uz.academixai.interfaces.web.ApiException;
 @Service
 public class DataDeletionService {
 
-  private final DataDeletionRequestRepository requestRepository;
-  private final ParentStudentLinkRepository parentStudentLinkRepository;
-  private final StudentProfileRepository studentProfileRepository;
-  private final EntityManager entityManager;
   private static final Logger log = LoggerFactory.getLogger(DataDeletionService.class);
 
+  private final DeletionRequestStore requests;
+  private final ParentLinkStore links;
+  private final ChildReadModel children;
+  private final MinorDataEraser eraser;
+  private final TenantScope tenantScope;
+
   public DataDeletionService(
-      DataDeletionRequestRepository requestRepository,
-      ParentStudentLinkRepository parentStudentLinkRepository,
-      StudentProfileRepository studentProfileRepository,
-      EntityManager entityManager) {
-    this.requestRepository = requestRepository;
-    this.parentStudentLinkRepository = parentStudentLinkRepository;
-    this.studentProfileRepository = studentProfileRepository;
-    this.entityManager = entityManager;
+      DeletionRequestStore requests,
+      ParentLinkStore links,
+      ChildReadModel children,
+      MinorDataEraser eraser,
+      TenantScope tenantScope) {
+    this.requests = requests;
+    this.links = links;
+    this.children = children;
+    this.eraser = eraser;
+    this.tenantScope = tenantScope;
   }
 
   /**
@@ -53,22 +57,19 @@ public class DataDeletionService {
    * student isActive=false" (read as {@code student_profiles.is_active} — a student who has left
    * the school, e.g. graduated/transferred, not a currently-enrolled one). Unblocks Sprint 7's
    * deferred gap now that {@code parent_student_links} exists to verify "is this really your child"
-   * before accepting the request.
+   * before accepting a request.
    */
   public DataDeletionRequest requestDeletion(UUID parentUserId, UUID studentId) {
-    boolean isLinked =
-        parentStudentLinkRepository.existsByParentUserIdAndStudentUserIdAndIsActiveTrue(
-            parentUserId, studentId);
-    if (!isLinked) {
+    if (!links.existsActive(parentUserId, studentId)) {
       throw new ApiException(
           HttpStatus.FORBIDDEN,
           "ERR_ACCESS_DENIED",
           "Bu farzandingiz emas.",
           "Faqat o'zingizga bog'langan farzandlar uchun so'rov yuborishingiz mumkin.");
     }
-    StudentProfileEntity profile =
-        studentProfileRepository
-            .findByUserId(studentId)
+    StudentProfile profile =
+        children
+            .profile(studentId)
             .orElseThrow(
                 () ->
                     new ApiException(
@@ -84,24 +85,19 @@ public class DataDeletionService {
           "O'quvchi maktabni tark etgandan so'ng qayta urinib ko'ring.");
     }
 
-    DataDeletionRequest request =
+    return requests.save(
         new DataDeletionRequest(
             UUID.randomUUID(),
-            profile.getSchoolId(),
+            profile.schoolId(),
             studentId,
             parentUserId,
             DeletionRequestStatus.PENDING,
             LocalDateTime.now(),
-            null);
-    return requestRepository.save(DataDeletionRequestEntity.fromDomain(request)).toDomain();
+            null));
   }
 
   public List<DataDeletionRequest> listPending(UUID schoolId) {
-    return requestRepository
-        .findBySchoolIdAndStatusOrderByRequestedAtDesc(schoolId, DeletionRequestStatus.PENDING)
-        .stream()
-        .map(DataDeletionRequestEntity::toDomain)
-        .toList();
+    return requests.findPendingOfSchool(schoolId);
   }
 
   /**
@@ -115,9 +111,9 @@ public class DataDeletionService {
   // UnexpectedRollbackException 500 instead of the intended 404 (confirmed by a real test run).
   @Transactional(noRollbackFor = ApiException.class)
   public DataDeletionRequest approveDataDeletion(UUID schoolId, UUID requestId) {
-    DataDeletionRequestEntity entity =
-        requestRepository
-            .findByIdAndSchoolId(requestId, schoolId)
+    DataDeletionRequest request =
+        requests
+            .findByIdInSchool(requestId, schoolId)
             .orElseThrow(
                 () ->
                     new ApiException(
@@ -125,42 +121,31 @@ public class DataDeletionService {
                         "ERR_NOT_FOUND",
                         "So'rov topilmadi.",
                         "ID ni tekshiring."));
-    UUID studentId = entity.getStudentId();
 
-    entityManager
-        .createNativeQuery(
-            "UPDATE handwriting_profiles SET feature_vector = NULL, is_reliable = FALSE WHERE student_id = :studentId")
-        .setParameter("studentId", studentId)
-        .executeUpdate();
-    entityManager
-        .createNativeQuery(
-            "UPDATE psychological_signals SET raw_evidence = NULL, description = NULL WHERE student_id = :studentId")
-        .setParameter("studentId", studentId)
-        .executeUpdate();
+    eraser.eraseHandwritingProfile(request.studentId());
+    eraser.erasePsychologicalEvidence(request.studentId());
 
-    DataDeletionRequest domain = entity.toDomain();
-    DataDeletionRequest approved =
+    return requests.save(
         new DataDeletionRequest(
-            domain.id(),
-            domain.schoolId(),
-            domain.studentId(),
-            domain.requestedBy(),
+            request.id(),
+            request.schoolId(),
+            request.studentId(),
+            request.requestedBy(),
             DeletionRequestStatus.APPROVED,
-            domain.requestedAt(),
-            LocalDateTime.now());
-    return requestRepository.save(DataDeletionRequestEntity.fromDomain(approved)).toDomain();
+            request.requestedAt(),
+            LocalDateTime.now()));
   }
 
-  // Scheduled, oyiga bir marta — resolved signal 2 yildan eski bo'lsa anonimlashtiriladi.
+  /**
+   * Monthly retention job: a resolved signal older than two years loses its evidence. Cross-tenant
+   * by definition — it sweeps every school in one statement — so it runs as the system role rather
+   * than pretending to be scoped (and so it keeps working once Wellbeing's signals table is
+   * RLS-protected).
+   */
   @Scheduled(cron = "0 0 3 1 * *")
   @Transactional
   public void anonymizeOldResolvedSignals() {
-    int updated =
-        entityManager
-            .createNativeQuery(
-                "UPDATE psychological_signals SET description = NULL, raw_evidence = NULL"
-                    + " WHERE resolved = TRUE AND resolved_at < NOW() - INTERVAL '2 years'")
-            .executeUpdate();
+    int updated = tenantScope.callAsSystem(eraser::anonymizeResolvedSignalsOlderThanTwoYears);
     log.info("Monthly psychological-signal anonymization: {} rows anonymized", updated);
   }
 }

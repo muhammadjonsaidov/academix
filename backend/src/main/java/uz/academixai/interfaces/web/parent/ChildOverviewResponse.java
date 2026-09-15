@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.parent;
 
 import java.util.List;
-import uz.academixai.application.ParentDashboardService.ChildOverview;
+import uz.academixai.family.application.ParentDashboardService.ChildOverview;
 import uz.academixai.learning.application.port.in.StudentHomeworkQuery.HomeworkItem;
 
 /** Response shape is a deviation — §2.5 gives the endpoint path, not the body. */

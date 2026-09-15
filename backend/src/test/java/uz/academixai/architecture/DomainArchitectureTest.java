@@ -97,6 +97,16 @@ class DomainArchitectureTest {
           .because("Intelligence policies must depend on provider and configuration ports");
 
   @ArchTest
+  static final ArchRule familyApplicationMustDependOnPortsNotInfrastructure =
+      noClasses()
+          .that()
+          .resideInAnyPackage("uz.academixai.family.application..")
+          .should()
+          .dependOnClassesThat()
+          .resideInAnyPackage("uz.academixai.infrastructure..", "uz.academixai.application..")
+          .because("Family use cases must depend on ports, not technical adapters");
+
+  @ArchTest
   static final ArchRule wellbeingApplicationMustDependOnPortsNotInfrastructure =
       noClasses()
           .that()
