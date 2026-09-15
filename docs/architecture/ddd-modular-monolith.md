@@ -279,6 +279,28 @@ Still legacy and next in line:
   should become School's published membership query, after which Identity's `SchoolContextLookup`
   port is implemented by School instead of by a legacy adapter.
 
+School also owns membership resolution now, which closes the ordered plan's first item:
+
+```
+school/
+  application/port/in/    TeacherAccess, SchoolMembership (published)
+  application/            ... SchoolMembershipService
+  infrastructure/legacy/  LegacyMembershipLookup (schools.admin_id, users.school_id,
+                          student_profiles.school_id)
+```
+
+`SchoolMembership.schoolOf(userId, role)` replaces the legacy `application.SchoolContextResolver`
+(ADMIN via `schools.admin_id`, TEACHER/PSYCHOLOGIST via `users.school_id`, STUDENT via the profile,
+PARENT via Family's published `ParentChildAccess` — first link by id, unchanged). Identity's
+transitional `LegacySchoolContextLookup` is gone: `SchoolMembershipContextLookup` now implements
+Identity's `SchoolContextLookup` port against School's published API, so **Identity no longer
+depends on the legacy application package at all**.
+
+The system scope for that pre-authentication read stays in the Identity adapter, deliberately: it
+runs before any tenant is known, and keeping the role switch at the pre-auth boundary is what stops
+a future request-scoped caller of `SchoolMembership` from lifting RLS for the rest of its
+transaction (documented on the port).
+
 ## Ordered implementation plan
 
 1. Complete Identity ports for token issuance, sessions, rate limiting and school-context lookup.

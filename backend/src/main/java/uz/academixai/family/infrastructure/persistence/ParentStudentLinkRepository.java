@@ -22,7 +22,7 @@ public interface ParentStudentLinkRepository extends JpaRepository<ParentStudent
   /**
    * Joined child view for the admin parents list/check (GET /admin/parents) — links carry no
    * school_id by design (V34), so school scoping goes through the linked student's profile, the
-   * same join {@code SchoolContextResolver} uses.
+   * same join School's membership lookup uses.
    */
   interface ChildRow {
     UUID getParentUserId();

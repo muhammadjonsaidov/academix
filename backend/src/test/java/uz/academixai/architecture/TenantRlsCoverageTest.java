@@ -202,7 +202,7 @@ class TenantRlsCoverageTest {
             + "TenantScope.runAsSystem for that narrow indexed lookup.");
     pending.put(
         "schools",
-        "Same bootstrap as users: SchoolContextResolver reads schools.admin_id before a tenant is "
+        "Same bootstrap as users: School's membership lookup reads schools.admin_id before a tenant is "
             + "known. Revisit together with a dedicated pre-auth access path.");
     pending.put(
         "school_classes",

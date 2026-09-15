@@ -19,8 +19,8 @@ import uz.academixai.progress.application.port.in.StudentDashboard.RecentGrade;
  *
  * <p>Authorization: every method asks Family's published {@link ParentChildAccess} rather than
  * comparing school IDs — a parent's JWT {@code schoolId} claim collapses to their first linked
- * child (see {@code SchoolContextResolver}), which would incorrectly deny access to a second child
- * at a different school; the link itself is the real authorization boundary here.
+ * child (see {@code SchoolMembership}), which would incorrectly deny access to a second child at a
+ * different school; the link itself is the real authorization boundary here.
  *
  * <p>Reads come from {@link ChildReadModel} (the query side) and Learning's published homework
  * query; this use case holds no persistence of its own, so it never sees another context's tables.
