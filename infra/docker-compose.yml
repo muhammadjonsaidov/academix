@@ -78,7 +78,12 @@ services:
     # SEAWEEDFS_ACCESS_KEY/SECRET_KEY defaults (see application.yml) via seaweedfs-config/s3-config.json.
     # Production substitutes a host-generated, permission-restricted config through
     # SEAWEEDFS_CONFIG_FILE; local development keeps the checked-in dev config.
-    command: server -s3 -s3.config=/etc/seaweedfs/s3-config.json -dir=/data
+    # Keep enough logical volumes available for the S3 bucket collection. Without an explicit
+    # limit SeaweedFS derives a small pool from free disk space; it consumed that pool with
+    # unscoped bootstrap volumes and then rejected every `homeworks` object upload with 500.
+    # This is a logical-volume cap, not preallocated disk space; actual storage remains bounded
+    # by the host filesystem and must be monitored.
+    command: server -s3 -s3.config=/etc/seaweedfs/s3-config.json -dir=/data -volume.max=${SEAWEEDFS_VOLUME_MAX:-8}
     ports:
       - "8333:8333" # S3 API
       - "9333:9333" # master UI
