@@ -12,24 +12,25 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.PsychologistManagementService;
+import uz.academixai.domain.Role;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.school.application.StaffManagementService;
 
-/** Deviation, judgment call — see PsychologistManagementService. Mirrors AdminTeacherController. */
+/** Deviation, judgment call — see StaffManagementService. Mirrors AdminTeacherController. */
 @RestController
 @RequestMapping("/api/v1/admin/psychologists")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminPsychologistController {
 
-  private final PsychologistManagementService psychologistService;
+  private final StaffManagementService staffService;
 
-  public AdminPsychologistController(PsychologistManagementService psychologistService) {
-    this.psychologistService = psychologistService;
+  public AdminPsychologistController(StaffManagementService staffService) {
+    this.staffService = staffService;
   }
 
   @GetMapping
   public List<PsychologistResponse> list(@AuthenticationPrincipal AcademixPrincipal principal) {
-    return psychologistService.list(principal.schoolId()).stream()
+    return staffService.list(principal.schoolId(), Role.PSYCHOLOGIST).stream()
         .map(PsychologistResponse::from)
         .toList();
   }
@@ -39,8 +40,9 @@ public class AdminPsychologistController {
       @AuthenticationPrincipal AcademixPrincipal principal,
       @RequestBody InvitePsychologistRequest request) {
     var invited =
-        psychologistService.invite(
+        staffService.invite(
             principal.schoolId(),
+            Role.PSYCHOLOGIST,
             request.phone(),
             request.firstName(),
             request.lastName(),
@@ -53,13 +55,13 @@ public class AdminPsychologistController {
   public PsychologistResponse activate(
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID psychologistId) {
     return PsychologistResponse.from(
-        psychologistService.activate(principal.schoolId(), psychologistId));
+        staffService.activate(principal.schoolId(), Role.PSYCHOLOGIST, psychologistId));
   }
 
   @PutMapping("/{psychologistId}/deactivate")
   public PsychologistResponse deactivate(
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID psychologistId) {
     return PsychologistResponse.from(
-        psychologistService.deactivate(principal.schoolId(), psychologistId));
+        staffService.deactivate(principal.schoolId(), Role.PSYCHOLOGIST, psychologistId));
   }
 }

@@ -242,6 +242,43 @@ or a named compatibility adapter, so nothing in `family.application` reaches int
 another context's `infrastructure` package. Before this migration that rule caught one live
 violation (Wellbeing → Progress).
 
+`school` now owns staff and student membership as well as the academic structure:
+
+```
+school/
+  application/            ClassAdministrationService, SchoolAdministrationService,
+                          SubjectCatalogService, TeacherAccessQueryService,
+                          TeacherAssignmentAdministrationService,
+                          StudentManagementService, StaffManagementService
+    port/in/              TeacherAccess (published)
+    port/out/             ClassAdministrationRepository, SchoolAdministrationRepository,
+                          SubjectCatalogRepository, TeacherAccessReadRepository,
+                          TeacherAssignmentQuery, TeacherAssignmentRepository, TeacherDirectory,
+                          MemberAccountStore, StudentStore, ClassLookup
+  infrastructure/
+    identity/             JpaTeacherDirectory
+    persistence/          class, school, subject, assignment and teacher-access adapters
+    legacy/               LegacyMemberAccountStore, LegacyStudentStore, LegacyClassLookup
+```
+
+`TeacherManagementService` and `PsychologistManagementService` were byte-identical apart from the
+`Role` constant and the error strings; they are now one role-parameterised
+`StaffManagementService`, so a third staff role is a constant rather than a second copy.
+`StudentManagementService` moved with three ports (`MemberAccountStore`, `StudentStore`,
+`ClassLookup`) implemented by named legacy adapters — the `users` and `student_profiles` tables
+still live in the legacy persistence package, and `ParentAccountStore` in Family is the same
+transitional shape for parents: Identity owns accounts, so one published account API will
+eventually replace both.
+
+Still legacy and next in line:
+
+- `BulkImportService` (Excel roster import — needs ports over the parser, temp file store and
+  `import_column_mappings`).
+- School membership resolution: `application/SchoolContextResolver` plus Identity's transitional
+  `LegacySchoolContextLookup` are what the ordered plan calls out as "school-context lookup". They
+  should become School's published membership query, after which Identity's `SchoolContextLookup`
+  port is implemented by School instead of by a legacy adapter.
+
 ## Ordered implementation plan
 
 1. Complete Identity ports for token issuance, sessions, rate limiting and school-context lookup.
