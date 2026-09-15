@@ -9,5 +9,7 @@ public record OpenAiCompatibleProperties(
     String baseUrl,
     String modelText,
     String modelVision,
+    String embeddingApiKey,
+    String embeddingBaseUrl,
     String modelEmbedding,
     int embeddingDimensions) {}

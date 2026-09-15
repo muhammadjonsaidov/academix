@@ -122,9 +122,13 @@ services:
       SEAWEEDFS_BUCKET: ${SEAWEEDFS_BUCKET:-homeworks}
       # Real AI/email/telegram keys — app degrades gracefully without them
       AI_API_KEY: ${AI_API_KEY:-${QWEN_API_KEY:-}}
-      AI_BASE_URL: ${AI_BASE_URL:-${QWEN_BASE_URL:-https://dashscope-intl.aliyuncs.com/compatible-mode/v1}}
-      AI_MODEL_TEXT: ${AI_MODEL_TEXT:-${QWEN_MODEL_TEXT:-qwen3.7-max}}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.deepseek.com/}
+      AI_MODEL_TEXT: ${AI_MODEL_TEXT:-deepseek-flash}
       AI_MODEL_VISION: ${AI_MODEL_VISION:-${QWEN_MODEL_VISION:-qwen3.7-plus}}
+      # Embeddings use their own provider credentials: changing Qwen retrieval must never switch
+      # the chat/lesson-plan provider away from DeepSeek.
+      AI_EMBEDDING_API_KEY: ${AI_EMBEDDING_API_KEY:-${QWEN_EMBEDDING_API_KEY:-}}
+      AI_EMBEDDING_BASE_URL: ${AI_EMBEDDING_BASE_URL:-${QWEN_EMBEDDING_BASE_URL:-https://dashscope-intl.aliyuncs.com/compatible-mode/v1}}
       AI_MODEL_EMBEDDING: ${AI_MODEL_EMBEDDING:-${QWEN_MODEL_EMBEDDING:-qwen3.7-text-embedding}}
       AI_EMBEDDING_DIMENSIONS: ${AI_EMBEDDING_DIMENSIONS:-${QWEN_EMBEDDING_DIMENSIONS:-1024}}
       # Temporary compatibility with existing deployments. New environments should use AI_* only.
@@ -132,6 +136,8 @@ services:
       QWEN_BASE_URL: ${QWEN_BASE_URL:-}
       QWEN_MODEL_TEXT: ${QWEN_MODEL_TEXT:-}
       QWEN_MODEL_VISION: ${QWEN_MODEL_VISION:-}
+      QWEN_EMBEDDING_API_KEY: ${QWEN_EMBEDDING_API_KEY:-}
+      QWEN_EMBEDDING_BASE_URL: ${QWEN_EMBEDDING_BASE_URL:-}
       QWEN_MODEL_EMBEDDING: ${QWEN_MODEL_EMBEDDING:-}
       QWEN_EMBEDDING_DIMENSIONS: ${QWEN_EMBEDDING_DIMENSIONS:-}
       GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-}

@@ -131,11 +131,13 @@ academix:
       # AI_* names are provider-neutral. QWEN_* fallbacks preserve existing deployments during
       # migration; remove them from the production .env after switching successfully.
       api-key: ${AI_API_KEY:${QWEN_API_KEY:}}
-      base-url: ${AI_BASE_URL:${QWEN_BASE_URL:https://dashscope-intl.aliyuncs.com/compatible-mode/v1}}
-      model-text: ${AI_MODEL_TEXT:${QWEN_MODEL_TEXT:qwen3.7-max}}
+      base-url: ${AI_BASE_URL:https://api.deepseek.com/}
+      model-text: ${AI_MODEL_TEXT:deepseek-flash}
       model-vision: ${AI_MODEL_VISION:${QWEN_MODEL_VISION:qwen3.7-plus}}
       # The vector column is fixed at 1024 dimensions. Keep this in sync with V44; changing it
       # requires a deliberate re-index migration, never an accidental provider-default change.
+      embedding-api-key: ${AI_EMBEDDING_API_KEY:${QWEN_EMBEDDING_API_KEY:${AI_API_KEY:}}}
+      embedding-base-url: ${AI_EMBEDDING_BASE_URL:${QWEN_EMBEDDING_BASE_URL:https://dashscope-intl.aliyuncs.com/compatible-mode/v1}}
       model-embedding: ${AI_MODEL_EMBEDDING:${QWEN_MODEL_EMBEDDING:qwen3.7-text-embedding}}
       embedding-dimensions: ${AI_EMBEDDING_DIMENSIONS:${QWEN_EMBEDDING_DIMENSIONS:1024}}
     google-vision:

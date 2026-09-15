@@ -367,8 +367,8 @@ public class OpenAiCompatibleClient implements AiProvider, EmbeddingProvider {
     tools.jackson.databind.JsonNode response =
         restClient
             .post()
-            .uri(properties.baseUrl() + "/embeddings")
-            .header("Authorization", "Bearer " + properties.apiKey())
+            .uri(properties.embeddingBaseUrl() + "/embeddings")
+            .header("Authorization", "Bearer " + properties.embeddingApiKey())
             .body(
                 Map.of(
                     "model", properties.modelEmbedding(),
