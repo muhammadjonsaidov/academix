@@ -12,7 +12,6 @@ import uz.academixai.application.port.out.ai.AiProvider;
 import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
 import uz.academixai.domain.LessonPlan;
 import uz.academixai.domain.LessonPlanContent;
-import uz.academixai.domain.SyllabusProcessingStatus;
 import uz.academixai.infrastructure.persistence.LessonPlanEntity;
 import uz.academixai.infrastructure.persistence.LessonPlanRepository;
 import uz.academixai.infrastructure.persistence.SchoolClassEntity;
@@ -22,6 +21,8 @@ import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.infrastructure.persistence.TeacherSyllabusEntity;
 import uz.academixai.infrastructure.persistence.TeacherSyllabusRepository;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.learning.application.SyllabusKnowledgeService;
+import uz.academixai.learning.domain.SyllabusProcessingStatus;
 
 /**
  * academix_tz.md §1.18/§2.3 "Dars rejasi". No AI budget gate — lesson-plan generation isn't one of

@@ -1,4 +1,4 @@
-package uz.academixai.application;
+package uz.academixai.learning.infrastructure.syllabus;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -9,12 +9,16 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.stereotype.Component;
-import uz.academixai.domain.FileType;
 import uz.academixai.infrastructure.ai.GoogleVisionClient;
+import uz.academixai.learning.application.port.out.SyllabusTextExtraction;
+import uz.academixai.learning.domain.FileType;
 
 /** Extracts source text locally where possible; OCR is used only for image uploads. */
 @Component
-public class SyllabusTextExtractor {
+public class SyllabusTextExtractor implements SyllabusTextExtraction {
+
+  // Moved out of the legacy application package on purpose: PDFBox and the OCR provider are
+  // storage/vendor concerns, and the use case only needs the port.
 
   private final GoogleVisionClient googleVisionClient;
 
@@ -22,6 +26,7 @@ public class SyllabusTextExtractor {
     this.googleVisionClient = googleVisionClient;
   }
 
+  @Override
   public String extract(FileType fileType, byte[] fileBytes) {
     try {
       return switch (fileType) {

@@ -1,4 +1,4 @@
-package uz.academixai.application;
+package uz.academixai.learning.application;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,8 +6,9 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import uz.academixai.application.port.out.ai.EmbeddingProvider;
-import uz.academixai.infrastructure.storage.FileStorageService;
+import uz.academixai.learning.application.port.out.SyllabusObjectStorage;
+import uz.academixai.learning.application.port.out.SyllabusTextExtraction;
+import uz.academixai.learning.application.port.out.TextEmbeddings;
 
 /**
  * Orchestrates file download, extraction, chunking and vector indexing outside the HTTP request.
@@ -19,17 +20,17 @@ public class SyllabusIngestionService {
   private static final int EMBEDDING_BATCH_SIZE = 10;
 
   private final SyllabusIngestionStateService state;
-  private final FileStorageService storage;
-  private final SyllabusTextExtractor extractor;
+  private final SyllabusObjectStorage storage;
+  private final SyllabusTextExtraction extractor;
   private final SyllabusChunker chunker;
-  private final EmbeddingProvider embeddings;
+  private final TextEmbeddings embeddings;
 
   public SyllabusIngestionService(
       SyllabusIngestionStateService state,
-      FileStorageService storage,
-      SyllabusTextExtractor extractor,
+      SyllabusObjectStorage storage,
+      SyllabusTextExtraction extractor,
       SyllabusChunker chunker,
-      EmbeddingProvider embeddings) {
+      TextEmbeddings embeddings) {
     this.state = state;
     this.storage = storage;
     this.extractor = extractor;

@@ -2,9 +2,9 @@ package uz.academixai.interfaces.web.teacher;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.FileType;
-import uz.academixai.domain.SyllabusProcessingStatus;
-import uz.academixai.domain.TeacherSyllabus;
+import uz.academixai.learning.domain.FileType;
+import uz.academixai.learning.domain.SyllabusProcessingStatus;
+import uz.academixai.learning.domain.TeacherSyllabus;
 
 public record SyllabusResponse(
     UUID id,

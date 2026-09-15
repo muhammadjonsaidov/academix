@@ -1,4 +1,4 @@
-package uz.academixai.domain;
+package uz.academixai.learning.domain;
 
 /** Lifecycle of the asynchronous syllabus-to-knowledge-base pipeline. */
 public enum SyllabusProcessingStatus {

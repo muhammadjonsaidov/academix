@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import uz.academixai.application.SyllabusService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.learning.application.SyllabusService;
 
 /** academix_tz.md §2.3 "Darslik yuklash" — exact contract, don't drift path/shape from spec. */
 @RestController
@@ -36,7 +36,12 @@ public class SyllabusController {
       @RequestPart("title") String title) {
     var syllabus =
         syllabusService.upload(
-            principal.userId(), UUID.fromString(subjectId), UUID.fromString(classId), title, file);
+            principal.schoolId(),
+            principal.userId(),
+            UUID.fromString(subjectId),
+            UUID.fromString(classId),
+            title,
+            file);
     return SyllabusResponse.from(syllabus);
   }
 

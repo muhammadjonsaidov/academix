@@ -247,8 +247,9 @@ class TenantRlsCoverageTest {
             + "the column must be backfilled from student_profiles.");
     pending.put(
         "teacher_syllabuses",
-        "Teacher-keyed: the syllabus ingestion worker consumes a queue message that carries no "
-            + "schoolId, so it cannot scope itself yet. Add schoolId to the message first.");
+        "Teacher-keyed with no school_id: the ingestion worker now runs in the uploading "
+            + "teacher's tenant scope (the queue message carries the school), so the remaining "
+            + "work is the column backfill and the insert path, not the scope.");
     pending.put(
         "lesson_plans",
         "Teacher-keyed, and generated from a syllabus through the same ingestion pipeline.");
@@ -262,8 +263,9 @@ class TenantRlsCoverageTest {
             + "path already knows the assignment.");
     pending.put(
         "syllabus_chunks",
-        "Newest tenant data (V44) and the only tenant table with no school_id at all — it derives "
-            + "scope through teacher_syllabuses, so it must be backfilled alongside it.");
+        "Newest tenant data (V44) and the only tenant table with no school_id at all — chunks "
+            + "derive their tenant through teacher_syllabuses, so the two must be backfilled "
+            + "together. The writer is already scoped.");
     pending.put(
         "reports",
         "Has school_id, but ParentReportService reads it outside a tenant scope; that caller must "

@@ -301,6 +301,42 @@ runs before any tenant is known, and keeping the role switch at the pre-auth bou
 a future request-scoped caller of `SchoolMembership` from lifting RLS for the rest of its
 transaction (documented on the port).
 
+`learning` now owns the syllabus knowledge pipeline as well as assignments, submissions, exams
+and grading:
+
+```
+learning/
+  domain/                 TeacherSyllabus, SyllabusProcessingStatus, FileType
+  application/            SyllabusService, SyllabusIngestionService,
+                          SyllabusIngestionStateService, SyllabusKnowledgeService, SyllabusChunker
+    port/out/             SyllabusStore, SyllabusKnowledgeStore, SyllabusTextExtraction,
+                          SyllabusObjectStorage, TextEmbeddings, SyllabusIngestionPublisher
+  infrastructure/
+    persistence/          JpaSyllabusStore, JdbcSyllabusKnowledgeStore (pgvector SQL)
+    syllabus/             SyllabusTextExtractor (PDFBox/DOCX, OCR through Intelligence)
+    storage/              LegacySyllabusObjectStorage
+    ai/                   LegacyTextEmbeddings
+    messaging/            OutboxSyllabusIngestionPublisher
+```
+
+Two things this slice fixed beyond the package move:
+
+- **The ingestion worker is tenant-scoped.** `SyllabusIngestionMessage` now carries the school and
+  the listener runs the work through `TenantScope.runAsTenant` — this was the second of the two
+  blockers listed under tenancy, and the reason `teacher_syllabuses`/`syllabus_chunks` could not be
+  policy-protected. Only the `school_id` backfill remains for those two tables.
+- **`SyllabusService` no longer reads the users table.** The upload takes `schoolId` from the
+  caller's principal instead of looking it up by teacher, so the use case has no Identity
+  dependency at all.
+
+`syllabus_chunks` SQL stays native in `JdbcSyllabusKnowledgeStore` on purpose: the `<=>` cosine
+operator and the `vector` cast are pgvector syntax, not JPA. `SyllabusKnowledgeService` implements
+Learning's own `SyllabusKnowledgeLookup` port, so the anti-corruption adapter between two classes of
+the same context is gone.
+
+Still legacy in Learning: `LessonPlanService`, `GradingCriteriaService` (with the
+`LessonPlan`/`LessonPlanContent`/`SubjectGradingCriteria` domain types) — Slice B.
+
 ## Ordered implementation plan
 
 1. Complete Identity ports for token issuance, sessions, rate limiting and school-context lookup.

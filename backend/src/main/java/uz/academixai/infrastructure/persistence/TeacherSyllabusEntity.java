@@ -8,9 +8,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.FileType;
-import uz.academixai.domain.SyllabusProcessingStatus;
-import uz.academixai.domain.TeacherSyllabus;
+import uz.academixai.learning.domain.FileType;
+import uz.academixai.learning.domain.SyllabusProcessingStatus;
+import uz.academixai.learning.domain.TeacherSyllabus;
 
 /**
  * JPA mapping for {@code teacher_syllabuses} (TZ §1.17, migration V15 — missing from

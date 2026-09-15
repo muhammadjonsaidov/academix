@@ -1,4 +1,4 @@
-package uz.academixai.application;
+package uz.academixai.learning.application;
 
 import java.util.ArrayList;
 import java.util.List;
