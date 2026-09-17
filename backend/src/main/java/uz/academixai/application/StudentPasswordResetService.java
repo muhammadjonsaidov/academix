@@ -16,7 +16,7 @@ import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * academix_tz.md §2.1 — class-teacher-assisted STUDENT password reset. Students have no {@code

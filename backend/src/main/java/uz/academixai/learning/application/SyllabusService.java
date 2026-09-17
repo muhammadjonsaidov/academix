@@ -10,13 +10,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.out.SyllabusIngestionPublisher;
 import uz.academixai.learning.application.port.out.SyllabusObjectStorage;
 import uz.academixai.learning.application.port.out.SyllabusStore;
 import uz.academixai.learning.domain.FileType;
 import uz.academixai.learning.domain.SyllabusProcessingStatus;
 import uz.academixai.learning.domain.TeacherSyllabus;
+import uz.academixai.shared.error.ApiException;
 
 /** academix_tz.md §2.6 "Darslik" — teacher uploads, lists and fetches syllabuses. */
 @Service

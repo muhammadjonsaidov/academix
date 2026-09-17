@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * Exercises {@link ClamAvScanner} against a stub clamd speaking the real INSTREAM wire protocol,

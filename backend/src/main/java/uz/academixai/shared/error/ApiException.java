@@ -1,4 +1,4 @@
-package uz.academixai.interfaces.web;
+package uz.academixai.shared.error;
 
 import org.springframework.http.HttpStatus;
 

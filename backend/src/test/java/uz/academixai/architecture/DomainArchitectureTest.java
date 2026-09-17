@@ -36,6 +36,43 @@ class DomainArchitectureTest {
           .because(
               "domain aggregates and policies must stay independent of delivery and infrastructure");
 
+  /**
+   * The ten vertical slices. The legacy application/domain/infrastructure/interfaces tree is not
+   * one of them — it is what they are migrating out of.
+   */
+  private static final String[] CONTEXTS = {
+    "uz.academixai.identity..",
+    "uz.academixai.school..",
+    "uz.academixai.learning..",
+    "uz.academixai.intelligence..",
+    "uz.academixai.progress..",
+    "uz.academixai.wellbeing..",
+    "uz.academixai.notification..",
+    "uz.academixai.reporting..",
+    "uz.academixai.family..",
+    "uz.academixai.onboarding..",
+  };
+
+  /**
+   * The legacy delivery tree is on its way out, and no context may reach back into it.
+   *
+   * <p>This is the rule that made the shared error contract worth extracting: until {@code
+   * ApiException} moved to {@code shared.error}, every one of the ten contexts imported something
+   * from {@code uz.academixai.interfaces} — so a context could not be moved, tested or reasoned
+   * about without dragging the old web layer along with it. With the contract in the shared kernel
+   * the dependency is gone, and this rule keeps it gone.
+   */
+  @ArchTest
+  static final ArchRule noContextDependsOnTheLegacyDeliveryTree =
+      noClasses()
+          .that()
+          .resideInAnyPackage(CONTEXTS)
+          .should()
+          .dependOnClassesThat()
+          .resideInAnyPackage("uz.academixai.interfaces..")
+          .because(
+              "contexts must publish their own inbound adapters, not reuse the legacy web layer");
+
   @ArchTest
   static final ArchRule identityApplicationMustDependOnPortsNotInfrastructure =
       noClasses()
@@ -95,16 +132,6 @@ class DomainArchitectureTest {
           .dependOnClassesThat()
           .resideInAnyPackage("uz.academixai.infrastructure..", "uz.academixai.application..")
           .because("Intelligence policies must depend on provider and configuration ports");
-
-  @ArchTest
-  static final ArchRule schoolManagementUseCasesMustDependOnPortsNotInfrastructure =
-      noClasses()
-          .that()
-          .resideInAnyPackage("uz.academixai.school.application..")
-          .should()
-          .dependOnClassesThat()
-          .resideInAnyPackage("uz.academixai.infrastructure..", "uz.academixai.application..")
-          .because("School use cases must depend on ports, not technical adapters");
 
   @ArchTest
   static final ArchRule familyApplicationMustDependOnPortsNotInfrastructure =

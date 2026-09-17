@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * academix_tz.md §5.2 / backend TDD §"Virus Scan" — ClamAV scanning for uploaded files.

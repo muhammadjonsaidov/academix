@@ -14,7 +14,7 @@ import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserRepository;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * academix_tz.md §2.3 "Psixologik signallar (faqat sinf rahbari ko'radi)" — homeroom-teacher-only,

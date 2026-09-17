@@ -20,11 +20,11 @@ import uz.academixai.infrastructure.persistence.ImportColumnMappingRepository;
 import uz.academixai.infrastructure.persistence.SchoolClassEntity;
 import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.TempImportFileStore;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.interfaces.web.admin.ImportAnalyzeResponse;
 import uz.academixai.interfaces.web.admin.ImportCommitResponse;
 import uz.academixai.interfaces.web.admin.ImportRowError;
 import uz.academixai.school.application.StudentManagementService;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * academix_tz.md §1.24/§2.2 — 2-phase, school-flexible bulk student import. See the

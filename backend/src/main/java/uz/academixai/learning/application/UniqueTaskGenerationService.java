@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import uz.academixai.domain.AssignmentType;
 import uz.academixai.domain.HomeworkAssignment;
 import uz.academixai.domain.StudentUniqueTask;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.out.ClassStudentQuery;
 import uz.academixai.learning.application.port.out.HomeworkAssignmentStore;
 import uz.academixai.learning.application.port.out.StudentUniqueTaskStore;
@@ -18,6 +17,7 @@ import uz.academixai.learning.application.port.out.UniqueTaskAi;
 import uz.academixai.learning.application.port.out.UniqueTaskContentValidator;
 import uz.academixai.learning.application.port.out.UniqueTaskContextLookup;
 import uz.academixai.learning.application.port.out.UniqueTaskGenerator;
+import uz.academixai.shared.error.ApiException;
 
 /** Generates one independently checked, idempotent task per student for a unique assignment. */
 @Service

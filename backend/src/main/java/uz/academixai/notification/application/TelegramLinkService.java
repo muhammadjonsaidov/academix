@@ -6,9 +6,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.infrastructure.telegram.TelegramProperties;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.notification.domain.TelegramConnection;
 import uz.academixai.notification.infrastructure.persistence.TelegramConnectionRepository;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * academix_tz.md §2.7 "barcha rollar uchun umumiy" (common to all roles) Telegram sub-resource —

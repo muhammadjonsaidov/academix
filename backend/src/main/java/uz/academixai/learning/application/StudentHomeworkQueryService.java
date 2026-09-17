@@ -9,7 +9,6 @@ import uz.academixai.domain.AssignmentType;
 import uz.academixai.domain.HomeworkAssignment;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.SubmissionStatus;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.in.StudentHomeworkQuery;
 import uz.academixai.learning.application.port.out.HomeworkAssignmentStore;
 import uz.academixai.learning.application.port.out.HomeworkSubmissionReadRepository;
@@ -17,6 +16,7 @@ import uz.academixai.learning.application.port.out.StudentClassLookup;
 import uz.academixai.learning.application.port.out.StudentUniqueTaskStore;
 import uz.academixai.learning.application.port.out.SubjectNameLookup;
 import uz.academixai.learning.application.port.out.SubmissionAssessmentLookup;
+import uz.academixai.shared.error.ApiException;
 
 /** Student homework and submission-history read use cases owned by Learning. */
 @Service

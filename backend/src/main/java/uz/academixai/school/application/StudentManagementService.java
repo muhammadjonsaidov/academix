@@ -11,12 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.academixai.domain.Role;
 import uz.academixai.domain.StudentProfile;
 import uz.academixai.identity.application.PasswordPolicy;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.school.application.port.out.ClassLookup;
 import uz.academixai.school.application.port.out.MemberAccountStore;
 import uz.academixai.school.application.port.out.MemberAccountStore.MemberAccount;
 import uz.academixai.school.application.port.out.StudentStore;
 import uz.academixai.school.application.port.out.StudentStore.StudentRow;
+import uz.academixai.shared.error.ApiException;
 
 /** academix_tz.md §2.2 "O'quvchilar" — admin CRUD over STUDENT users + student_profiles. */
 @Service

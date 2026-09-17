@@ -252,7 +252,7 @@ class HandwritingServiceIntegrationTest {
             () ->
                 handwritingService.resetProfile(
                     schoolId, studentId, teacherId, ResetReason.OTHER, null))
-        .isInstanceOf(uz.academixai.interfaces.web.ApiException.class)
+        .isInstanceOf(uz.academixai.shared.error.ApiException.class)
         .hasMessageContaining("limit");
   }
 
@@ -264,7 +264,7 @@ class HandwritingServiceIntegrationTest {
             () ->
                 handwritingService.resetProfile(
                     schoolId, studentId, otherTeacherId, ResetReason.OTHER, null))
-        .isInstanceOf(uz.academixai.interfaces.web.ApiException.class)
+        .isInstanceOf(uz.academixai.shared.error.ApiException.class)
         .hasMessageContaining("sinf rahbari");
   }
 

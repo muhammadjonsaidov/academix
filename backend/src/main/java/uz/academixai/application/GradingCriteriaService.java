@@ -9,7 +9,7 @@ import uz.academixai.domain.CriteriaItem;
 import uz.academixai.domain.SubjectGradingCriteria;
 import uz.academixai.infrastructure.persistence.SubjectGradingCriteriaEntity;
 import uz.academixai.infrastructure.persistence.SubjectGradingCriteriaRepository;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * academix_tz.md §1.19/§2.3 "Baholash mezonlari". No school scoping in the spec entity — a

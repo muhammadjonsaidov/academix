@@ -4,7 +4,7 @@ import java.time.Duration;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * Shared fixed-window rate limiter backed by a plain Redis {@code INCR}+{@code EXPIRE} counter.

@@ -10,7 +10,6 @@ import uz.academixai.domain.ExamAIFeedback;
 import uz.academixai.domain.ExamGrade;
 import uz.academixai.domain.ExamSubmission;
 import uz.academixai.domain.SubmissionStatus;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.in.ExamSubmissionWorkflow;
 import uz.academixai.learning.application.port.out.ExamGradeStore;
 import uz.academixai.learning.application.port.out.ExamImageStorage;
@@ -21,6 +20,7 @@ import uz.academixai.learning.application.port.out.ExamSubmissionStore;
 import uz.academixai.learning.application.port.out.FileSafetyScanner;
 import uz.academixai.learning.application.port.out.StudentNameLookup;
 import uz.academixai.learning.application.port.out.UploadQuota;
+import uz.academixai.shared.error.ApiException;
 
 /** Learning-owned workflow for receiving and reviewing exam papers. */
 @Service

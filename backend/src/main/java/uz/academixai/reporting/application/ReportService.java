@@ -17,13 +17,13 @@ import uz.academixai.infrastructure.persistence.SchoolRepository;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
 import uz.academixai.infrastructure.storage.FileStorageService;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.reporting.domain.Report;
 import uz.academixai.reporting.domain.ReportType;
 import uz.academixai.reporting.infrastructure.pdf.JasperReportGenerator;
 import uz.academixai.reporting.infrastructure.pdf.ReportRow;
 import uz.academixai.reporting.infrastructure.persistence.ReportEntity;
 import uz.academixai.reporting.infrastructure.persistence.ReportRepository;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * academix_tz.md's {@code ReportService} pseudocode ({@code generateStudentReport}/{@code

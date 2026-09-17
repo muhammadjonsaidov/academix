@@ -12,7 +12,7 @@ import uz.academixai.identity.application.PasswordPolicy;
 import uz.academixai.infrastructure.mail.PasswordResetMailSender;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * academix_tz.md §2.1 forgot-password/reset-password — ADMIN/TEACHER/PARENT/PSYCHOLOGIST only

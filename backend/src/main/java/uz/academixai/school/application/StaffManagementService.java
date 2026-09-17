@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 import uz.academixai.domain.Role;
 import uz.academixai.domain.User;
 import uz.academixai.identity.application.PasswordPolicy;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.school.application.port.out.MemberAccountStore;
 import uz.academixai.school.application.port.out.MemberAccountStore.MemberAccount;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * Invite/activate/deactivate for the school's staff accounts.

@@ -20,9 +20,9 @@ import uz.academixai.infrastructure.persistence.SubjectEntity;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.infrastructure.persistence.TeacherSyllabusEntity;
 import uz.academixai.infrastructure.persistence.TeacherSyllabusRepository;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.SyllabusKnowledgeService;
 import uz.academixai.learning.domain.SyllabusProcessingStatus;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * academix_tz.md §1.18/§2.3 "Dars rejasi". No AI budget gate — lesson-plan generation isn't one of

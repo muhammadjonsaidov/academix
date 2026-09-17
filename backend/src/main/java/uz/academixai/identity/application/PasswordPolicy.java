@@ -1,7 +1,7 @@
 package uz.academixai.identity.application;
 
 import org.springframework.http.HttpStatus;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 
 /** Server-side password rule shared by every account-creation and reset path. */
 public final class PasswordPolicy {

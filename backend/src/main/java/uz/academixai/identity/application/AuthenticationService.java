@@ -14,7 +14,7 @@ import uz.academixai.identity.application.port.out.LoginAttemptLimiter;
 import uz.academixai.identity.application.port.out.RefreshSessionStore;
 import uz.academixai.identity.application.port.out.SchoolContextLookup;
 import uz.academixai.identity.domain.Account;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 
 /** Authentication and self-service account use cases. */
 @Service

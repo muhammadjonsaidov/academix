@@ -7,11 +7,11 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.ClassSubjectTeacher;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.school.application.port.out.ClassAdministrationRepository;
 import uz.academixai.school.application.port.out.SubjectCatalogRepository;
 import uz.academixai.school.application.port.out.TeacherAssignmentRepository;
 import uz.academixai.school.application.port.out.TeacherDirectory;
+import uz.academixai.shared.error.ApiException;
 
 /** Administrative use cases for assigning one teacher to a class and subject. */
 @Service

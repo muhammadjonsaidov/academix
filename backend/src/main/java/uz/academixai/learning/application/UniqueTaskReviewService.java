@@ -8,11 +8,11 @@ import org.springframework.stereotype.Service;
 import uz.academixai.domain.AssignmentType;
 import uz.academixai.domain.HomeworkAssignment;
 import uz.academixai.domain.StudentUniqueTask;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.in.UniqueTaskReview;
 import uz.academixai.learning.application.port.out.HomeworkAssignmentStore;
 import uz.academixai.learning.application.port.out.StudentNameLookup;
 import uz.academixai.learning.application.port.out.StudentUniqueTaskStore;
+import uz.academixai.shared.error.ApiException;
 
 /** Teacher review, approval and publish use cases for generated Learning tasks. */
 @Service

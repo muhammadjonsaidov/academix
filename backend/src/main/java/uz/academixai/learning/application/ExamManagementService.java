@@ -7,13 +7,13 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.Exam;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.in.ExamManagement;
 import uz.academixai.learning.application.port.out.ClassSizeQuery;
 import uz.academixai.learning.application.port.out.ExamAiBudget;
 import uz.academixai.learning.application.port.out.ExamStore;
 import uz.academixai.learning.application.port.out.ExamSubmissionStatistics;
 import uz.academixai.school.application.port.in.TeacherAccess;
+import uz.academixai.shared.error.ApiException;
 
 /** Teacher exam lifecycle use cases owned by the Learning context. */
 @Service

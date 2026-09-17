@@ -9,7 +9,6 @@ import uz.academixai.domain.Grade;
 import uz.academixai.domain.HomeworkAssignment;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.SubmissionStatus;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.in.HomeworkGrading;
 import uz.academixai.learning.application.port.out.GradeStore;
 import uz.academixai.learning.application.port.out.HomeworkAssignmentStore;
@@ -17,6 +16,7 @@ import uz.academixai.learning.application.port.out.HomeworkSubmissionReadReposit
 import uz.academixai.learning.application.port.out.HomeworkSubmissionStore;
 import uz.academixai.learning.application.port.out.StudentAchievementUpdater;
 import uz.academixai.learning.application.port.out.SubmissionAssessmentLookup;
+import uz.academixai.shared.error.ApiException;
 
 /** Final teacher grade command, including status transition and Progress update. */
 @Service

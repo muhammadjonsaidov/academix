@@ -13,7 +13,7 @@ import uz.academixai.family.application.port.out.ParentAccountStore.ParentAccoun
 import uz.academixai.family.application.port.out.ParentLinkStore;
 import uz.academixai.family.domain.ParentRelation;
 import uz.academixai.family.domain.ParentStudentLink;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * academix_tz.md — {@code POST /admin/parents/link}. Real gap needing a judgment call: the spec

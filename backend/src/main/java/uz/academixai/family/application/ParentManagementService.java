@@ -14,7 +14,7 @@ import uz.academixai.family.application.port.out.ParentAccountStore.ParentAccoun
 import uz.academixai.family.application.port.out.ParentLinkStore;
 import uz.academixai.family.application.port.out.ParentLinkStore.LinkedChild;
 import uz.academixai.identity.application.PasswordPolicy;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * Admin-facing parent (ota-ona/vasiy) management — create with an admin-supplied password, list

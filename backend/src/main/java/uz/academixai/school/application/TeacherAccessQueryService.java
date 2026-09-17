@@ -6,10 +6,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.SchoolClass;
 import uz.academixai.domain.Subject;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.school.application.port.in.TeacherAccess;
 import uz.academixai.school.application.port.out.TeacherAccessReadRepository;
 import uz.academixai.school.application.port.out.TeacherAssignmentQuery;
+import uz.academixai.shared.error.ApiException;
 
 /** Teacher-facing School read queries and their membership authorization policy. */
 @Service

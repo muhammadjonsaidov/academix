@@ -7,8 +7,8 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.SchoolClass;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.school.application.port.out.ClassAdministrationRepository;
+import uz.academixai.shared.error.ApiException;
 
 /** Class aggregate administration use cases for one school tenant. */
 @Service

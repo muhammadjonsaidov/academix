@@ -10,7 +10,6 @@ import uz.academixai.domain.HomeworkAssignment;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.domain.SubmissionType;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.in.HomeworkSubmissionCommand;
 import uz.academixai.learning.application.port.out.FileSafetyScanner;
 import uz.academixai.learning.application.port.out.HomeworkAssignmentStore;
@@ -20,6 +19,7 @@ import uz.academixai.learning.application.port.out.HomeworkSubmissionStore;
 import uz.academixai.learning.application.port.out.StudentClassLookup;
 import uz.academixai.learning.application.port.out.StudentUniqueTaskStore;
 import uz.academixai.learning.application.port.out.UploadQuota;
+import uz.academixai.shared.error.ApiException;
 
 /** Accepts a homework submission, validates its image and records a durable processing event. */
 @Service

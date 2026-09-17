@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import uz.academixai.domain.Exam;
 import uz.academixai.domain.ExamGrade;
 import uz.academixai.domain.ExamSubmission;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.in.StudentExamQuery;
 import uz.academixai.learning.application.port.out.ExamGradeStore;
 import uz.academixai.learning.application.port.out.ExamStore;
@@ -15,6 +14,7 @@ import uz.academixai.learning.application.port.out.ExamSubmissionAssessmentLooku
 import uz.academixai.learning.application.port.out.ExamSubmissionStore;
 import uz.academixai.learning.application.port.out.StudentClassLookup;
 import uz.academixai.learning.application.port.out.SubjectNameLookup;
+import uz.academixai.shared.error.ApiException;
 
 /** Student-facing exam result read model owned by Learning. */
 @Service

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import uz.academixai.domain.PsychologicalSignal;
 import uz.academixai.domain.SignalSeverity;
 import uz.academixai.domain.WatchlistEntry;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 import uz.academixai.wellbeing.application.port.in.PsychologistWorkspace;
 import uz.academixai.wellbeing.application.port.out.BehaviorActivityLookup;
 import uz.academixai.wellbeing.application.port.out.PsychologistWorkspaceStore;

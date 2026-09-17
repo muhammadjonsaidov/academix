@@ -16,7 +16,7 @@ import uz.academixai.family.application.port.out.MinorDataEraser;
 import uz.academixai.family.application.port.out.ParentLinkStore;
 import uz.academixai.family.domain.DataDeletionRequest;
 import uz.academixai.family.domain.DeletionRequestStatus;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 import uz.academixai.shared.tenancy.TenantScope;
 
 /**

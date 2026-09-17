@@ -7,12 +7,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.AssignmentType;
 import uz.academixai.domain.HomeworkAssignment;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.in.HomeworkManagement;
 import uz.academixai.learning.application.port.out.HomeworkAssignmentStore;
 import uz.academixai.learning.application.port.out.HomeworkSubmissionQuery;
 import uz.academixai.learning.application.port.out.UniqueTaskGenerator;
 import uz.academixai.school.application.port.in.TeacherAccess;
+import uz.academixai.shared.error.ApiException;
 
 /** Teacher homework lifecycle use cases owned by the Learning context. */
 @Service

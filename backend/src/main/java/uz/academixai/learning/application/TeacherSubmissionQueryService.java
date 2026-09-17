@@ -7,12 +7,12 @@ import org.springframework.stereotype.Service;
 import uz.academixai.domain.HomeworkAssignment;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.SubmissionStatus;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.in.TeacherSubmissionQuery;
 import uz.academixai.learning.application.port.out.HomeworkAssignmentStore;
 import uz.academixai.learning.application.port.out.HomeworkSubmissionReadRepository;
 import uz.academixai.learning.application.port.out.StudentNameLookup;
 import uz.academixai.learning.application.port.out.SubmissionAssessmentLookup;
+import uz.academixai.shared.error.ApiException;
 
 /** Teacher-scoped submission read model owned by Learning. */
 @Service

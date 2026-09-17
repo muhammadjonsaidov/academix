@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.learning.application.port.in.StudentHomeworkQuery;
 import uz.academixai.learning.application.port.in.StudentHomeworkQuery.HomeworkItem;
 import uz.academixai.progress.application.port.in.StudentDashboard;
 import uz.academixai.progress.application.port.out.StudentDashboardStore;
 import uz.academixai.progress.domain.BadgeCriteriaType;
+import uz.academixai.shared.error.ApiException;
 
 /** Progress-owned student dashboard read model, composed through persistence and Learning ports. */
 @Service

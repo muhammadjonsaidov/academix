@@ -8,7 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
-import uz.academixai.interfaces.web.ApiErrorResponse;
+import uz.academixai.shared.error.ApiErrorResponse;
 
 /**
  * Spring Security's default (no entry point configured) returns a bare 403 for missing/invalid

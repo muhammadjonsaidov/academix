@@ -17,7 +17,7 @@ import uz.academixai.intelligence.application.port.out.ChatAbuseGuard;
 import uz.academixai.intelligence.application.port.out.TutorAi;
 import uz.academixai.intelligence.application.port.out.TutorChatStore;
 import uz.academixai.intelligence.domain.AiCallCategory;
-import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.shared.error.ApiException;
 
 /** Intelligence-owned tutor interaction with deterministic guardrails and bounded history. */
 @Service

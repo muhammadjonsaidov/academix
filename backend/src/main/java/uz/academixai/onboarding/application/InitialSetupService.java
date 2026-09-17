@@ -11,8 +11,8 @@ import uz.academixai.domain.School;
 import uz.academixai.identity.application.PasswordPolicy;
 import uz.academixai.identity.application.port.out.AccountRepository;
 import uz.academixai.identity.domain.Account;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.school.application.port.out.SchoolAdministrationRepository;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * One-time product bootstrap for an empty installation.

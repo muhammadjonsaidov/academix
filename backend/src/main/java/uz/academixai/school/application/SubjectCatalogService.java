@@ -6,8 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.Subject;
 import uz.academixai.domain.SubjectType;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.school.application.port.out.SubjectCatalogRepository;
+import uz.academixai.shared.error.ApiException;
 
 /** Administrative use cases for one tenant's subject catalog. */
 @Service

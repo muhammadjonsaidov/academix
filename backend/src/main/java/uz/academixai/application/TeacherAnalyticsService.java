@@ -19,11 +19,11 @@ import uz.academixai.infrastructure.persistence.StudentProfileEntity;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
-import uz.academixai.interfaces.web.ApiException;
 import uz.academixai.progress.domain.XpHistoryEntry;
 import uz.academixai.progress.infrastructure.persistence.XpHistoryEntity;
 import uz.academixai.progress.infrastructure.persistence.XpHistoryRepository;
 import uz.academixai.school.application.port.in.TeacherAccess;
+import uz.academixai.shared.error.ApiException;
 
 /**
  * academix_tz.md §2.3 "O'quvchi progressi"/"Sinf taqqoslash" — both scoped to "faqat o'z sinfi"
