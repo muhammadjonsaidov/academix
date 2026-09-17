@@ -9,8 +9,10 @@ import java.time.LocalDateTime;
 
 /** academix_tz.md §2.3 — PUT /teacher/homework/{assignmentId} body. */
 public record UpdateHomeworkRequest(
-    @NotBlank @Size(max = 255) String title,
-    @Size(max = 5000) String description,
-    @NotNull LocalDateTime deadlineAt,
-    @Size(max = 255) String syllabusReference,
-    @Min(1) @Max(1000) int maxScore) {}
+    @NotBlank(message = "majburiy maydon") @Size(max = 255, message = "ko'pi bilan 255 belgi")
+        String title,
+    @Size(max = 5000, message = "ko'pi bilan 5000 belgi") String description,
+    @NotNull(message = "majburiy maydon") LocalDateTime deadlineAt,
+    @Size(max = 255, message = "ko'pi bilan 255 belgi") String syllabusReference,
+    @Min(value = 1, message = "kamida 1") @Max(value = 1000, message = "ko'pi bilan 1000")
+        int maxScore) {}

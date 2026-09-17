@@ -8,6 +8,7 @@ import uz.academixai.family.domain.ParentRelation;
 
 /** academix_tz.md — POST /admin/parents/link body, exact shape. */
 public record LinkParentRequest(
-    @NotBlank @Size(max = 20) String parentPhone,
-    @NotNull UUID studentId,
-    @NotNull ParentRelation relation) {}
+    @NotBlank(message = "majburiy maydon") @Size(max = 20, message = "ko'pi bilan 20 belgi")
+        String parentPhone,
+    @NotNull(message = "majburiy maydon") UUID studentId,
+    @NotNull(message = "majburiy maydon") ParentRelation relation) {}

@@ -4,4 +4,4 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 /** academix_tz.md §2.2 — { newClassId: "uuid" } */
-public record TransferClassRequest(@NotNull UUID newClassId) {}
+public record TransferClassRequest(@NotNull(message = "majburiy maydon") UUID newClassId) {}

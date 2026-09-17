@@ -9,8 +9,13 @@ import jakarta.validation.constraints.Size;
  * admin-chosen initial password handed to the parent — see ParentManagementService.
  */
 public record CreateParentRequest(
-    @NotBlank @Size(max = 50) String firstName,
-    @NotBlank @Size(max = 50) String lastName,
-    @NotBlank @Size(max = 20) String phone,
-    @Email @Size(max = 100) String email,
-    @NotBlank @Size(max = 72) String password) {}
+    @NotBlank(message = "majburiy maydon") @Size(max = 50, message = "ko'pi bilan 50 belgi")
+        String firstName,
+    @NotBlank(message = "majburiy maydon") @Size(max = 50, message = "ko'pi bilan 50 belgi")
+        String lastName,
+    @NotBlank(message = "majburiy maydon") @Size(max = 20, message = "ko'pi bilan 20 belgi")
+        String phone,
+    @Email(message = "email formati noto'g'ri") @Size(max = 100, message = "ko'pi bilan 100 belgi")
+        String email,
+    @NotBlank(message = "majburiy maydon") @Size(max = 72, message = "ko'pi bilan 72 belgi")
+        String password) {}

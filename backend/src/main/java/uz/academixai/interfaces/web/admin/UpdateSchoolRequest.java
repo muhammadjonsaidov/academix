@@ -5,8 +5,12 @@ import jakarta.validation.constraints.Size;
 
 /** academix_tz.md §2.2 {@code PUT /admin/school} — exact body shape. */
 public record UpdateSchoolRequest(
-    @NotBlank @Size(max = 150) String name,
-    @NotBlank @Size(max = 500) String address,
-    @NotBlank @Size(max = 50) String region,
-    @NotBlank @Size(max = 50) String district,
-    @Size(max = 20) String phone) {}
+    @NotBlank(message = "majburiy maydon") @Size(max = 150, message = "ko'pi bilan 150 belgi")
+        String name,
+    @NotBlank(message = "majburiy maydon") @Size(max = 500, message = "ko'pi bilan 500 belgi")
+        String address,
+    @NotBlank(message = "majburiy maydon") @Size(max = 50, message = "ko'pi bilan 50 belgi")
+        String region,
+    @NotBlank(message = "majburiy maydon") @Size(max = 50, message = "ko'pi bilan 50 belgi")
+        String district,
+    @Size(max = 20, message = "ko'pi bilan 20 belgi") String phone) {}

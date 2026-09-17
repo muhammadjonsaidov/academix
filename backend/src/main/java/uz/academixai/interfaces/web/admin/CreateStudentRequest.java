@@ -15,11 +15,16 @@ import java.util.UUID;
  * (bulk import path keeps the server-generated temp password).
  */
 public record CreateStudentRequest(
-    @NotBlank @Size(max = 50) String firstName,
-    @NotBlank @Size(max = 50) String lastName,
-    @NotBlank @Size(max = 20) String phone,
-    @Email @Size(max = 100) String email,
-    @NotBlank @Size(max = 72) String password,
-    @NotNull UUID classId,
-    @Size(max = 30) String studentNumber,
-    @PastOrPresent LocalDate birthDate) {}
+    @NotBlank(message = "majburiy maydon") @Size(max = 50, message = "ko'pi bilan 50 belgi")
+        String firstName,
+    @NotBlank(message = "majburiy maydon") @Size(max = 50, message = "ko'pi bilan 50 belgi")
+        String lastName,
+    @NotBlank(message = "majburiy maydon") @Size(max = 20, message = "ko'pi bilan 20 belgi")
+        String phone,
+    @Email(message = "email formati noto'g'ri") @Size(max = 100, message = "ko'pi bilan 100 belgi")
+        String email,
+    @NotBlank(message = "majburiy maydon") @Size(max = 72, message = "ko'pi bilan 72 belgi")
+        String password,
+    @NotNull(message = "majburiy maydon") UUID classId,
+    @Size(max = 30, message = "ko'pi bilan 30 belgi") String studentNumber,
+    @PastOrPresent(message = "kelajak sana bo'lmasligi kerak") LocalDate birthDate) {}

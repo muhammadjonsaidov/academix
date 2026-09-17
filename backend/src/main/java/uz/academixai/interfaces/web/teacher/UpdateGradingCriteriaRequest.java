@@ -6,4 +6,5 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record UpdateGradingCriteriaRequest(
-    @NotNull @NotEmpty @Valid List<CriteriaItemDto> criteria) {}
+    @NotNull(message = "majburiy maydon") @NotEmpty(message = "bo'sh bo'lmasligi kerak") @Valid
+        List<CriteriaItemDto> criteria) {}

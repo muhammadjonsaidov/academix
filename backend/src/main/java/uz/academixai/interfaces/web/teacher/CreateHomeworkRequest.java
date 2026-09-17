@@ -14,11 +14,13 @@ import uz.academixai.domain.AssignmentType;
  * syllabusReference?, maxScore }
  */
 public record CreateHomeworkRequest(
-    @NotNull UUID classId,
-    @NotNull UUID subjectId,
-    @NotBlank @Size(max = 255) String title,
-    @Size(max = 5000) String description,
-    @NotNull LocalDateTime deadlineAt,
+    @NotNull(message = "majburiy maydon") UUID classId,
+    @NotNull(message = "majburiy maydon") UUID subjectId,
+    @NotBlank(message = "majburiy maydon") @Size(max = 255, message = "ko'pi bilan 255 belgi")
+        String title,
+    @Size(max = 5000, message = "ko'pi bilan 5000 belgi") String description,
+    @NotNull(message = "majburiy maydon") LocalDateTime deadlineAt,
     AssignmentType type,
-    @Size(max = 255) String syllabusReference,
-    @Min(1) @Max(1000) int maxScore) {}
+    @Size(max = 255, message = "ko'pi bilan 255 belgi") String syllabusReference,
+    @Min(value = 1, message = "kamida 1") @Max(value = 1000, message = "ko'pi bilan 1000")
+        int maxScore) {}

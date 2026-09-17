@@ -6,7 +6,10 @@ import java.util.UUID;
 
 /** academix_tz.md §2.3 {@code POST /student/ai-chat} — exact body shape. */
 public record AiChatRequest(
-    @Size(max = 100) String subject, @NotBlank @Size(max = 4000) String message, Context context) {
+    @Size(max = 100, message = "ko'pi bilan 100 belgi") String subject,
+    @NotBlank(message = "majburiy maydon") @Size(max = 4000, message = "ko'pi bilan 4000 belgi")
+        String message,
+    Context context) {
 
   public record Context(UUID assignmentId) {}
 

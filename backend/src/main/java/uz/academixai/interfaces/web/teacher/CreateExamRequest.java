@@ -9,8 +9,10 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record CreateExamRequest(
-    @NotNull UUID classId,
-    @NotNull UUID subjectId,
-    @NotBlank @Size(max = 255) String title,
-    @NotNull LocalDate examDate,
-    @Min(1) @Max(1000) int maxScore) {}
+    @NotNull(message = "majburiy maydon") UUID classId,
+    @NotNull(message = "majburiy maydon") UUID subjectId,
+    @NotBlank(message = "majburiy maydon") @Size(max = 255, message = "ko'pi bilan 255 belgi")
+        String title,
+    @NotNull(message = "majburiy maydon") LocalDate examDate,
+    @Min(value = 1, message = "kamida 1") @Max(value = 1000, message = "ko'pi bilan 1000")
+        int maxScore) {}
