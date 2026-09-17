@@ -5,8 +5,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.AdminDashboardService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.reporting.application.AdminDashboardService;
 
 /** academix_tz.md §2.2 — admin dashboard summary. */
 @RestController

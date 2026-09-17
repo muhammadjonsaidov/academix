@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.admin;
 
 import java.util.List;
-import uz.academixai.application.AdminDashboardService.Dashboard;
+import uz.academixai.reporting.application.AdminDashboardService.Dashboard;
 
 /** academix_tz.md §2.2 {@code GET /admin/dashboard} — exact response shape. */
 public record AdminDashboardResponse(
