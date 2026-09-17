@@ -2,7 +2,7 @@ package uz.academixai.interfaces.web.teacher;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.application.TeacherPsychologyService.SignalWithStudent;
+import uz.academixai.wellbeing.application.TeacherPsychologyService.SignalWithStudent;
 
 /**
  * academix_tz.md §2.3 — response shape inferred (spec gives paths only), see

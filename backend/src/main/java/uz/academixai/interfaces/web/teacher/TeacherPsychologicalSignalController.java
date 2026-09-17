@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.TeacherPsychologyService;
 import uz.academixai.domain.SignalSeverity;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.wellbeing.application.TeacherPsychologyService;
 
 /** academix_tz.md §2.3 "Psixologik signallar" — exact paths, response shape is a deviation. */
 @RestController
