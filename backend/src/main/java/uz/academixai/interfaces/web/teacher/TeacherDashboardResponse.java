@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.teacher;
 
 import java.util.List;
-import uz.academixai.application.TeacherDashboardService.Dashboard;
+import uz.academixai.learning.application.TeacherDashboardService.Dashboard;
 
 /** academix_tz.md §2.3 {@code GET /teacher/dashboard} — exact response shape. */
 public record TeacherDashboardResponse(

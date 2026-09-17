@@ -6,4 +6,7 @@ import java.util.UUID;
 public interface HomeworkSubmissionQuery {
 
   long countByAssignmentId(UUID assignmentId);
+
+  /** Submissions still awaiting a grade from this teacher. */
+  int countPendingGradeByTeacher(UUID schoolId, UUID teacherId);
 }

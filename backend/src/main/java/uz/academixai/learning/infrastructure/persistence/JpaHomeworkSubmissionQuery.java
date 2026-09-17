@@ -19,4 +19,9 @@ public class JpaHomeworkSubmissionQuery implements HomeworkSubmissionQuery {
   public long countByAssignmentId(UUID assignmentId) {
     return repository.countByAssignmentId(assignmentId);
   }
+
+  @Override
+  public int countPendingGradeByTeacher(UUID schoolId, UUID teacherId) {
+    return repository.countPendingGradeByTeacher(schoolId, teacherId);
+  }
 }
