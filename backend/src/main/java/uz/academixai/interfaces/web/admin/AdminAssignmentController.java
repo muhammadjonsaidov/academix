@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.AssignmentService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.school.application.TeacherAssignmentAdministrationService;
 
 /** academix_tz.md §2.2 "O'qituvchi-Sinf-Fan biriktirish" — exact contract, don't drift. */
 @RestController
@@ -21,9 +21,9 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminAssignmentController {
 
-  private final AssignmentService assignmentService;
+  private final TeacherAssignmentAdministrationService assignmentService;
 
-  public AdminAssignmentController(AssignmentService assignmentService) {
+  public AdminAssignmentController(TeacherAssignmentAdministrationService assignmentService) {
     this.assignmentService = assignmentService;
   }
 

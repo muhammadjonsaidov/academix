@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Tizimga kirish",
   description:
-    "AcademiX AI platformasiga kirish. Telefon raqamingiz va parolingiz bilan tizimga kiring.",
+    "AcademiX AI platformasiga telefon raqami yoki email va parol bilan kiring.",
   robots: {
     index: false,
     follow: false,

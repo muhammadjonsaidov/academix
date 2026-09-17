@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   BarChart3,
@@ -17,13 +18,17 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { ProgressBar } from "@/components/shared/ProgressBar";
 import { StatTile, StatTileSkeleton } from "@/components/shared/StatTile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SchoolSetupChecklist } from "@/features/admin/dashboard/components/SchoolSetupChecklist";
 import { useAdminAnalyticsStore } from "@/stores/useAdminAnalyticsStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function AdminDashboardPage() {
   const dashboard = useAdminAnalyticsStore((state) => state.dashboard);
-  const fetchDashboard = useAdminAnalyticsStore((state) => state.fetchDashboard);
+  const fetchDashboard = useAdminAnalyticsStore(
+    (state) => state.fetchDashboard,
+  );
   const firstName = useAuthStore((state) => state.user?.firstName);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +42,9 @@ export default function AdminDashboardPage() {
   const heroDescription = dashboard
     ? `${dashboard.totalStudents} o'quvchi · ${dashboard.totalTeachers} o'qituvchi · bugun ${dashboard.activeToday} faol`
     : "Maktab bo'yicha umumiy holat.";
+  const isNewSchool =
+    dashboard !== null &&
+    dashboard.totalClasses === 0;
 
   return (
     <DashboardShell role="ADMIN">
@@ -59,9 +67,7 @@ export default function AdminDashboardPage() {
           }
         />
 
-        {error ? (
-          <p className="text-sm text-destructive">{error}</p>
-        ) : null}
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
         {isLoading ? (
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -72,11 +78,24 @@ export default function AdminDashboardPage() {
           </div>
         ) : dashboard ? (
           <>
+            <SchoolSetupChecklist dashboard={dashboard} />
             {/* Role tiles: no accent prop — the data-role layer resolves the admin hue. */}
             <div className="stagger-rise grid grid-cols-2 gap-4 lg:grid-cols-4">
-              <StatTile label="O'quvchilar" value={dashboard.totalStudents} icon={GraduationCap} />
-              <StatTile label="O'qituvchilar" value={dashboard.totalTeachers} icon={Users} />
-              <StatTile label="Bugun faol" value={dashboard.activeToday} icon={TrendingUp} />
+              <StatTile
+                label="O'quvchilar"
+                value={dashboard.totalStudents}
+                icon={GraduationCap}
+              />
+              <StatTile
+                label="O'qituvchilar"
+                value={dashboard.totalTeachers}
+                icon={Users}
+              />
+              <StatTile
+                label="Bugun faol"
+                value={dashboard.activeToday}
+                icon={TrendingUp}
+              />
               <StatTile
                 label="Topshirish darajasi (30 kun)"
                 value={`${dashboard.homeworkSubmissionRate}%`}
@@ -103,14 +122,37 @@ export default function AdminDashboardPage() {
             <div className="grid gap-4 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Sinflar bo&apos;yicha o&apos;zlashtirish</CardTitle>
+                  <CardTitle>
+                    Sinflar bo&apos;yicha o&apos;zlashtirish
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {dashboard.classProgressList.length === 0 ? (
                     <EmptyState
                       icon={Inbox}
-                      title="Ma'lumot yo'q"
-                      description="Sinflar bo'yicha o'zlashtirish ma'lumotlari hali mavjud emas."
+                      title={
+                        isNewSchool
+                          ? "Birinchi sinfni yarating"
+                          : "Ma'lumot yo'q"
+                      }
+                      description={
+                        isNewSchool
+                          ? "O'quvchilarni qo'shish uchun avval sinf yarating."
+                          : "Sinflar bo'yicha o'zlashtirish ma'lumotlari hali mavjud emas."
+                      }
+                      action={
+                        isNewSchool ? (
+                          <Link
+                            href="/dashboard/admin/classes"
+                            className={buttonVariants({
+                              variant: "outline",
+                              size: "sm",
+                            })}
+                          >
+                            Sinflarga o&apos;tish
+                          </Link>
+                        ) : undefined
+                      }
                     />
                   ) : (
                     <ul className="space-y-2">
@@ -120,17 +162,26 @@ export default function AdminDashboardPage() {
                           className="card-lift hover-glow space-y-1.5 rounded-md border border-border px-3 py-2.5 text-sm"
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <span className="truncate font-medium">{c.className}</span>
+                            <span className="truncate font-medium">
+                              {c.className}
+                            </span>
                             <span className="font-data shrink-0 text-muted-foreground">
                               {c.avgScore}%
                             </span>
                           </div>
                           <ProgressBar
                             value={c.avgScore}
-                            tone={c.avgScore >= 70 ? "success" : c.avgScore >= 50 ? "role" : "destructive"}
+                            tone={
+                              c.avgScore >= 70
+                                ? "success"
+                                : c.avgScore >= 50
+                                  ? "role"
+                                  : "destructive"
+                            }
                           />
                           <p className="text-xs text-muted-foreground">
-                            {c.gradedCount} baholangan · {c.studentCount} o&apos;quvchi
+                            {c.gradedCount} baholangan · {c.studentCount}{" "}
+                            o&apos;quvchi
                           </p>
                         </li>
                       ))}
@@ -148,7 +199,24 @@ export default function AdminDashboardPage() {
                     <EmptyState
                       icon={Inbox}
                       title="Ma'lumot yo'q"
-                      description="O'qituvchilar reytingi hali hisoblanmagan."
+                      description={
+                        isNewSchool
+                          ? "Sinf yaratilgach, o'qituvchini taklif qiling."
+                          : "O'qituvchilar reytingi hali hisoblanmagan."
+                      }
+                      action={
+                        isNewSchool ? (
+                          <Link
+                            href="/dashboard/admin/teachers"
+                            className={buttonVariants({
+                              variant: "outline",
+                              size: "sm",
+                            })}
+                          >
+                            O&apos;qituvchi qo&apos;shish
+                          </Link>
+                        ) : undefined
+                      }
                     />
                   ) : (
                     <ul className="space-y-2">

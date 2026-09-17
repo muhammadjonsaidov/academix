@@ -12,6 +12,7 @@ import uz.academixai.infrastructure.persistence.GradeRepository;
 import uz.academixai.infrastructure.persistence.GradeRepository.ClassProgressRow;
 import uz.academixai.infrastructure.persistence.GradeRepository.TeacherRatingRow;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
+import uz.academixai.school.application.port.in.TeacherAccess;
 
 /** academix_tz.md §2.3 {@code GET /teacher/dashboard} — exact response shape. */
 @Service
@@ -20,15 +21,15 @@ public class TeacherDashboardService {
   private static final int CLASS_PROGRESS_WINDOW_DAYS = 30;
   private static final LocalDateTime EPOCH = LocalDateTime.of(2000, 1, 1, 0, 0);
 
-  private final TeacherContextService teacherContextService;
+  private final TeacherAccess teacherAccess;
   private final HomeworkSubmissionRepository submissionRepository;
   private final GradeRepository gradeRepository;
 
   public TeacherDashboardService(
-      TeacherContextService teacherContextService,
+      TeacherAccess teacherAccess,
       HomeworkSubmissionRepository submissionRepository,
       GradeRepository gradeRepository) {
-    this.teacherContextService = teacherContextService;
+    this.teacherAccess = teacherAccess;
     this.submissionRepository = submissionRepository;
     this.gradeRepository = gradeRepository;
   }
@@ -43,7 +44,7 @@ public class TeacherDashboardService {
       List<ClassProgressRow> classProgressSummary) {}
 
   public Dashboard dashboard(UUID schoolId, UUID teacherId) {
-    List<SchoolClass> myClasses = teacherContextService.myClasses(schoolId, teacherId);
+    List<SchoolClass> myClasses = teacherAccess.myClasses(schoolId, teacherId);
     Set<UUID> classIds = myClasses.stream().map(SchoolClass::id).collect(Collectors.toSet());
 
     int pendingSubmissions = submissionRepository.countPendingGradeByTeacher(schoolId, teacherId);

@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.psychologist;
 
 import java.util.Map;
-import uz.academixai.application.PsychologistService.MonthlyReport;
+import uz.academixai.wellbeing.application.port.in.PsychologistWorkspace.MonthlyReport;
 
 /** academix_tz.md §2.6 — GET /psychologist/reports?period=monthly. Shape is a deviation. */
 public record MonthlyReportResponse(

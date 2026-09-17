@@ -138,6 +138,20 @@ export default function TeacherLessonPlansPage() {
     fetchLessonPlans().catch(() => setError("Dars rejalarini yuklab bo'lmadi."));
   }, [fetchClasses, fetchSubjects, fetchSyllabuses, fetchLessonPlans]);
 
+  const readySyllabuses = syllabuses.filter((syllabus) => syllabus.processingStatus === "READY");
+  const hasPendingIndexing = syllabuses.some(
+    (syllabus) =>
+      syllabus.processingStatus === "PENDING" || syllabus.processingStatus === "PROCESSING",
+  );
+
+  useEffect(() => {
+    if (!hasPendingIndexing) return;
+    const interval = window.setInterval(() => {
+      fetchSyllabuses().catch(() => {});
+    }, 4000);
+    return () => window.clearInterval(interval);
+  }, [fetchSyllabuses, hasPendingIndexing]);
+
   async function handleGenerate(event: FormEvent) {
     event.preventDefault();
     setError(null);
@@ -171,13 +185,18 @@ export default function TeacherLessonPlansPage() {
               <SelectField
                 id="syllabusId"
                 value={syllabusId}
-                onChange={(e) => setSyllabusId(e.target.value)}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  setSyllabusId(selectedId);
+                  const syllabus = readySyllabuses.find((item) => item.id === selectedId);
+                  if (syllabus) setClassId(syllabus.classId);
+                }}
                 required
               >
                 <option value="" disabled>
                   Tanlang
                 </option>
-                {syllabuses.map((s) => (
+                {readySyllabuses.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.title}
                   </option>
@@ -221,9 +240,14 @@ export default function TeacherLessonPlansPage() {
               />
             </FormField>
             <div className="flex items-end sm:col-span-2 lg:col-span-4">
-              <Button type="submit" disabled={isGenerating}>
+              <Button type="submit" disabled={isGenerating || readySyllabuses.length === 0}>
                 {isGenerating ? "Generatsiya qilinmoqda..." : "Reja generatsiya qilish"}
               </Button>
+              {readySyllabuses.length === 0 ? (
+                <p className="ml-3 text-sm text-muted-foreground">
+                  Avval AI tayyor holatdagi darslik yuklang.
+                </p>
+              ) : null}
             </div>
           </form>
         </CardContent>

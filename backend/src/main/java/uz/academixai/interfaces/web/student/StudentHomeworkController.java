@@ -8,24 +8,24 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.StudentDashboardService;
-import uz.academixai.application.StudentProgressService;
-import uz.academixai.application.StudentSubmissionService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.interfaces.web.PageResponse;
+import uz.academixai.learning.application.port.in.StudentHomeworkQuery;
+import uz.academixai.progress.application.StudentProgressService;
+import uz.academixai.progress.application.port.in.StudentDashboard;
 
 /** academix_tz.md §2.4 "Vazifalar" / "Topshirilgan ishlar tarixi" — read-only, exact contract. */
 @RestController
 @PreAuthorize("hasRole('STUDENT')")
 public class StudentHomeworkController {
 
-  private final StudentSubmissionService submissionService;
-  private final StudentDashboardService dashboardService;
+  private final StudentHomeworkQuery submissionService;
+  private final StudentDashboard dashboardService;
   private final StudentProgressService progressService;
 
   public StudentHomeworkController(
-      StudentSubmissionService submissionService,
-      StudentDashboardService dashboardService,
+      StudentHomeworkQuery submissionService,
+      StudentDashboard dashboardService,
       StudentProgressService progressService) {
     this.submissionService = submissionService;
     this.dashboardService = dashboardService;

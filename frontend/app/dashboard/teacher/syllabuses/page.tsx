@@ -34,6 +34,32 @@ export default function TeacherSyllabusesPage() {
     fetchSyllabuses().catch(() => setError("Darsliklarni yuklab bo'lmadi."));
   }, [fetchClasses, fetchSubjects, fetchSyllabuses]);
 
+  const hasPendingIndexing = syllabuses.some(
+    (syllabus) =>
+      syllabus.processingStatus === "PENDING" || syllabus.processingStatus === "PROCESSING",
+  );
+
+  useEffect(() => {
+    if (!hasPendingIndexing) return;
+    const interval = window.setInterval(() => {
+      fetchSyllabuses().catch(() => {});
+    }, 4000);
+    return () => window.clearInterval(interval);
+  }, [fetchSyllabuses, hasPendingIndexing]);
+
+  function processingBadge(syllabus: (typeof syllabuses)[number]) {
+    switch (syllabus.processingStatus) {
+      case "READY":
+        return <Badge className="bg-emerald-600 hover:bg-emerald-600">AI tayyor</Badge>;
+      case "FAILED":
+        return <Badge variant="destructive">AI tayyorlanmadi</Badge>;
+      case "PROCESSING":
+        return <Badge variant="secondary">AI tayyorlanmoqda</Badge>;
+      default:
+        return <Badge variant="secondary">Navbatda</Badge>;
+    }
+  }
+
   function classFullName(id: string) {
     return classes.find((c) => c.id === id)?.fullName ?? "—";
   }
@@ -122,7 +148,7 @@ export default function TeacherSyllabusesPage() {
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                 required
                 fileName={file?.name}
-                hint="PDF, DOCX, JPG yoki PNG"
+                hint="PDF, DOCX, JPG yoki PNG. Yuklangach AI darslikni o'qib, qidiruv uchun tayyorlaydi."
               />
             </FormField>
             <div className="flex items-end sm:col-span-2 lg:col-span-1">
@@ -153,6 +179,7 @@ export default function TeacherSyllabusesPage() {
                   <th className="py-2">Sinf</th>
                   <th className="py-2">Fan</th>
                   <th className="py-2">Format</th>
+                  <th className="py-2">AI holati</th>
                   <th className="px-6 py-2">Yuklangan</th>
                 </tr>
               </thead>
@@ -164,6 +191,14 @@ export default function TeacherSyllabusesPage() {
                     <td className="py-3">{subjectName(s.subjectId)}</td>
                     <td className="py-3">
                       <Badge variant="outline">{s.fileType}</Badge>
+                    </td>
+                    <td className="py-3">
+                      <div className="space-y-1">
+                        {processingBadge(s)}
+                        {s.processingStatus === "FAILED" && s.processingError ? (
+                          <p className="max-w-56 text-xs text-destructive">{s.processingError}</p>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-6 py-3 font-data">{new Date(s.uploadedAt).toLocaleString()}</td>
                   </tr>

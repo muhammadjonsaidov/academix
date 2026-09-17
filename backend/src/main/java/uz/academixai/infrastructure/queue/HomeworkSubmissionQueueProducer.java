@@ -1,22 +1,15 @@
 package uz.academixai.infrastructure.queue;
 
 import java.util.UUID;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import uz.academixai.infrastructure.outbox.OutboxService;
 
 /**
  * Publishes to {@code homework.submissions.queue} — consumed by task 22's OCR+grading listener.
  *
- * <p><b>Publishes only after the current transaction commits, if one is active.</b> {@code
- * RlsTransactionFilter} wraps the whole HTTP request (including the controller that calls this) in
- * one transaction — publishing synchronously would let a fast consumer try {@code
- * submissionRepo.findById(submissionId)} before that transaction's INSERT is actually durable, a
- * real race (the spec's own consumer pseudocode does exactly that lookup as its first line). {@code
- * TransactionSynchronizationManager.registerSynchronization(afterCommit)} defers the publish until
- * the row genuinely exists. Falls back to publishing immediately when no transaction is active
- * (e.g. a future non-request caller).
+ * <p>The message is written to the transactional outbox with the submission. This closes the old
+ * after-commit failure window where a database commit could succeed but the process could die
+ * before RabbitMQ received the message.
  *
  * <p><b>{@code schoolId} rides along in the message on purpose</b> — the listener has no HTTP
  * request to derive it from (unlike every other RLS-touching code path), so it can't run its own
@@ -27,28 +20,20 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Component
 public class HomeworkSubmissionQueueProducer {
 
-  private final RabbitTemplate rabbitTemplate;
+  private final OutboxService outbox;
 
-  public HomeworkSubmissionQueueProducer(RabbitTemplate rabbitTemplate) {
-    this.rabbitTemplate = rabbitTemplate;
+  public HomeworkSubmissionQueueProducer(OutboxService outbox) {
+    this.outbox = outbox;
   }
 
   public void publish(UUID submissionId, UUID schoolId) {
-    if (TransactionSynchronizationManager.isSynchronizationActive()) {
-      TransactionSynchronizationManager.registerSynchronization(
-          new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-              doPublish(submissionId, schoolId);
-            }
-          });
-    } else {
-      doPublish(submissionId, schoolId);
-    }
-  }
-
-  private void doPublish(UUID submissionId, UUID schoolId) {
-    rabbitTemplate.convertAndSend(
-        HomeworkQueueConfig.SUBMISSIONS_QUEUE, new SubmissionQueueMessage(submissionId, schoolId));
+    outbox.enqueue(
+        schoolId,
+        "HomeworkSubmission",
+        submissionId,
+        "HomeworkSubmissionAccepted",
+        HomeworkQueueConfig.SUBMISSIONS_QUEUE,
+        "submission",
+        new SubmissionQueueMessage(submissionId, schoolId));
   }
 }

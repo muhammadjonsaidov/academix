@@ -1,6 +1,6 @@
 package uz.academixai.interfaces.web.student;
 
-import uz.academixai.application.ParentProgressService.SubjectProgress;
+import uz.academixai.progress.application.port.in.ParentProgress.SubjectProgress;
 
 public record SubjectProgressResponse(
     String subject,

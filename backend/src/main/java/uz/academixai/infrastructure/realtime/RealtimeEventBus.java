@@ -15,9 +15,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
- * In-memory SSE hub — the project's real-time push channel (the one place the frontend gets
- * events without polling; see {@code useRealtimeEvents} on the frontend and the docs' old
- * "no push updates" stance, which this deliberately supersedes for status/notification events).
+ * In-memory SSE hub — the project's real-time push channel (the one place the frontend gets events
+ * without polling; see {@code useRealtimeEvents} on the frontend and the docs' old "no push
+ * updates" stance, which this deliberately supersedes for status/notification events).
  *
  * <p>One {@link SseEmitter} per browser tab, registered per authenticated userId. Publishing is a
  * fan-out to that user's emitters. No persistence, no replay, no multi-instance fan-out: with a
@@ -26,9 +26,9 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  * fanout pattern to copy).
  *
  * <p><b>Transaction safety:</b> {@link #publishAfterCommit} is the entry point used by services
- * that run inside a transaction (the RabbitMQ listeners, notification sends) — the event only
- * fires after the DB commit, so a client can never observe a status that the DB doesn't yet have
- * (a rollback would silently drop the event instead of lying to the client).
+ * that run inside a transaction (the RabbitMQ listeners, notification sends) — the event only fires
+ * after the DB commit, so a client can never observe a status that the DB doesn't yet have (a
+ * rollback would silently drop the event instead of lying to the client).
  */
 @Component
 public class RealtimeEventBus {
@@ -40,8 +40,10 @@ public class RealtimeEventBus {
 
   private final Map<UUID, List<SseEmitter>> subscribers = new ConcurrentHashMap<>();
 
-  /** Register an emitter for a user. The returned emitter is owned by the caller (the HTTP
-   * controller) and pushed to by this bus until it completes, times out, or errors. */
+  /**
+   * Register an emitter for a user. The returned emitter is owned by the caller (the HTTP
+   * controller) and pushed to by this bus until it completes, times out, or errors.
+   */
   public SseEmitter subscribe(UUID userId) {
     SseEmitter emitter = new SseEmitter(EMITTER_TIMEOUT_MS);
     subscribers.computeIfAbsent(userId, ignored -> new CopyOnWriteArrayList<>()).add(emitter);
@@ -52,8 +54,8 @@ public class RealtimeEventBus {
   }
 
   /**
-   * Publish after the current transaction commits if one is active, otherwise immediately.
-   * See the class Javadoc for why this matters for the AI/notification pipelines.
+   * Publish after the current transaction commits if one is active, otherwise immediately. See the
+   * class Javadoc for why this matters for the AI/notification pipelines.
    */
   public void publishAfterCommit(UUID userId, String eventName, Object payload) {
     if (TransactionSynchronizationManager.isActualTransactionActive()) {
@@ -96,9 +98,9 @@ public class RealtimeEventBus {
   }
 
   /**
-   * Keeps idle connections alive through proxies that close silent streams (Railway's edge,
-   * nginx with short proxy_read_timeout, ...). Comment lines are valid SSE and invisible to
-   * EventSource's message listeners, so this adds no client-side noise.
+   * Keeps idle connections alive through proxies that close silent streams (an edge proxy, nginx
+   * with short proxy_read_timeout, ...). Comment lines are valid SSE and invisible to EventSource's
+   * message listeners, so this adds no client-side noise.
    */
   @Scheduled(fixedDelay = 20_000)
   public void heartbeat() {

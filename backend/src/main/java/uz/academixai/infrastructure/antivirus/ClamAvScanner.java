@@ -1,6 +1,7 @@
 package uz.academixai.infrastructure.antivirus;
 
 import jakarta.annotation.PostConstruct;
+import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,18 +86,31 @@ public class ClamAvScanner {
     if (!enabled || file == null || file.isEmpty()) {
       return;
     }
-    String result;
-    try (InputStream content = file.getInputStream()) {
-      result = scanStream(content);
+    try {
+      scan(file.getBytes(), file.getOriginalFilename());
     } catch (IOException e) {
       log.error("ClamAV scan failed for upload '{}'", file.getOriginalFilename(), e);
+      throw unscannable();
+    }
+  }
+
+  /** Transport-neutral overload used by application ports after HTTP data has been mapped. */
+  public void scan(byte[] content, String fileName) {
+    if (!enabled || content == null || content.length == 0) {
+      return;
+    }
+    String result;
+    try (InputStream stream = new ByteArrayInputStream(content)) {
+      result = scanStream(stream);
+    } catch (IOException e) {
+      log.error("ClamAV scan failed for upload '{}'", fileName, e);
       throw unscannable();
     }
 
     if (result.contains("FOUND")) {
       // Deliberately logged at WARN with the signature name: this is a real security event and
       // the one case where an operator needs to know what was uploaded and by which request.
-      log.warn("ClamAV rejected upload '{}': {}", file.getOriginalFilename(), result);
+      log.warn("ClamAV rejected upload '{}': {}", fileName, result);
       throw new ApiException(
           HttpStatus.BAD_REQUEST,
           "ERR_INVALID_FILE",
@@ -104,7 +118,7 @@ public class ClamAvScanner {
           "Boshqa fayl yuklang yoki administratorga murojaat qiling.");
     }
     if (!result.contains("OK")) {
-      log.error("Unexpected clamd reply for upload '{}': {}", file.getOriginalFilename(), result);
+      log.error("Unexpected clamd reply for upload '{}': {}", fileName, result);
       throw unscannable();
     }
   }

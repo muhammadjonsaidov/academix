@@ -2,7 +2,7 @@ package uz.academixai.interfaces.web.student;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.application.StudentSubmissionService.StudentSubmissionDetail;
+import uz.academixai.learning.application.port.in.StudentHomeworkQuery.SubmissionDetail;
 
 /** academix_tz.md §2.4 — GET /student/submissions/{submissionId}. */
 public record StudentSubmissionDetailResponse(
@@ -14,7 +14,7 @@ public record StudentSubmissionDetailResponse(
     StudentAiFeedbackResponse aiFeedback,
     StudentGradeResponse grade) {
 
-  public static StudentSubmissionDetailResponse from(StudentSubmissionDetail detail) {
+  public static StudentSubmissionDetailResponse from(SubmissionDetail detail) {
     var submission = detail.submission();
     return new StudentSubmissionDetailResponse(
         submission.id(),

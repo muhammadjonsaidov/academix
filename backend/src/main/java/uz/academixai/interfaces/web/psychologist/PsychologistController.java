@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.PsychologistService;
 import uz.academixai.domain.SignalSeverity;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.interfaces.web.PageResponse;
+import uz.academixai.wellbeing.application.port.in.PsychologistWorkspace;
 
 /** academix_tz.md §2.6 "Psychologist API" — exact paths, some response/request shapes deviate. */
 @RestController
@@ -25,9 +25,9 @@ import uz.academixai.interfaces.web.PageResponse;
 @PreAuthorize("hasRole('PSYCHOLOGIST')")
 public class PsychologistController {
 
-  private final PsychologistService psychologistService;
+  private final PsychologistWorkspace psychologistService;
 
-  public PsychologistController(PsychologistService psychologistService) {
+  public PsychologistController(PsychologistWorkspace psychologistService) {
     this.psychologistService = psychologistService;
   }
 

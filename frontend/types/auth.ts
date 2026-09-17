@@ -12,7 +12,6 @@ export interface UserSummary {
 
 export interface LoginResponse {
   accessToken: string;
-  refreshToken: string;
   user: UserSummary;
 }
 

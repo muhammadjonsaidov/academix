@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.psychologist;
 
 import java.util.List;
-import uz.academixai.application.PsychologistService.Dashboard;
+import uz.academixai.wellbeing.application.port.in.PsychologistWorkspace.Dashboard;
 
 /** academix_tz.md §2.6 — GET /psychologist/dashboard, exact shape. */
 public record PsychologistDashboardResponse(

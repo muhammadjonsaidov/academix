@@ -22,4 +22,13 @@ public class NotificationStatusRepository {
   public void markSentToTelegram(UUID notificationId) {
     jdbc.update("UPDATE notifications SET sent_to_telegram = true WHERE id = ?", notificationId);
   }
+
+  public boolean isSentToTelegram(UUID notificationId) {
+    Boolean sent =
+        jdbc.queryForObject(
+            "SELECT sent_to_telegram FROM notifications WHERE id = ?",
+            Boolean.class,
+            notificationId);
+    return Boolean.TRUE.equals(sent);
+  }
 }

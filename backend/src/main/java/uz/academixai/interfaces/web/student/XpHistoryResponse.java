@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.student;
 
 import java.time.LocalDateTime;
-import uz.academixai.application.StudentDashboardService.XpHistoryItem;
+import uz.academixai.progress.application.port.in.StudentDashboard.XpHistoryItem;
 
 public record XpHistoryResponse(LocalDateTime date, int xp, String reason) {
 

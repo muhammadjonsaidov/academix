@@ -203,3 +203,17 @@ export function isNavItemActive(pathname: string, href: string): boolean {
   if (isRoleRoot) return false;
   return pathname.startsWith(`${href}/`);
 }
+
+/**
+ * Resolves a stable product title from the navigation model. Longest match wins so a drill-in
+ * route inherits the closest list/workspace title (for example a homework review remains under
+ * "Uy vazifalari"). The app shell uses it for the document title and its screen-reader heading.
+ */
+export function dashboardPageTitle(role: Role, pathname: string): string {
+  const matches = NAV_CONFIG[role]
+    .flatMap((group) => group.items)
+    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .sort((left, right) => right.href.length - left.href.length);
+
+  return matches[0]?.label ?? "Bosh sahifa";
+}

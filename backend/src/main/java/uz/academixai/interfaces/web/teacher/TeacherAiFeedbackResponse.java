@@ -1,10 +1,10 @@
 package uz.academixai.interfaces.web.teacher;
 
 import java.util.List;
+import uz.academixai.domain.AIFeedback;
 import uz.academixai.domain.CriteriaScore;
 import uz.academixai.domain.PlagiarismType;
 import uz.academixai.domain.StepAnalysis;
-import uz.academixai.infrastructure.persistence.AIFeedbackEntity;
 
 /** academix_tz.md §2.3 — teacher sees everything, including plagiarism/handwriting. */
 public record TeacherAiFeedbackResponse(
@@ -17,19 +17,18 @@ public record TeacherAiFeedbackResponse(
     float handwritingMatchScore,
     String feedback) {
 
-  public static TeacherAiFeedbackResponse from(AIFeedbackEntity entity) {
-    if (entity == null) {
+  public static TeacherAiFeedbackResponse from(AIFeedback feedback) {
+    if (feedback == null) {
       return null;
     }
-    var domain = entity.toDomain();
     return new TeacherAiFeedbackResponse(
-        domain.extractedText(),
-        domain.aiScorePercent(),
-        domain.criteriaScores(),
-        domain.stepAnalyses(),
-        domain.plagiarismScore(),
-        domain.plagiarismType(),
-        domain.handwritingMatchScore(),
-        domain.feedback());
+        feedback.extractedText(),
+        feedback.aiScorePercent(),
+        feedback.criteriaScores(),
+        feedback.stepAnalyses(),
+        feedback.plagiarismScore(),
+        feedback.plagiarismType(),
+        feedback.handwritingMatchScore(),
+        feedback.feedback());
   }
 }

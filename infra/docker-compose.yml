@@ -1,13 +1,13 @@
-# Full AcademiX AI stack — one command, everything up:
+# Full AcademiX AI application/infrastructure stack:
 #   docker compose up -d --build
-# Then open http://localhost:3000 and log in with the demo accounts
-# (infra/seed/demo-seed.sql header: ADMIN +998901234567 / Test1234!).
+# Demo data is deliberately opt-in and only for disposable development databases:
+#   docker compose --profile demo up -d --build
 #
 # The prod-only pieces (nginx/certbot TLS, postgres-backup, clamav) stay profile-gated:
 #   docker compose --profile prod up -d      # nginx+certbot+backup, no clamav
 #   docker compose --profile antivirus up -d clamav
 #
-# Copy infra/.env.example → infra/.env to supply real secrets (QWEN_API_KEY,
+# Copy infra/.env.example → infra/.env to supply real secrets (AI_API_KEY,
 # GOOGLE_VISION_API_KEY, TELEGRAM_BOT_TOKEN, ...). Everything has working
 # local-dev defaults, so a bare `up` also works.
 
@@ -42,6 +42,16 @@ services:
 
   redis:
     image: redis:8.8.0
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        if [ -n "$$REDIS_PASSWORD" ]; then
+          exec redis-server --requirepass "$$REDIS_PASSWORD"
+        fi
+        exec redis-server
     ports:
       - "6379:6379"
 
@@ -66,13 +76,20 @@ services:
     # always signs (SigV4) when given credentials, so the backend's S3Client can't talk to an
     # unconfigured SeaweedFS at all. Fixed by giving it a real identity matching the backend's
     # SEAWEEDFS_ACCESS_KEY/SECRET_KEY defaults (see application.yml) via seaweedfs-config/s3-config.json.
-    command: server -s3 -s3.config=/etc/seaweedfs/s3-config.json -dir=/data
+    # Production substitutes a host-generated, permission-restricted config through
+    # SEAWEEDFS_CONFIG_FILE; local development keeps the checked-in dev config.
+    # Keep enough logical volumes available for the S3 bucket collection. Without an explicit
+    # limit SeaweedFS derives a small pool from free disk space; it consumed that pool with
+    # unscoped bootstrap volumes and then rejected every `homeworks` object upload with 500.
+    # This is a logical-volume cap, not preallocated disk space; actual storage remains bounded
+    # by the host filesystem and must be monitored.
+    command: server -s3 -s3.config=/etc/seaweedfs/s3-config.json -dir=/data -volume.max=${SEAWEEDFS_VOLUME_MAX:-8}
     ports:
       - "8333:8333" # S3 API
       - "9333:9333" # master UI
     volumes:
       - seaweedfs-data:/data
-      - ./seaweedfs-config/s3-config.json:/etc/seaweedfs/s3-config.json:ro
+      - ${SEAWEEDFS_CONFIG_FILE:-./seaweedfs-config/s3-config.json}:/etc/seaweedfs/s3-config.json:ro
 
   backend:
     build:
@@ -104,7 +121,25 @@ services:
       SEAWEEDFS_SECRET_KEY: ${SEAWEEDFS_SECRET_KEY:-local-dev-secret-key}
       SEAWEEDFS_BUCKET: ${SEAWEEDFS_BUCKET:-homeworks}
       # Real AI/email/telegram keys — app degrades gracefully without them
+      AI_API_KEY: ${AI_API_KEY:-${QWEN_API_KEY:-}}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.deepseek.com/}
+      AI_MODEL_TEXT: ${AI_MODEL_TEXT:-deepseek-flash}
+      AI_MODEL_VISION: ${AI_MODEL_VISION:-${QWEN_MODEL_VISION:-qwen3.7-plus}}
+      # Embeddings use their own provider credentials: changing Qwen retrieval must never switch
+      # the chat/lesson-plan provider away from DeepSeek.
+      AI_EMBEDDING_API_KEY: ${AI_EMBEDDING_API_KEY:-${QWEN_EMBEDDING_API_KEY:-}}
+      AI_EMBEDDING_BASE_URL: ${AI_EMBEDDING_BASE_URL:-${QWEN_EMBEDDING_BASE_URL:-https://dashscope-intl.aliyuncs.com/compatible-mode/v1}}
+      AI_MODEL_EMBEDDING: ${AI_MODEL_EMBEDDING:-${QWEN_MODEL_EMBEDDING:-qwen3.7-text-embedding}}
+      AI_EMBEDDING_DIMENSIONS: ${AI_EMBEDDING_DIMENSIONS:-${QWEN_EMBEDDING_DIMENSIONS:-1024}}
+      # Temporary compatibility with existing deployments. New environments should use AI_* only.
       QWEN_API_KEY: ${QWEN_API_KEY:-}
+      QWEN_BASE_URL: ${QWEN_BASE_URL:-}
+      QWEN_MODEL_TEXT: ${QWEN_MODEL_TEXT:-}
+      QWEN_MODEL_VISION: ${QWEN_MODEL_VISION:-}
+      QWEN_EMBEDDING_API_KEY: ${QWEN_EMBEDDING_API_KEY:-}
+      QWEN_EMBEDDING_BASE_URL: ${QWEN_EMBEDDING_BASE_URL:-}
+      QWEN_MODEL_EMBEDDING: ${QWEN_MODEL_EMBEDDING:-}
+      QWEN_EMBEDDING_DIMENSIONS: ${QWEN_EMBEDDING_DIMENSIONS:-}
       GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-}
       GMAIL_USERNAME: ${GMAIL_USERNAME:-}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
@@ -139,6 +174,7 @@ services:
       DATABASE_APP_PASSWORD: ${DATABASE_APP_PASSWORD:-academix_app_local_dev_only}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-academix}
@@ -178,8 +214,9 @@ services:
       backend:
         condition: service_started
 
-  # One-shot: after Flyway has created the schema (backend healthy), apply the
-  # fresh-DB bootstrap + the demo seed. Idempotent, exits after running.
+  # DEVELOPMENT/DEMO ONLY. This creates known Test1234! accounts and must never run
+  # from a normal or production invocation. After Flyway has created the schema it
+  # applies the fresh-DB bootstrap and the demo seed.
   seed:
     image: postgres:18-alpine
     environment:
@@ -197,6 +234,7 @@ services:
         psql -v ON_ERROR_STOP=1 -h postgres -U ${DATABASE_USERNAME:-academix} -d academix -f /demo-seed.sql
         echo "Seed complete — demo logins ready."
     restart: "no"
+    profiles: ["demo"]
     depends_on:
       backend:
         condition: service_healthy

@@ -4,15 +4,14 @@ import type { LoginResponse, Profile, UserSummary } from "@/types/auth";
 
 interface AuthState {
   accessToken: string | null;
-  refreshToken: string | null;
   user: UserSummary | null;
   profile: Profile | null;
   isAuthenticated: boolean;
-  login: (phone: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   logout: () => void;
   setAccessToken: (token: string) => void;
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
-  forgotPassword: (phone: string) => Promise<string>;
+  forgotPassword: (email: string) => Promise<string>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   fetchProfile: () => Promise<void>;
   updateProfile: (firstName: string, lastName: string, email: string) => Promise<void>;
@@ -28,20 +27,18 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/a
 // create a real circular module dependency with lib/api/client.ts (which imports this store).
 export const useAuthStore = create<AuthState>((set, get) => ({
   accessToken: null,
-  refreshToken: null,
   user: null,
   profile: null,
   isAuthenticated: false,
 
-  login: async (phone, password) => {
+  login: async (identifier, password) => {
     const { data } = await axios.post<LoginResponse>(
       `${API_BASE_URL}/auth/login`,
-      { phone, password },
+      { identifier, password },
       { withCredentials: true },
     );
     set({
       accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
       user: data.user,
       isAuthenticated: true,
     });
@@ -51,7 +48,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const token = get().accessToken;
     set({
       accessToken: null,
-      refreshToken: null,
       user: null,
       profile: null,
       isAuthenticated: false,
@@ -90,10 +86,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // Unauthenticated, same plain-axios reasoning as login/logout above. Returns the (always
   // success) message so the page can display it directly — backend intentionally never
   // reveals whether the phone/email actually matched an account (anti-enumeration).
-  forgotPassword: async (phone) => {
+  forgotPassword: async (email) => {
     const { data } = await axios.post<{ success: boolean; message: string }>(
       `${API_BASE_URL}/auth/forgot-password`,
-      { phone },
+      { email },
     );
     return data.message;
   },

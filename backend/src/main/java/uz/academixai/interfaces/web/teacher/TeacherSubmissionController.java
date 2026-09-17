@@ -11,10 +11,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.TeacherSubmissionService;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.interfaces.web.PageResponse;
+import uz.academixai.learning.application.port.in.HomeworkGrading;
+import uz.academixai.learning.application.port.in.TeacherSubmissionQuery;
 
 /** academix_tz.md §2.3 "Topshirilgan ishlarni ko'rish va baholash" — exact contract. */
 @RestController
@@ -22,10 +23,13 @@ import uz.academixai.interfaces.web.PageResponse;
 @PreAuthorize("hasRole('TEACHER')")
 public class TeacherSubmissionController {
 
-  private final TeacherSubmissionService submissionService;
+  private final TeacherSubmissionQuery submissionService;
+  private final HomeworkGrading gradingService;
 
-  public TeacherSubmissionController(TeacherSubmissionService submissionService) {
+  public TeacherSubmissionController(
+      TeacherSubmissionQuery submissionService, HomeworkGrading gradingService) {
     this.submissionService = submissionService;
+    this.gradingService = gradingService;
   }
 
   @GetMapping
@@ -58,7 +62,7 @@ public class TeacherSubmissionController {
       @PathVariable UUID submissionId,
       @RequestBody GradeSubmissionRequest request) {
     var saved =
-        submissionService.grade(
+        gradingService.grade(
             principal.schoolId(),
             principal.userId(),
             submissionId,

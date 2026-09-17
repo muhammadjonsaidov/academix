@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.AdminSchoolService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.school.application.SchoolAdministrationService;
 
 /** academix_tz.md §2.2 "Maktab". */
 @RestController
@@ -16,9 +16,9 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminSchoolController {
 
-  private final AdminSchoolService schoolService;
+  private final SchoolAdministrationService schoolService;
 
-  public AdminSchoolController(AdminSchoolService schoolService) {
+  public AdminSchoolController(SchoolAdministrationService schoolService) {
     this.schoolService = schoolService;
   }
 

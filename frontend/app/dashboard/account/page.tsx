@@ -12,6 +12,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { fieldClass, FormField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,12 +97,11 @@ export default function AccountPage() {
   return (
     <DashboardShell role={role}>
       <div className="mx-auto max-w-4xl space-y-6">
-        <div>
-          <h2 className="font-heading text-xl font-semibold">Sozlamalar</h2>
-          <p className="text-sm text-muted-foreground">
-            Hisobingiz va bildirishnomalarni boshqaring.
-          </p>
-        </div>
+        <PageHeader
+          title="Sozlamalar"
+          description="Hisobingiz va bildirishnomalarni boshqaring."
+          eyebrow="Hisob"
+        />
 
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
           {/* Section nav — vertical on desktop, horizontal scroll strip on mobile */}

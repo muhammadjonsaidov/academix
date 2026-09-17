@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.SchoolClassService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.school.application.ClassAdministrationService;
 
 /** academix_tz.md §2.2 "Sinflar" — exact contract, don't drift path/shape from the spec. */
 @RestController
@@ -22,9 +22,9 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminClassController {
 
-  private final SchoolClassService classService;
+  private final ClassAdministrationService classService;
 
-  public AdminClassController(SchoolClassService classService) {
+  public AdminClassController(ClassAdministrationService classService) {
     this.classService = classService;
   }
 

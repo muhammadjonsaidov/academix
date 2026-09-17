@@ -2,7 +2,7 @@ package uz.academixai.interfaces.web.psychologist;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.application.PsychologistService.SignalWithStudent;
+import uz.academixai.wellbeing.application.port.in.PsychologistWorkspace.SignalWithStudent;
 
 /** academix_tz.md §2.6 — GET /psychologist/signals, exact shape. */
 public record PsychologistSignalListItemResponse(

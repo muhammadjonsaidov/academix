@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.AuthService;
 import uz.academixai.application.PasswordResetService;
+import uz.academixai.identity.application.AuthenticationService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.infrastructure.security.JwtService;
 
@@ -22,12 +22,12 @@ import uz.academixai.infrastructure.security.JwtService;
  * academix_tz.md §2.1 — exact contract, don't drift path/shape from the spec.
  *
  * <p>Deviation on top of the spec (documented, judgment call): the refresh token is additionally
- * set as its own httpOnly cookie ({@code academix_refresh}, path-scoped to /api/v1/auth) and {@code
- * POST /refresh} falls back to that cookie when the body carries no token. This exists so the
- * frontend can bootstrap a session after a hard page reload — its access token lives only in memory
- * (frontend_tdd.md §5.5, deliberately not localStorage), so without this every F5 forced a fresh
- * login. Same security posture as the existing {@code academix_auth} cookie: httpOnly, Secure,
- * SameSite=Strict — JS never sees either token.
+ * set as its own httpOnly cookie ({@code academix_refresh}, path-scoped to /api/v1/auth). This
+ * exists so the frontend can bootstrap a session after a hard page reload — its access token lives
+ * only in memory (frontend_tdd.md §5.5, deliberately not localStorage), so without this every F5
+ * forced a fresh login. Refresh is cookie-only and rotates the token on every use; JavaScript never
+ * sees either token. Same security posture as the existing {@code academix_auth} cookie: httpOnly,
+ * Secure, SameSite=Strict.
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -36,7 +36,7 @@ public class AuthController {
   private static final String COOKIE_NAME = "academix_auth";
   private static final String REFRESH_COOKIE_NAME = "academix_refresh";
 
-  private final AuthService authService;
+  private final AuthenticationService authenticationService;
   private final JwtService jwtService;
   private final PasswordResetService passwordResetService;
 
@@ -50,11 +50,11 @@ public class AuthController {
   private final String cookieDomain;
 
   public AuthController(
-      AuthService authService,
+      AuthenticationService authenticationService,
       JwtService jwtService,
       PasswordResetService passwordResetService,
       @Value("${academix.cookie-domain:}") String cookieDomain) {
-    this.authService = authService;
+    this.authenticationService = authenticationService;
     this.jwtService = jwtService;
     this.passwordResetService = passwordResetService;
     this.cookieDomain = cookieDomain == null || cookieDomain.isBlank() ? null : cookieDomain;
@@ -62,10 +62,8 @@ public class AuthController {
 
   @PostMapping("/login")
   public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-    var result = authService.login(request.phone(), request.password());
-    var body =
-        new LoginResponse(
-            result.accessToken(), result.refreshToken(), UserSummary.from(result.user()));
+    var result = authenticationService.login(request.identifier(), request.password());
+    var body = new LoginResponse(result.accessToken(), UserSummary.from(result.account()));
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, authCookie(result.accessToken()).toString())
         .header(HttpHeaders.SET_COOKIE, refreshCookie(result.refreshToken()).toString())
@@ -74,22 +72,20 @@ public class AuthController {
 
   @PostMapping("/refresh")
   public ResponseEntity<RefreshResponse> refresh(
-      @RequestBody(required = false) RefreshRequest request,
       @CookieValue(value = REFRESH_COOKIE_NAME, required = false) String refreshCookie) {
-    String refreshToken =
-        request != null && request.refreshToken() != null && !request.refreshToken().isBlank()
-            ? request.refreshToken()
-            : refreshCookie;
-    String accessToken = authService.refresh(refreshToken);
+    // The browser cannot read this HttpOnly cookie. Accepting a JSON refreshToken body would put
+    // the long-lived credential back into JavaScript memory and defeats that boundary.
+    var result = authenticationService.refresh(refreshCookie);
     return ResponseEntity.ok()
-        .header(HttpHeaders.SET_COOKIE, authCookie(accessToken).toString())
-        .body(new RefreshResponse(accessToken));
+        .header(HttpHeaders.SET_COOKIE, authCookie(result.accessToken()).toString())
+        .header(HttpHeaders.SET_COOKIE, refreshCookie(result.refreshToken()).toString())
+        .body(new RefreshResponse(result.accessToken()));
   }
 
   @PostMapping("/logout")
   public ResponseEntity<LogoutResponse> logout(
       @AuthenticationPrincipal AcademixPrincipal principal) {
-    authService.logout(principal.userId());
+    authenticationService.logout(principal.userId());
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, clearedAuthCookie().toString())
         .header(HttpHeaders.SET_COOKIE, clearedRefreshCookie().toString())
@@ -98,7 +94,7 @@ public class AuthController {
 
   @GetMapping("/profile")
   public ProfileResponse profile(@AuthenticationPrincipal AcademixPrincipal principal) {
-    return ProfileResponse.from(authService.profile(principal.userId()));
+    return ProfileResponse.from(authenticationService.profile(principal.userId()));
   }
 
   @PutMapping("/profile")
@@ -106,7 +102,7 @@ public class AuthController {
       @AuthenticationPrincipal AcademixPrincipal principal,
       @RequestBody UpdateProfileRequest request) {
     return ProfileResponse.from(
-        authService.updateProfile(
+        authenticationService.updateProfile(
             principal.userId(), request.firstName(), request.lastName(), request.email()));
   }
 
@@ -114,18 +110,18 @@ public class AuthController {
   public ResponseEntity<Void> changePassword(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @RequestBody ChangePasswordRequest request) {
-    authService.changePassword(principal.userId(), request.oldPassword(), request.newPassword());
+    authenticationService.changePassword(
+        principal.userId(), request.oldPassword(), request.newPassword());
     return ResponseEntity.ok().build();
   }
 
   @PostMapping("/forgot-password")
   public ForgotPasswordResponse forgotPassword(@RequestBody ForgotPasswordRequest request) {
-    passwordResetService.forgotPassword(request.phone());
+    passwordResetService.forgotPassword(request.email());
     // Always the same response regardless of outcome — see PasswordResetService's Javadoc
-    // (anti-enumeration: a caller can't tell "no account," "no email on file," or "sent" apart).
+    // (anti-enumeration: a caller can't tell "no account" or "sent" apart).
     return new ForgotPasswordResponse(
-        true,
-        "Agar hisobingiz mavjud bo'lsa va email kiritilgan bo'lsa, tiklash havolasi yuborildi.");
+        true, "Agar bu emailga bog'langan hisob mavjud bo'lsa, tiklash havolasi yuborildi.");
   }
 
   @PostMapping("/reset-password")

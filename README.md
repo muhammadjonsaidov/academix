@@ -22,7 +22,7 @@ reports, and the AI Tutor chat are all built and verified live end-to-end. What'
 - **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, shadcn/ui
   (Base UI), Zustand, Axios
 - **Storage**: SeaweedFS (S3-compatible)
-- **AI**: Google Cloud Vision (OCR), Alibaba Qwen via DashScope (grading, plagiarism, chat,
+- **AI**: Google Cloud Vision (OCR) and any OpenAI-compatible provider (grading, plagiarism, chat,
   psychology signals, generation)
 - **PDF reports**: JasperReports
 - **Bot**: Telegram
@@ -55,7 +55,8 @@ cp frontend/.env.local.example frontend/.env.local
 cp telegram-bot/.env.example telegram-bot/.env
 ```
 
-Fill in the real secrets in `backend/.env` (`QWEN_API_KEY`, `GOOGLE_VISION_API_KEY`,
+Fill in the real secrets in `backend/.env` (`AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL_TEXT`,
+`GOOGLE_VISION_API_KEY`,
 `TELEGRAM_BOT_TOKEN`) — everything else already has working local-dev defaults.
 `TELEGRAM_BOT_TOKEN` must be set to the **same value** in `telegram-bot/.env`: both services act
 as the same bot identity. The app boots and
@@ -70,13 +71,14 @@ different values silently break every authenticated request.
 ```
 cp infra/.env.example infra/.env   # optional: real AI/Telegram secrets
 cd infra
-docker compose up -d --build
+docker compose --profile demo up -d --build
 ```
 
 Brings up the **whole product**: Postgres (with pgvector) + Redis + RabbitMQ + SeaweedFS,
 backend (`http://localhost:8080`), frontend (`http://localhost:3000`), telegram-bot, and a
-one-shot `seed` service that fills the DB with the demo data (`infra/seed/bootstrap.sql` first,
-then `infra/seed/demo-seed.sql`).
+one-shot `seed` service that fills the DB with demo data (`infra/seed/bootstrap.sql` first, then
+`infra/seed/demo-seed.sql`). The `demo` profile is deliberately required because it creates known
+`Test1234!` credentials and must never be used for production.
 
 Demo logins (password `Test1234!` for all) — full list in `infra/seed/demo-seed.sql`:
 
@@ -94,6 +96,9 @@ Optional extras, still profile-gated:
 docker compose --profile antivirus up -d clamav   # upload virus scanning (needs ACADEMIX_CLAMAV_ENABLED=true)
 docker compose --profile prod up -d               # nginx TLS + nightly postgres backup
 ```
+
+For a non-demo local stack, omit `--profile demo`; provision the first school/admin through the
+approved bootstrap procedure rather than demo credentials.
 
 ### 3. Backend (local dev, no Docker)
 

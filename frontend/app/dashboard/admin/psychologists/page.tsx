@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { HeartPulse, UserPlus } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { fieldClass, FormField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,12 +72,11 @@ export default function AdminPsychologistsPage() {
   return (
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
-        <div>
-          <h2 className="font-heading text-xl font-semibold">Psixologlar</h2>
-          <p className="text-sm text-muted-foreground">
-            Maktabga psixolog taklif qiling va ularning holatini boshqaring.
-          </p>
-        </div>
+        <PageHeader
+          title="Psixologlar"
+          description="Maktabga psixolog taklif qiling va ularning holatini boshqaring."
+          eyebrow="Jamoa"
+        />
 
         <Card>
           <CardHeader>

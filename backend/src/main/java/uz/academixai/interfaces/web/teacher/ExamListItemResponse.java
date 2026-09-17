@@ -2,7 +2,7 @@ package uz.academixai.interfaces.web.teacher;
 
 import java.time.LocalDate;
 import java.util.UUID;
-import uz.academixai.application.ExamService.ExamSummary;
+import uz.academixai.learning.application.port.in.ExamManagement.ExamSummary;
 
 /**
  * academix_tz.md gap-fill (deviation, judgment call, see CLAUDE.md): the spec never documents a

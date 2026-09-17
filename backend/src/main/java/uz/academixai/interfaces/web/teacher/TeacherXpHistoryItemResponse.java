@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.teacher;
 
 import java.time.LocalDateTime;
-import uz.academixai.domain.XpHistoryEntry;
+import uz.academixai.progress.domain.XpHistoryEntry;
 
 public record TeacherXpHistoryItemResponse(LocalDateTime date, int xp, String reason) {
 

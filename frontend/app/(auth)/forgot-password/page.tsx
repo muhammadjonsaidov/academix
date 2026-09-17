@@ -11,7 +11,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function ForgotPasswordPage() {
   const forgotPassword = useAuthStore((state) => state.forgotPassword);
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -19,7 +19,7 @@ export default function ForgotPasswordPage() {
     event.preventDefault();
     setIsSubmitting(true);
     try {
-      const result = await forgotPassword(phone);
+      const result = await forgotPassword(email);
       setMessage(result);
     } catch {
       // Backend always returns success (anti-enumeration) — a network/500 failure here is
@@ -57,8 +57,7 @@ export default function ForgotPasswordPage() {
               Parolni tiklash
             </p>
             <p className="text-sm text-muted-foreground">
-              Telefon raqamingizni kiriting — agar hisobingizga email biriktirilgan bo&apos;lsa,
-              tiklash havolasi shu emailga yuboriladi.
+              Hisobingizga biriktirilgan emailni kiriting. Tiklash havolasi shu manzilga yuboriladi.
             </p>
           </CardHeader>
           <CardContent className="pt-4">
@@ -75,15 +74,16 @@ export default function ForgotPasswordPage() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label htmlFor="phone" className="text-sm font-medium">
-                    Telefon raqam
+                  <label htmlFor="email" className="text-sm font-medium">
+                    Email manzil
                   </label>
                   <input
-                    id="phone"
-                    type="tel"
-                    placeholder="+998901234567"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    id="email"
+                    type="email"
+                    placeholder="admin@maktab.uz"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
                     required
                     className={`${fieldClass} w-full`}
                   />

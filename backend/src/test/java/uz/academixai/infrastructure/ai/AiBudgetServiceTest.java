@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.ai;
+package uz.academixai.intelligence.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.transaction.support.TransactionTemplate;
 import uz.academixai.TestcontainersConfiguration;
+import uz.academixai.intelligence.domain.AiCallCategory;
 
 /**
  * Real Postgres (school row, monthlyAiCallLimit) + real Redis (INCR-based usage counter) — no

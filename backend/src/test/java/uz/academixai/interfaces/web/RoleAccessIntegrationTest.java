@@ -2,11 +2,11 @@ package uz.academixai.interfaces.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-
+import jakarta.servlet.http.Cookie;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -49,8 +50,8 @@ import uz.academixai.infrastructure.security.JwtService;
  *   <li>an anonymous request gets {@code 401}.
  * </ul>
  *
- * <p>Endpoints with {@code allowedRole == null} are common to every authenticated role
- * ({@code isAuthenticated()} — notifications/telegram/auth-profile).
+ * <p>Endpoints with {@code allowedRole == null} are common to every authenticated role ({@code
+ * isAuthenticated()} — notifications/telegram/auth-profile).
  *
  * <p>Authentication uses real JWTs minted via {@link JwtService} — the same production path the
  * {@code JwtAuthenticationFilter} verifies. No seed data is needed: the filter derives role and
@@ -107,6 +108,7 @@ class RoleAccessIntegrationTest {
 
   // Real user for the public auth-flow test — login needs an actual row to answer 200.
   private static final String AUTH_PHONE = "+998900009999";
+  private static final String AUTH_EMAIL = "auth.user@academix.uz";
   private static final String AUTH_PASSWORD = "password123";
 
   @BeforeAll
@@ -121,7 +123,7 @@ class RoleAccessIntegrationTest {
             "Auth",
             "User",
             AUTH_PHONE,
-            null,
+            AUTH_EMAIL,
             passwordEncoder.encode(AUTH_PASSWORD),
             Role.STUDENT,
             true,
@@ -140,12 +142,15 @@ class RoleAccessIntegrationTest {
     String path = resolve(endpoint.path());
     if (endpoint.multipart()) {
       MockMultipartHttpServletRequestBuilder mp = multipart(path);
-      mp.file(new MockMultipartFile("file", "file.bin", "application/octet-stream", new byte[] {1}));
+      mp.file(
+          new MockMultipartFile("file", "file.bin", "application/octet-stream", new byte[] {1}));
       mp.file(new MockMultipartFile("images", "img.jpg", "image/jpeg", new byte[] {1}));
       // @RequestPart text fields must be multipart parts (files), not query params.
       mp.file(new MockMultipartFile("subjectId", "", "text/plain", uuidBytes()));
       mp.file(new MockMultipartFile("classId", "", "text/plain", uuidBytes()));
-      mp.file(new MockMultipartFile("title", "", "text/plain", "Test title".getBytes(StandardCharsets.UTF_8)));
+      mp.file(
+          new MockMultipartFile(
+              "title", "", "text/plain", "Test title".getBytes(StandardCharsets.UTF_8)));
       mp.param("studentIds", UUID.randomUUID().toString());
       // POST /student/homework/{id}/submit requires a @RequestParam SubmissionType 'type' —
       // without it Spring dies in argument resolution (before @PreAuthorize) with a 500.
@@ -204,9 +209,9 @@ class RoleAccessIntegrationTest {
   }
 
   /**
-   * Executes the request and returns the response status. A request that reaches the service
-   * layer on this empty DB may legitimately throw (FK violation on a throwaway school/user id, or
-   * a rollback-only marker bubbling out of the RLS request transaction) — that still proves the
+   * Executes the request and returns the response status. A request that reaches the service layer
+   * on this empty DB may legitimately throw (FK violation on a throwaway school/user id, or a
+   * rollback-only marker bubbling out of the RLS request transaction) — that still proves the
    * security gate was passed: a blocked request always answers 401/403 as a normal response, never
    * throws. The RBAC guarantee this test asserts is "not 401"; the business outcome is out of
    * scope.
@@ -266,29 +271,47 @@ class RoleAccessIntegrationTest {
     // would 401 before ever reaching AuthService. (A login with wrong credentials legitimately
     // answers 401 ERR_INVALID_CREDENTIALS, so the negative form of this test is unusable — the
     // positive flow is the real proof.)
-    String loginBody =
-        mockMvc.perform(
+    var loginResult =
+        mockMvc
+            .perform(
                 post("/api/v1/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        "{\"phone\":\""
+                        "{\"identifier\":\""
                             + AUTH_PHONE
                             + "\",\"password\":\""
                             + AUTH_PASSWORD
                             + "\"}"))
             .andExpect(status().isOk())
             .andReturn()
-            .getResponse()
-            .getContentAsString();
+            .getResponse();
 
-    // refresh: use the refresh token issued by that login, still no Authorization header.
-    String refreshToken =
-        loginBody.replaceAll(".*\"refreshToken\":\"([^\"]+)\".*", "$1");
-    assertThat(refreshToken).as("login response carries a refreshToken").isNotBlank();
-    mockMvc.perform(
-            post("/api/v1/auth/refresh")
+    // A case-insensitive email address belonging to the same account is an equally valid login
+    // identifier. This is the public contract used by the login page and by account recovery.
+    mockMvc
+        .perform(
+            post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
+                .content(
+                    "{\"identifier\":\""
+                        + AUTH_EMAIL.toUpperCase(java.util.Locale.ROOT)
+                        + "\",\"password\":\""
+                        + AUTH_PASSWORD
+                        + "\"}"))
+        .andExpect(status().isOk());
+
+    // Refresh credentials are intentionally not in the JSON body. The HttpOnly cookie is the
+    // only browser-visible transport, so this catches an accidental regression that exposes a
+    // seven-day token to JavaScript.
+    assertThat(loginResult.getContentAsString()).doesNotContain("refreshToken");
+    String refreshCookie =
+        loginResult.getHeaders(HttpHeaders.SET_COOKIE).stream()
+            .filter(header -> header.startsWith("academix_refresh="))
+            .findFirst()
+            .map(header -> header.substring("academix_refresh=".length()).split(";", 2)[0])
+            .orElseThrow();
+    mockMvc
+        .perform(post("/api/v1/auth/refresh").cookie(new Cookie("academix_refresh", refreshCookie)))
         .andExpect(status().isOk());
 
     // The remaining public endpoints answer business responses (never a security 401) even
@@ -332,7 +355,10 @@ class RoleAccessIntegrationTest {
             """
             {"newClassId":"%s"}"""
                 .formatted(UUID.randomUUID())),
-        new Endpoint(HttpMethod.PUT, "/api/v1/admin/students/{studentId}/handwriting/unlock-reset", Role.ADMIN),
+        new Endpoint(
+            HttpMethod.PUT,
+            "/api/v1/admin/students/{studentId}/handwriting/unlock-reset",
+            Role.ADMIN),
         new Endpoint(HttpMethod.GET, "/api/v1/admin/teachers", Role.ADMIN),
         new Endpoint(
             HttpMethod.POST,
@@ -380,7 +406,8 @@ class RoleAccessIntegrationTest {
             """
             {"firstName":"Ota","lastName":"Ona","phone":"+998900000003",\
             "password":"password123"}"""),
-        new Endpoint(HttpMethod.GET, "/api/v1/admin/parents/check?phone=%2B998901234567", Role.ADMIN),
+        new Endpoint(
+            HttpMethod.GET, "/api/v1/admin/parents/check?phone=%2B998901234567", Role.ADMIN),
         new Endpoint(
             HttpMethod.POST,
             "/api/v1/admin/parents/link",
@@ -396,8 +423,10 @@ class RoleAccessIntegrationTest {
             """
             {"firstName":"Test","lastName":"Psych","phone":"+998900000005",\
             "email":"psych@academix.uz","password":"password123"}"""),
-        new Endpoint(HttpMethod.PUT, "/api/v1/admin/psychologists/{psychologistId}/activate", Role.ADMIN),
-        new Endpoint(HttpMethod.PUT, "/api/v1/admin/psychologists/{psychologistId}/deactivate", Role.ADMIN),
+        new Endpoint(
+            HttpMethod.PUT, "/api/v1/admin/psychologists/{psychologistId}/activate", Role.ADMIN),
+        new Endpoint(
+            HttpMethod.PUT, "/api/v1/admin/psychologists/{psychologistId}/deactivate", Role.ADMIN),
         new Endpoint(HttpMethod.GET, "/api/v1/admin/analytics/classes-comparison", Role.ADMIN),
         new Endpoint(HttpMethod.GET, "/api/v1/admin/analytics/teachers-ranking", Role.ADMIN),
         new Endpoint(HttpMethod.GET, "/api/v1/admin/analytics/school-progress", Role.ADMIN),
@@ -420,8 +449,10 @@ class RoleAccessIntegrationTest {
                 .formatted(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())),
         new Endpoint(HttpMethod.DELETE, "/api/v1/admin/assignments/{assignmentId}", Role.ADMIN),
         new Endpoint(HttpMethod.GET, "/api/v1/admin/data-deletion-requests", Role.ADMIN),
-        new Endpoint(HttpMethod.PUT, "/api/v1/admin/data-deletion-requests/{id}/approve", Role.ADMIN),
-        new Endpoint(HttpMethod.POST, "/api/v1/admin/students/bulk-import/analyze", Role.ADMIN, true),
+        new Endpoint(
+            HttpMethod.PUT, "/api/v1/admin/data-deletion-requests/{id}/approve", Role.ADMIN),
+        new Endpoint(
+            HttpMethod.POST, "/api/v1/admin/students/bulk-import/analyze", Role.ADMIN, true),
         new Endpoint(
             HttpMethod.POST,
             "/api/v1/admin/students/bulk-import/commit",
@@ -457,16 +488,24 @@ class RoleAccessIntegrationTest {
             """
             {"title":"Yangilangan vazifa","deadlineAt":"2026-06-02T18:00:00","maxScore":100}"""),
         new Endpoint(HttpMethod.DELETE, "/api/v1/teacher/homework/{assignmentId}", Role.TEACHER),
-        new Endpoint(HttpMethod.POST, "/api/v1/teacher/homework/{assignmentId}/submit", Role.TEACHER),
-        new Endpoint(HttpMethod.GET, "/api/v1/teacher/homework/{assignmentId}/unique-tasks", Role.TEACHER),
-        new Endpoint(HttpMethod.PUT, "/api/v1/teacher/homework/{assignmentId}/unique-tasks/{taskId}/approve", Role.TEACHER),
+        new Endpoint(
+            HttpMethod.POST, "/api/v1/teacher/homework/{assignmentId}/submit", Role.TEACHER),
+        new Endpoint(
+            HttpMethod.GET, "/api/v1/teacher/homework/{assignmentId}/unique-tasks", Role.TEACHER),
+        new Endpoint(
+            HttpMethod.PUT,
+            "/api/v1/teacher/homework/{assignmentId}/unique-tasks/{taskId}/approve",
+            Role.TEACHER),
         new Endpoint(
             HttpMethod.PUT,
             "/api/v1/teacher/homework/{assignmentId}/unique-tasks/{taskId}",
             Role.TEACHER,
             """
             {"taskContent":"Yangi matn"}"""),
-        new Endpoint(HttpMethod.POST, "/api/v1/teacher/homework/{assignmentId}/unique-tasks/approve-all", Role.TEACHER),
+        new Endpoint(
+            HttpMethod.POST,
+            "/api/v1/teacher/homework/{assignmentId}/unique-tasks/approve-all",
+            Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/submissions", Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/submissions/{submissionId}", Role.TEACHER),
         new Endpoint(
@@ -476,22 +515,33 @@ class RoleAccessIntegrationTest {
             """
             {"score":90,"fivePointGrade":5,"teacherComment":"Yaxshi","isExcellent":false}"""),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/exams/{examId}/submissions", Role.TEACHER),
-        new Endpoint(HttpMethod.POST, "/api/v1/teacher/exams/{examId}/submissions/bulk-upload", Role.TEACHER, true),
+        new Endpoint(
+            HttpMethod.POST,
+            "/api/v1/teacher/exams/{examId}/submissions/bulk-upload",
+            Role.TEACHER,
+            true),
         new Endpoint(
             HttpMethod.POST,
             "/api/v1/teacher/exams/{examId}/submissions/{id}/grade",
             Role.TEACHER,
             """
             {"score":90,"fivePointGrade":5,"teacherComment":"Yaxshi"}"""),
-        new Endpoint(HttpMethod.POST, "/api/v1/teacher/exams/{examId}/submissions/approve-all", Role.TEACHER),
+        new Endpoint(
+            HttpMethod.POST,
+            "/api/v1/teacher/exams/{examId}/submissions/approve-all",
+            Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/classes", Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/classes/{classId}/students", Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/classes/{classId}/analytics", Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/students/{studentId}/progress", Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/subjects", Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/psychological-signals", Role.TEACHER),
-        new Endpoint(HttpMethod.GET, "/api/v1/teacher/psychological-signals/{signalId}", Role.TEACHER),
-        new Endpoint(HttpMethod.PUT, "/api/v1/teacher/psychological-signals/{signalId}/resolve", Role.TEACHER),
+        new Endpoint(
+            HttpMethod.GET, "/api/v1/teacher/psychological-signals/{signalId}", Role.TEACHER),
+        new Endpoint(
+            HttpMethod.PUT,
+            "/api/v1/teacher/psychological-signals/{signalId}/resolve",
+            Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/syllabuses", Role.TEACHER),
         new Endpoint(HttpMethod.POST, "/api/v1/teacher/syllabuses", Role.TEACHER, true),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/syllabuses/{syllabusId}", Role.TEACHER),
@@ -509,7 +559,10 @@ class RoleAccessIntegrationTest {
             Role.TEACHER,
             """
             {"teacherEditedPlan":"Reja matni","isApproved":true}"""),
-        new Endpoint(HttpMethod.GET, "/api/v1/teacher/grading-criteria?subjectId=" + UUID.randomUUID(), Role.TEACHER),
+        new Endpoint(
+            HttpMethod.GET,
+            "/api/v1/teacher/grading-criteria?subjectId=" + UUID.randomUUID(),
+            Role.TEACHER),
         new Endpoint(
             HttpMethod.PUT,
             "/api/v1/teacher/grading-criteria/{subjectId}",
@@ -522,7 +575,8 @@ class RoleAccessIntegrationTest {
             Role.TEACHER,
             """
             {"reason":"ILLNESS","notes":"Test"}"""),
-        new Endpoint(HttpMethod.PUT, "/api/v1/teacher/students/{studentId}/reset-password", Role.TEACHER),
+        new Endpoint(
+            HttpMethod.PUT, "/api/v1/teacher/students/{studentId}/reset-password", Role.TEACHER),
 
         // --- Student (academix_tz.md §2.4) ---
         new Endpoint(HttpMethod.GET, "/api/v1/student/progress", Role.STUDENT),
@@ -531,7 +585,8 @@ class RoleAccessIntegrationTest {
         new Endpoint(HttpMethod.GET, "/api/v1/student/xp-history", Role.STUDENT),
         new Endpoint(HttpMethod.GET, "/api/v1/student/homework", Role.STUDENT),
         new Endpoint(HttpMethod.GET, "/api/v1/student/homework/{assignmentId}", Role.STUDENT),
-        new Endpoint(HttpMethod.POST, "/api/v1/student/homework/{assignmentId}/submit", Role.STUDENT, true),
+        new Endpoint(
+            HttpMethod.POST, "/api/v1/student/homework/{assignmentId}/submit", Role.STUDENT, true),
         new Endpoint(HttpMethod.GET, "/api/v1/student/submissions", Role.STUDENT),
         new Endpoint(HttpMethod.GET, "/api/v1/student/submissions/{submissionId}", Role.STUDENT),
         new Endpoint(HttpMethod.GET, "/api/v1/student/exams", Role.STUDENT),
@@ -548,13 +603,21 @@ class RoleAccessIntegrationTest {
         new Endpoint(HttpMethod.GET, "/api/v1/parent/dashboard", Role.PARENT),
         new Endpoint(HttpMethod.GET, "/api/v1/parent/children", Role.PARENT),
         new Endpoint(HttpMethod.GET, "/api/v1/parent/children/{studentId}/overview", Role.PARENT),
-        new Endpoint(HttpMethod.GET, "/api/v1/parent/children/{studentId}/quarter-report", Role.PARENT),
-        new Endpoint(HttpMethod.GET, "/api/v1/parent/children/{studentId}/quarter-report/download", Role.PARENT),
+        new Endpoint(
+            HttpMethod.GET, "/api/v1/parent/children/{studentId}/quarter-report", Role.PARENT),
+        new Endpoint(
+            HttpMethod.GET,
+            "/api/v1/parent/children/{studentId}/quarter-report/download",
+            Role.PARENT),
         new Endpoint(HttpMethod.GET, "/api/v1/parent/children/{studentId}/progress", Role.PARENT),
         new Endpoint(HttpMethod.GET, "/api/v1/parent/children/{studentId}/homework", Role.PARENT),
-        new Endpoint(HttpMethod.GET, "/api/v1/parent/children/{studentId}/submissions", Role.PARENT),
+        new Endpoint(
+            HttpMethod.GET, "/api/v1/parent/children/{studentId}/submissions", Role.PARENT),
         new Endpoint(HttpMethod.GET, "/api/v1/parent/children/{studentId}/grades", Role.PARENT),
-        new Endpoint(HttpMethod.POST, "/api/v1/parent/children/{studentId}/data-deletion-request", Role.PARENT),
+        new Endpoint(
+            HttpMethod.POST,
+            "/api/v1/parent/children/{studentId}/data-deletion-request",
+            Role.PARENT),
         new Endpoint(
             HttpMethod.PUT,
             "/api/v1/parent/children/{studentId}/consent/biometric",
@@ -572,10 +635,15 @@ class RoleAccessIntegrationTest {
             Role.PSYCHOLOGIST,
             """
             {"notes":"Test","actionTaken":"Test"}"""),
-        new Endpoint(HttpMethod.PUT, "/api/v1/psychologist/signals/{signalId}/mark-manipulation", Role.PSYCHOLOGIST),
+        new Endpoint(
+            HttpMethod.PUT,
+            "/api/v1/psychologist/signals/{signalId}/mark-manipulation",
+            Role.PSYCHOLOGIST),
         new Endpoint(HttpMethod.GET, "/api/v1/psychologist/watchlist", Role.PSYCHOLOGIST),
-        new Endpoint(HttpMethod.POST, "/api/v1/psychologist/watchlist/{studentId}", Role.PSYCHOLOGIST),
-        new Endpoint(HttpMethod.DELETE, "/api/v1/psychologist/watchlist/{studentId}", Role.PSYCHOLOGIST),
+        new Endpoint(
+            HttpMethod.POST, "/api/v1/psychologist/watchlist/{studentId}", Role.PSYCHOLOGIST),
+        new Endpoint(
+            HttpMethod.DELETE, "/api/v1/psychologist/watchlist/{studentId}", Role.PSYCHOLOGIST),
         new Endpoint(HttpMethod.GET, "/api/v1/psychologist/reports", Role.PSYCHOLOGIST));
   }
 

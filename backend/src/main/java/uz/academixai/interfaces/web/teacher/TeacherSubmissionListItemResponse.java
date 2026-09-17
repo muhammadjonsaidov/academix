@@ -2,7 +2,7 @@ package uz.academixai.interfaces.web.teacher;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.application.TeacherSubmissionService.SubmissionWithFeedback;
+import uz.academixai.learning.application.port.in.TeacherSubmissionQuery.SubmissionWithFeedback;
 
 /** academix_tz.md §2.3 — GET /teacher/submissions list item. */
 public record TeacherSubmissionListItemResponse(

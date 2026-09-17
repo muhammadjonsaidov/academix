@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.admin;
 
 import java.util.UUID;
-import uz.academixai.domain.ParentStudentLink;
+import uz.academixai.family.domain.ParentStudentLink;
 
 public record ParentLinkResponse(
     UUID id,

@@ -1,0 +1,28 @@
+# Production hardening overlay.
+#
+# Use together with docker-compose.yml. Application dependencies remain reachable over the
+# Compose network, but no database, broker, object storage or application port is published on the
+# host. A local tunnel/reverse proxy is the only intended ingress.
+#
+# Docker Compose's !reset tag clears the development-only port mappings from the base file.
+services:
+  postgres:
+    ports: !reset []
+
+  redis:
+    ports: !reset []
+
+  rabbitmq:
+    ports: !reset []
+
+  seaweedfs:
+    ports: !reset []
+
+  backend:
+    ports: !reset []
+
+  telegram-bot:
+    ports: !reset []
+
+  frontend:
+    ports: !reset []

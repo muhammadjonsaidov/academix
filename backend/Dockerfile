@@ -20,9 +20,9 @@ RUN addgroup -S academix && adduser -S academix -G academix
 COPY --from=build /app/build/libs/*.jar app.jar
 USER academix
 EXPOSE 8080
-# Small-container default (Railway trial allows 1GB/replica): modest heap, SerialGC (right
+# Small-container default: modest heap, SerialGC (right
 # choice for small heaps — throughput GCs just add overhead here), capped metaspace/code
-# cache/thread stacks. Realistic RSS ~500-650MB. Metaspace is 256m, NOT lower — a real Railway
+# cache/thread stacks. Realistic RSS ~500-650MB. Metaspace is 256m, NOT lower — a real hosted
 # deploy OOM'd ("OutOfMemoryError: Metaspace") at 160m under live traffic: Jackson 3's generated
 # (de)serializers, the JDT in-process JRXML compiler, and Spring Security observation classes
 # together need well over 160m. Override by setting JAVA_TOOL_OPTIONS on the container env

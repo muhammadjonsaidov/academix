@@ -12,8 +12,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.TeacherManagementService;
+import uz.academixai.domain.Role;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.school.application.StaffManagementService;
 
 /** academix_tz.md §2.2 "O'qituvchilar" — exact contract, don't drift path/shape from the spec. */
 @RestController
@@ -21,15 +22,17 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminTeacherController {
 
-  private final TeacherManagementService teacherService;
+  private final StaffManagementService staffService;
 
-  public AdminTeacherController(TeacherManagementService teacherService) {
-    this.teacherService = teacherService;
+  public AdminTeacherController(StaffManagementService staffService) {
+    this.staffService = staffService;
   }
 
   @GetMapping
   public List<TeacherResponse> list(@AuthenticationPrincipal AcademixPrincipal principal) {
-    return teacherService.list(principal.schoolId()).stream().map(TeacherResponse::from).toList();
+    return staffService.list(principal.schoolId(), Role.TEACHER).stream()
+        .map(TeacherResponse::from)
+        .toList();
   }
 
   @PostMapping("/invite")
@@ -37,8 +40,9 @@ public class AdminTeacherController {
       @AuthenticationPrincipal AcademixPrincipal principal,
       @RequestBody InviteTeacherRequest request) {
     var invited =
-        teacherService.invite(
+        staffService.invite(
             principal.schoolId(),
+            Role.TEACHER,
             request.phone(),
             request.firstName(),
             request.lastName(),
@@ -50,12 +54,14 @@ public class AdminTeacherController {
   @PutMapping("/{teacherId}/activate")
   public TeacherResponse activate(
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID teacherId) {
-    return TeacherResponse.from(teacherService.activate(principal.schoolId(), teacherId));
+    return TeacherResponse.from(
+        staffService.activate(principal.schoolId(), Role.TEACHER, teacherId));
   }
 
   @PutMapping("/{teacherId}/deactivate")
   public TeacherResponse deactivate(
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID teacherId) {
-    return TeacherResponse.from(teacherService.deactivate(principal.schoolId(), teacherId));
+    return TeacherResponse.from(
+        staffService.deactivate(principal.schoolId(), Role.TEACHER, teacherId));
   }
 }

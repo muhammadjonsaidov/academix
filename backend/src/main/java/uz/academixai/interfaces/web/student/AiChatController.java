@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.AiChatService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.intelligence.application.port.in.TutorChat;
 
 /** academix_tz.md §2.3/§3.4 "AI Tutor chat" — exact contract, don't drift path/shape. */
 @RestController
@@ -18,9 +18,9 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 @PreAuthorize("hasRole('STUDENT')")
 public class AiChatController {
 
-  private final AiChatService chatService;
+  private final TutorChat chatService;
 
-  public AiChatController(AiChatService chatService) {
+  public AiChatController(TutorChat chatService) {
     this.chatService = chatService;
   }
 

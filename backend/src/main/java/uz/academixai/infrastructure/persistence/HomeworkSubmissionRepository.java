@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import uz.academixai.domain.SubmissionStatus;
 
 public interface HomeworkSubmissionRepository
     extends JpaRepository<HomeworkSubmissionEntity, UUID> {
@@ -27,6 +29,16 @@ public interface HomeworkSubmissionRepository
   boolean existsByAssignmentIdAndStudentId(UUID assignmentId, UUID studentId);
 
   long countByAssignmentId(UUID assignmentId);
+
+  /** Atomically claims a newly accepted submission for the async AI worker. */
+  @Modifying
+  @Query(
+      "update HomeworkSubmissionEntity submission set submission.status = :claimed "
+          + "where submission.id = :submissionId and submission.status = :expected")
+  int claimForAi(
+      @Param("submissionId") UUID submissionId,
+      @Param("expected") SubmissionStatus expected,
+      @Param("claimed") SubmissionStatus claimed);
 
   /**
    * admin dashboard's {@code activeToday}/{@code homeworkSubmissionRate} — count of distinct

@@ -2,9 +2,9 @@ package uz.academixai.interfaces.web.student;
 
 import java.time.LocalDate;
 import java.util.UUID;
-import uz.academixai.application.StudentExamService.ExamDetail;
+import uz.academixai.learning.application.port.in.StudentExamQuery.ExamDetail;
 
-/** academix_tz.md gap-fill (see StudentExamService) — GET /student/exams/{examId}. */
+/** academix_tz.md gap-fill — GET /student/exams/{examId}. */
 public record StudentExamDetailResponse(
     UUID examId,
     String title,
@@ -18,7 +18,7 @@ public record StudentExamDetailResponse(
         detail.exam().id(),
         detail.exam().title(),
         detail.exam().examDate(),
-        detail.submission().getStatus().name(),
+        detail.submission().status().name(),
         StudentExamAiFeedbackResponse.from(detail.feedback()),
         StudentExamGradeResponse.from(detail.grade()));
   }

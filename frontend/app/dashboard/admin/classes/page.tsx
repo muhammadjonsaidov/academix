@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, School as SchoolIcon, Trash2, X } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { fieldClass, FormField } from "@/components/shared/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,10 +96,7 @@ export default function AdminClassesPage() {
   return (
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
-        <div>
-          <h2 className="font-heading text-xl font-semibold">Sinflar</h2>
-          <p className="text-sm text-muted-foreground">Maktab sinflarini boshqaring.</p>
-        </div>
+        <PageHeader title="Sinflar" description="Maktab sinflarini boshqaring." eyebrow="Maktab" />
 
         <Card>
           <CardHeader>

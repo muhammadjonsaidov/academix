@@ -70,6 +70,11 @@ dependencies {
 	// Bulk import: .xlsx parsing (POST /admin/students/bulk-import/*)
 	implementation("org.apache.poi:poi-ooxml:5.5.1")
 
+	// Syllabus knowledge pipeline: extract selectable text from uploaded PDFs before chunking and
+	// embedding it. PDFBox is deliberately server-side; files are never sent to a third party just
+	// to read their text.
+	implementation("org.apache.pdfbox:pdfbox:3.0.6")
+
 	// Semester report PDFs (POST /admin/reports/generate) — LGPL, chosen over iText for licensing
 	// reasons (academix_backend_tdd.md §"Supporting tooling"). Confirmed real on Maven Central.
 	// jasperreports-pdf is a SEPARATE required module in 7.x (PDF export was split out of the core
@@ -79,7 +84,7 @@ dependencies {
 	implementation("net.sf.jasperreports:jasperreports-pdf:7.0.7")
 	// In-process JRXML→bytecode compiler (Eclipse JDT). REQUIRED when running from the Spring Boot
 	// fat jar: without it Jasper shells out to javac, whose -classpath cannot reference the nested
-	// BOOT-INF/lib jars — confirmed by a real Railway deploy crash-loop ("package
+	// BOOT-INF/lib jars — confirmed by a real hosted deploy crash-loop ("package
 	// net.sf.jasperreports.engine does not exist" from javac) that local `bootRun` (exploded
 	// classpath) never surfaced. Presence of this module makes JR 7 use JDT automatically.
 	implementation("net.sf.jasperreports:jasperreports-jdt:7.0.7")
@@ -105,6 +110,7 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+	testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 	testImplementation("org.testcontainers:testcontainers-postgresql")
@@ -117,7 +123,7 @@ tasks.withType<Test> {
 }
 
 // backend/.env was never actually loaded by `./gradlew bootRun` — no dotenv library, no task
-// config existed anywhere. Confirmed real: QWEN_API_KEY sat in .env with a genuine value while
+// config existed anywhere. Confirmed real: AI_API_KEY sat in .env with a genuine value while
 // every bootRun this session ran with it empty (a live 401 "You didn't provide an API key" from
 // Qwen proved it — a manual curl with the same key worked fine). DATABASE_URL/JWT_SECRET/etc.
 // only ever *looked* wired because their .env values happen to equal application.yml's inline

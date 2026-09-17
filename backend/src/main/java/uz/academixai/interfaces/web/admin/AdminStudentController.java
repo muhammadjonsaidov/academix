@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.application.HandwritingService;
-import uz.academixai.application.StudentManagementService;
 import uz.academixai.domain.StudentProfile;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.interfaces.web.PageResponse;
+import uz.academixai.school.application.StudentManagementService;
 
 /** academix_tz.md §2.2 "O'quvchilar" — exact contract, don't drift path/shape from the spec. */
 @RestController

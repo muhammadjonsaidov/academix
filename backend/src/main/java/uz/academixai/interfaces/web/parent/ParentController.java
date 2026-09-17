@@ -15,15 +15,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.DataDeletionService;
-import uz.academixai.application.ParentDashboardService;
-import uz.academixai.application.ParentLinkService;
-import uz.academixai.application.ParentProgressService;
-import uz.academixai.application.ParentReportService;
-import uz.academixai.application.ReportService.ReportDownload;
-import uz.academixai.application.StudentSubmissionService.StudentHomeworkItem;
+import uz.academixai.family.application.DataDeletionService;
+import uz.academixai.family.application.ParentDashboardService;
+import uz.academixai.family.application.ParentLinkService;
+import uz.academixai.family.application.ParentReportService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
-import uz.academixai.interfaces.web.admin.ReportResponse;
+import uz.academixai.learning.application.port.in.StudentHomeworkQuery.HomeworkItem;
+import uz.academixai.progress.application.port.in.ParentProgress;
+import uz.academixai.reporting.adapter.in.web.ReportResponse;
+import uz.academixai.reporting.application.ReportService.ReportDownload;
 
 /** academix_tz.md §2.5 "Parent API" — exact paths, some response shapes deviate. */
 @RestController
@@ -34,14 +34,14 @@ public class ParentController {
   private final DataDeletionService dataDeletionService;
   private final ParentLinkService parentLinkService;
   private final ParentDashboardService parentDashboardService;
-  private final ParentProgressService parentProgressService;
+  private final ParentProgress parentProgressService;
   private final ParentReportService parentReportService;
 
   public ParentController(
       DataDeletionService dataDeletionService,
       ParentLinkService parentLinkService,
       ParentDashboardService parentDashboardService,
-      ParentProgressService parentProgressService,
+      ParentProgress parentProgressService,
       ParentReportService parentReportService) {
     this.dataDeletionService = dataDeletionService;
     this.parentLinkService = parentLinkService;
@@ -111,7 +111,7 @@ public class ParentController {
   }
 
   @GetMapping("/children/{studentId}/homework")
-  public List<StudentHomeworkItem> homework(
+  public List<HomeworkItem> homework(
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID studentId) {
     return parentProgressService.homework(principal.userId(), studentId);
   }

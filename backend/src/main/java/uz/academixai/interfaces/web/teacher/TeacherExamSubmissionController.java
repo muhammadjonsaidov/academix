@@ -1,5 +1,7 @@
 package uz.academixai.interfaces.web.teacher;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -13,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import uz.academixai.application.ExamSubmissionService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.learning.application.port.in.ExamSubmissionWorkflow;
 
 /** academix_tz.md §2.3 "Nazorat ishi" — exact contract, don't drift path/shape from spec. */
 @RestController
@@ -22,9 +24,9 @@ import uz.academixai.infrastructure.security.AcademixPrincipal;
 @PreAuthorize("hasRole('TEACHER')")
 public class TeacherExamSubmissionController {
 
-  private final ExamSubmissionService examSubmissionService;
+  private final ExamSubmissionWorkflow examSubmissionService;
 
-  public TeacherExamSubmissionController(ExamSubmissionService examSubmissionService) {
+  public TeacherExamSubmissionController(ExamSubmissionWorkflow examSubmissionService) {
     this.examSubmissionService = examSubmissionService;
   }
 
@@ -36,8 +38,8 @@ public class TeacherExamSubmissionController {
       @RequestParam("studentIds") List<UUID> studentIds) {
     var result =
         examSubmissionService.bulkUpload(
-            principal.schoolId(), principal.userId(), examId, images, studentIds);
-    return ResponseEntity.ok(new BulkUploadExamSubmissionsResponse(result.queued()));
+            principal.schoolId(), principal.userId(), examId, toImages(images), studentIds);
+    return ResponseEntity.ok(new BulkUploadExamSubmissionsResponse(result));
   }
 
   @GetMapping
@@ -70,5 +72,20 @@ public class TeacherExamSubmissionController {
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID examId) {
     examSubmissionService.approveAll(principal.schoolId(), principal.userId(), examId);
     return ResponseEntity.noContent().build();
+  }
+
+  private static List<ExamSubmissionWorkflow.Image> toImages(List<MultipartFile> images) {
+    return images.stream().map(TeacherExamSubmissionController::toImage).toList();
+  }
+
+  private static ExamSubmissionWorkflow.Image toImage(MultipartFile image) {
+    try {
+      return new ExamSubmissionWorkflow.Image(
+          image == null ? null : image.getBytes(),
+          image == null ? null : image.getContentType(),
+          image == null ? null : image.getOriginalFilename());
+    } catch (IOException exception) {
+      throw new UncheckedIOException("Could not read exam upload", exception);
+    }
   }
 }

@@ -1,0 +1,142 @@
+package uz.academixai.family.application;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import uz.academixai.domain.Role;
+import uz.academixai.domain.User;
+import uz.academixai.family.application.port.out.ParentAccountStore;
+import uz.academixai.family.application.port.out.ParentAccountStore.ParentAccount;
+import uz.academixai.family.application.port.out.ParentLinkStore;
+import uz.academixai.family.application.port.out.ParentLinkStore.LinkedChild;
+import uz.academixai.identity.application.PasswordPolicy;
+import uz.academixai.interfaces.web.ApiException;
+
+/**
+ * Admin-facing parent (ota-ona/vasiy) management — create with an admin-supplied password, list
+ * with linked children, and a pre-link phone check.
+ *
+ * <p>DEVIATION, documented judgment call (same category as ParentLinkService's find-or-create):
+ * academix_tz.md §2.2's only parent endpoint is {@code POST /admin/parents/link} — no create, no
+ * list, no check are documented anywhere. In practice that made parents invisible: link's
+ * find-or-create stored them with a hardcoded name, no email, no school scoping, and no UI could
+ * ever list them again. This service adds the missing lifecycle:
+ *
+ * <ul>
+ *   <li>{@code create} requires phone AND email together (email is what password reset uses — a
+ *       parent with phone but no email can never recover their account) and takes the initial
+ *       password from the admin, who hands it to the parent; the parent may change it later via the
+ *       normal {@code PUT /auth/change-password}. This deliberately differs from the
+ *       teacher/psychologist invite pattern (server-generated temp password, inactive until
+ *       /activate) because no credential-delivery channel exists — the admin IS the delivery
+ *       channel here, so the account is active immediately.
+ *   <li>Parents get {@code users.school_id} set (the V6 deviation column, same as TEACHER) so a
+ *       school-scoped list is possible at all.
+ * </ul>
+ */
+@Service
+public class ParentManagementService {
+
+  private final ParentAccountStore accounts;
+  private final ParentLinkStore links;
+
+  public ParentManagementService(ParentAccountStore accounts, ParentLinkStore links) {
+    this.accounts = accounts;
+    this.links = links;
+  }
+
+  public User create(
+      UUID schoolId,
+      String firstName,
+      String lastName,
+      String phone,
+      String email,
+      String password) {
+    requireNotBlank(firstName, "Ism majburiy.");
+    requireNotBlank(phone, "Telefon raqam majburiy.");
+    // Email is OPTIONAL (product decision: phone + email(optional) + password for every role) —
+    // but note password reset is email-based, so a parent without an email can only recover
+    // their account through the admin re-setting a password.
+    requireNotBlank(password, "Boshlang'ich parol majburiy.");
+    PasswordPolicy.requireValid(password);
+    if (accounts.existsByPhone(phone)) {
+      throw new ApiException(
+          HttpStatus.CONFLICT,
+          "ERR_DUPLICATE_PHONE",
+          "Bu telefon raqam allaqachon ro'yxatdan o'tgan.",
+          "Boshqa telefon raqam kiriting yoki mavjud foydalanuvchini tekshiring.");
+    }
+
+    return toUser(
+        accounts.save(
+            new ParentAccount(
+                UUID.randomUUID(),
+                firstName,
+                lastName == null ? "" : lastName,
+                phone,
+                email == null || email.isBlank() ? null : email,
+                accounts.encodePassword(password),
+                Role.PARENT,
+                true,
+                LocalDateTime.now(),
+                null,
+                schoolId)));
+  }
+
+  /** Parents of this school with their actively-linked children (may be empty). */
+  public List<ParentWithChildren> list(UUID schoolId) {
+    Map<UUID, List<LinkedChild>> childrenByParent =
+        links.findActiveChildrenOfSchool(schoolId).stream()
+            .collect(Collectors.groupingBy(LinkedChild::parentUserId));
+    return accounts.findParentsOfSchool(schoolId).stream()
+        .map(
+            account ->
+                new ParentWithChildren(
+                    toUser(account), childrenByParent.getOrDefault(account.id(), List.of())))
+        .toList();
+  }
+
+  /**
+   * Pre-link lookup so the admin can SEE the state of a phone number before linking: does a user
+   * exist, is it already a parent, and which children are already linked. Solves the reported
+   * "linked the parent, then it vanished — was it even created?" opacity.
+   */
+  public ParentCheck check(String phone) {
+    ParentAccount account = accounts.findByPhone(phone).orElse(null);
+    if (account == null) {
+      return new ParentCheck(false, null, null, List.of());
+    }
+    List<LinkedChild> children =
+        account.role() == Role.PARENT ? links.findActiveChildrenOfParent(account.id()) : List.of();
+    return new ParentCheck(true, account.role().name(), toUser(account), children);
+  }
+
+  private static User toUser(ParentAccount account) {
+    return new User(
+        account.id(),
+        account.firstName(),
+        account.lastName(),
+        account.phone(),
+        account.email(),
+        account.passwordHash(),
+        account.role(),
+        account.isActive(),
+        account.createdAt(),
+        account.lastLoginAt());
+  }
+
+  private void requireNotBlank(String value, String message) {
+    if (value == null || value.isBlank()) {
+      throw new ApiException(
+          HttpStatus.BAD_REQUEST, "ERR_VALIDATION", message, "Barcha maydonlarni to'ldiring.");
+    }
+  }
+
+  public record ParentWithChildren(User parent, List<LinkedChild> children) {}
+
+  public record ParentCheck(boolean exists, String role, User user, List<LinkedChild> children) {}
+}

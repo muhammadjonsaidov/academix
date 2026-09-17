@@ -12,6 +12,7 @@ import uz.academixai.infrastructure.persistence.HandwritingProfileEntity;
 import uz.academixai.infrastructure.persistence.HandwritingProfileRepository;
 import uz.academixai.infrastructure.persistence.HandwritingResetLogEntity;
 import uz.academixai.infrastructure.persistence.HandwritingResetLogRepository;
+import uz.academixai.shared.tenancy.TenantScope;
 
 /**
  * backend_tdd.md §6.5 "Handwriting Reset — Anomaliya Monitoring" — weekly, flags only, no
@@ -30,6 +31,15 @@ import uz.academixai.infrastructure.persistence.HandwritingResetLogRepository;
  * reset_count_this_quarter} has no quarter-boundary reset job anywhere in this codebase (a separate
  * real gap, not built here) — "this quarter" is read as "all-time" until that job exists, which
  * only makes this detector more conservative (never under-flags), not less correct.
+ *
+ * <p><b>Runs as the system role.</b> This is a system-wide audit — flagging a teacher as a
+ * statistical outlier only means anything against every teacher, so the job is cross-tenant by
+ * definition and has no schoolId it could be scoped to. Before this went through {@link
+ * TenantScope} the read of the RLS-protected {@code handwriting_reset_logs} ran with no scope at
+ * all: it worked under the test suite (Testcontainers connects as a superuser, so RLS is inert) and
+ * would have failed on the real restricted role the app uses. Per-school statistics — a more
+ * meaningful outlier set, since a teacher is only comparable to colleagues in the same school — is
+ * a deliberate follow-up, not a silent omission.
  */
 @Service
 public class HandwritingAnomalyService {
@@ -40,12 +50,15 @@ public class HandwritingAnomalyService {
 
   private final HandwritingProfileRepository profileRepository;
   private final HandwritingResetLogRepository resetLogRepository;
+  private final TenantScope tenantScope;
 
   public HandwritingAnomalyService(
       HandwritingProfileRepository profileRepository,
-      HandwritingResetLogRepository resetLogRepository) {
+      HandwritingResetLogRepository resetLogRepository,
+      TenantScope tenantScope) {
     this.profileRepository = profileRepository;
     this.resetLogRepository = resetLogRepository;
+    this.tenantScope = tenantScope;
   }
 
   public record AnomalyReport(List<UUID> flaggedStudents, List<UUID> flaggedTeachers) {}
@@ -69,6 +82,10 @@ public class HandwritingAnomalyService {
   }
 
   public AnomalyReport computeAnomalies() {
+    return tenantScope.callAsSystem(this::computeAnomaliesInSystemScope);
+  }
+
+  private AnomalyReport computeAnomaliesInSystemScope() {
     List<UUID> flaggedStudents =
         profileRepository.findAll().stream()
             .filter(p -> p.getResetCountThisQuarter() >= STUDENT_RESET_FLAG_THRESHOLD)

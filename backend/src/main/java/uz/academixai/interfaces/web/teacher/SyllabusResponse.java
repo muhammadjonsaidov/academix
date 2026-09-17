@@ -2,8 +2,9 @@ package uz.academixai.interfaces.web.teacher;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.FileType;
-import uz.academixai.domain.TeacherSyllabus;
+import uz.academixai.learning.domain.FileType;
+import uz.academixai.learning.domain.SyllabusProcessingStatus;
+import uz.academixai.learning.domain.TeacherSyllabus;
 
 public record SyllabusResponse(
     UUID id,
@@ -13,6 +14,9 @@ public record SyllabusResponse(
     String fileUrl,
     FileType fileType,
     boolean isProcessed,
+    SyllabusProcessingStatus processingStatus,
+    String processingError,
+    LocalDateTime processedAt,
     LocalDateTime uploadedAt) {
 
   public static SyllabusResponse from(TeacherSyllabus syllabus) {
@@ -24,6 +28,9 @@ public record SyllabusResponse(
         syllabus.fileUrl(),
         syllabus.fileType(),
         syllabus.isProcessed(),
+        syllabus.processingStatus(),
+        syllabus.processingError(),
+        syllabus.processedAt(),
         syllabus.uploadedAt());
   }
 }

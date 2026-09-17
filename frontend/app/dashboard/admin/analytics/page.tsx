@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import {
   chartAxisTick,
   chartBarCursor,
@@ -37,14 +38,12 @@ export default function AdminAnalyticsPage() {
   return (
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="font-heading text-xl font-semibold">Tahlil</h2>
-            <p className="text-sm text-muted-foreground">
-              Sinflar, o&apos;qituvchilar va AI foydalanish bo&apos;yicha chuqur tahlil.
-            </p>
-          </div>
-          <div className="flex gap-2">
+        <PageHeader
+          title="Tahlil"
+          description="Sinflar, o'qituvchilar va AI foydalanish bo'yicha chuqur tahlil."
+          eyebrow="Maktab ko'rsatkichlari"
+          actions={
+            <>
             <Button
               variant={period === "monthly" ? "default" : "outline"}
               size="sm"
@@ -59,8 +58,9 @@ export default function AdminAnalyticsPage() {
             >
               Choraklik
             </Button>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         {/* Keyed by period so the loading state resets on a fresh mount (isLoading starts
             true via useState) instead of a synchronous setState(true) inside the effect. */}

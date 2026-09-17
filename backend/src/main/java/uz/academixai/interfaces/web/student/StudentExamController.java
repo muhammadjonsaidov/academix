@@ -8,22 +8,21 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.StudentExamService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.learning.application.port.in.StudentExamQuery;
 
 /**
- * Gap-fill deviation, judgment call (see StudentExamService's Javadoc): no student-facing exam
- * results endpoint exists anywhere in academix_tz.md — this mirrors {@code
- * StudentHomeworkController}'s submissions shape.
+ * Gap-fill deviation, judgment call: no student-facing exam results endpoint exists anywhere in
+ * academix_tz.md — this mirrors {@code StudentHomeworkController}'s submissions shape.
  */
 @RestController
 @RequestMapping("/api/v1/student/exams")
 @PreAuthorize("hasRole('STUDENT')")
 public class StudentExamController {
 
-  private final StudentExamService examService;
+  private final StudentExamQuery examService;
 
-  public StudentExamController(StudentExamService examService) {
+  public StudentExamController(StudentExamQuery examService) {
     this.examService = examService;
   }
 

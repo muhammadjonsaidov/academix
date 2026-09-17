@@ -8,10 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import uz.academixai.application.port.out.ai.AiProvider;
+import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
 import uz.academixai.domain.LessonPlan;
 import uz.academixai.domain.LessonPlanContent;
-import uz.academixai.infrastructure.ai.QwenAIClient;
-import uz.academixai.infrastructure.ai.QwenUnavailableException;
 import uz.academixai.infrastructure.persistence.LessonPlanEntity;
 import uz.academixai.infrastructure.persistence.LessonPlanRepository;
 import uz.academixai.infrastructure.persistence.SchoolClassEntity;
@@ -21,6 +21,8 @@ import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.infrastructure.persistence.TeacherSyllabusEntity;
 import uz.academixai.infrastructure.persistence.TeacherSyllabusRepository;
 import uz.academixai.interfaces.web.ApiException;
+import uz.academixai.learning.application.SyllabusKnowledgeService;
+import uz.academixai.learning.domain.SyllabusProcessingStatus;
 
 /**
  * academix_tz.md §1.18/§2.3 "Dars rejasi". No AI budget gate — lesson-plan generation isn't one of
@@ -42,19 +44,22 @@ public class LessonPlanService {
   private final TeacherSyllabusRepository syllabusRepository;
   private final SubjectRepository subjectRepository;
   private final SchoolClassRepository classRepository;
-  private final QwenAIClient qwenAIClient;
+  private final AiProvider aiClient;
+  private final SyllabusKnowledgeService syllabusKnowledge;
 
   public LessonPlanService(
       LessonPlanRepository lessonPlanRepository,
       TeacherSyllabusRepository syllabusRepository,
       SubjectRepository subjectRepository,
       SchoolClassRepository classRepository,
-      QwenAIClient qwenAIClient) {
+      AiProvider aiClient,
+      SyllabusKnowledgeService syllabusKnowledge) {
     this.lessonPlanRepository = lessonPlanRepository;
     this.syllabusRepository = syllabusRepository;
     this.subjectRepository = subjectRepository;
     this.classRepository = classRepository;
-    this.qwenAIClient = qwenAIClient;
+    this.aiClient = aiClient;
+    this.syllabusKnowledge = syllabusKnowledge;
   }
 
   public LessonPlan generate(
@@ -70,9 +75,34 @@ public class LessonPlanService {
                         "Darslik topilmadi.",
                         "syllabusId ni tekshiring."));
     UUID subjectId = syllabus.toDomain().subjectId();
+    if (!syllabus.getClassId().equals(classId)) {
+      throw new ApiException(
+          HttpStatus.BAD_REQUEST,
+          "ERR_SYLLABUS_CLASS_MISMATCH",
+          "Darslik tanlangan sinfga tegishli emas.",
+          "Darslik va sinfni bir xil qilib tanlang.");
+    }
+    if (syllabus.getProcessingStatus() != SyllabusProcessingStatus.READY) {
+      throw new ApiException(
+          HttpStatus.CONFLICT,
+          "ERR_SYLLABUS_NOT_READY",
+          syllabus.getProcessingStatus() == SyllabusProcessingStatus.FAILED
+              ? "Darslik AI uchun tayyorlanmadi. Uni qayta yuklang."
+              : "Darslik hali AI uchun tayyorlanmoqda.",
+          "Darslik tayyor bo'lgach qayta urinib ko'ring.");
+    }
     String subjectAndGrade = subjectAndGrade(subjectId, classId);
-
-    var content = callGenerate(subjectAndGrade, topic, syllabus.toDomain().extractedContent());
+    String groundedContext =
+        String.join(
+            "\n\n---\n\n", syllabusKnowledge.relevantForSyllabus(teacherId, syllabusId, topic, 6));
+    if (groundedContext.isBlank()) {
+      throw new ApiException(
+          HttpStatus.CONFLICT,
+          "ERR_SYLLABUS_NOT_READY",
+          "Darslikdan AI uchun kontekst topilmadi.",
+          "Darslikni qayta yuklang.");
+    }
+    var content = callGenerate(subjectAndGrade, topic, groundedContext);
 
     LessonPlan plan =
         new LessonPlan(
@@ -139,13 +169,13 @@ public class LessonPlanService {
   private LessonPlanContent callGenerate(
       String subjectAndGrade, String topic, String syllabusExtractedContent) {
     try {
-      return qwenAIClient.generateLessonPlan(subjectAndGrade, topic, syllabusExtractedContent);
-    } catch (QwenUnavailableException e) {
+      return aiClient.generateLessonPlan(subjectAndGrade, topic, syllabusExtractedContent);
+    } catch (AiProviderUnavailableException e) {
       // ApiException bypasses GlobalExceptionHandler's logging (only its catch-all
       // Exception.class handler logs) — without this, the real cause (auth failure,
       // timeout, malformed JSON, genuine circuit-open) was silently swallowed, confirmed
       // by a real 503 with zero corresponding log line.
-      log.warn("Qwen lesson-plan generation unavailable", e);
+      log.warn("AI provider lesson-plan generation unavailable", e);
       throw new ApiException(
           HttpStatus.SERVICE_UNAVAILABLE,
           "ERR_AI_UNAVAILABLE",

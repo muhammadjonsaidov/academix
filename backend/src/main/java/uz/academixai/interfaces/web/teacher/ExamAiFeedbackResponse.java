@@ -2,8 +2,8 @@ package uz.academixai.interfaces.web.teacher;
 
 import java.util.List;
 import uz.academixai.domain.CriteriaScore;
+import uz.academixai.domain.ExamAIFeedback;
 import uz.academixai.domain.StepAnalysis;
-import uz.academixai.infrastructure.persistence.ExamAIFeedbackEntity;
 
 public record ExamAiFeedbackResponse(
     String extractedText,
@@ -13,17 +13,16 @@ public record ExamAiFeedbackResponse(
     String feedback,
     float handwritingMatchScore) {
 
-  public static ExamAiFeedbackResponse from(ExamAIFeedbackEntity entity) {
-    if (entity == null) {
+  public static ExamAiFeedbackResponse from(ExamAIFeedback feedback) {
+    if (feedback == null) {
       return null;
     }
-    var domain = entity.toDomain();
     return new ExamAiFeedbackResponse(
-        domain.extractedText(),
-        domain.stepAnalyses(),
-        domain.criteriaScores(),
-        domain.aiScorePercent(),
-        domain.feedback(),
-        domain.handwritingMatchScore());
+        feedback.extractedText(),
+        feedback.stepAnalyses(),
+        feedback.criteriaScores(),
+        feedback.aiScorePercent(),
+        feedback.feedback(),
+        feedback.handwritingMatchScore());
   }
 }

@@ -22,8 +22,11 @@ export interface PsychAlerts {
 }
 
 export interface AdminDashboard {
+  totalClasses: number;
   totalStudents: number;
   totalTeachers: number;
+  totalSubjects: number;
+  totalAssignments: number;
   activeToday: number;
   homeworkSubmissionRate: number;
   classProgressList: ClassProgress[];

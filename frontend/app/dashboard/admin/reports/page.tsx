@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, FileBarChart, FileText } from "lucide-react";
 import { DashboardShell } from "@/components/shared/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -79,12 +80,11 @@ export default function AdminReportsPage() {
   return (
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
-        <div>
-          <h2 className="font-heading text-xl font-semibold">Hisobotlar</h2>
-          <p className="text-sm text-muted-foreground">
-            Maktab, sinf yoki o&apos;quvchi bo&apos;yicha choraklik PDF hisobot yarating.
-          </p>
-        </div>
+        <PageHeader
+          title="Hisobotlar"
+          description="Maktab, sinf yoki o'quvchi bo'yicha choraklik PDF hisobot yarating."
+          eyebrow="Tahlil"
+        />
 
         <Card>
           <CardHeader>

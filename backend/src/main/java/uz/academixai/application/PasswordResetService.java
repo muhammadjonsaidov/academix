@@ -8,6 +8,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import uz.academixai.identity.application.PasswordPolicy;
 import uz.academixai.infrastructure.mail.PasswordResetMailSender;
 import uz.academixai.infrastructure.persistence.UserEntity;
 import uz.academixai.infrastructure.persistence.UserRepository;
@@ -21,10 +22,9 @@ import uz.academixai.interfaces.web.ApiException;
  * password_reset_token:{token}} key, single-use, deleted on consumption.
  *
  * <p><b>Anti-enumeration by design</b>: {@link #forgotPassword} always returns success and never
- * reveals whether the phone number exists or whether that account has an email on file — both are
- * checked internally, and the email is only actually sent if both are true. A caller cannot
- * distinguish "no such account," "account has no email," or "email genuinely sent" from the
- * response alone; only real email delivery (or its absence) tells them anything.
+ * reveals whether the email address belongs to an active account. A caller cannot distinguish "no
+ * such account" from "email genuinely sent" from the response alone; only real email delivery (or
+ * its absence) tells them anything.
  *
  * <p>Rate limit: plain Redis INCR+EXPIRE, same pattern (and same reasoning: Bucket4j is on the
  * classpath but unwired anywhere in this codebase) as {@link TelegramLinkService}.
@@ -55,10 +55,12 @@ public class PasswordResetService {
     this.passwordEncoder = passwordEncoder;
   }
 
-  public void forgotPassword(String phone) {
-    enforceRateLimit(phone);
-    Optional<UserEntity> user = userRepository.findByPhone(phone).filter(UserEntity::isActive);
-    if (user.isPresent() && user.get().getEmail() != null && !user.get().getEmail().isBlank()) {
+  public void forgotPassword(String email) {
+    String normalizedEmail = email == null ? "" : email.trim();
+    enforceRateLimit(normalizedEmail);
+    Optional<UserEntity> user =
+        userRepository.findFirstByEmailIgnoreCase(normalizedEmail).filter(UserEntity::isActive);
+    if (user.isPresent()) {
       String token = UUID.randomUUID().toString();
       redis.opsForValue().set(tokenKey(token), user.get().getId().toString(), TOKEN_TTL);
       String resetUrl = frontendUrl + "/reset-password?token=" + token;
@@ -68,6 +70,7 @@ public class PasswordResetService {
   }
 
   public void resetPassword(String token, String newPassword) {
+    PasswordPolicy.requireValid(newPassword);
     String key = tokenKey(token);
     String userId = redis.opsForValue().get(key);
     if (userId == null) {
@@ -105,8 +108,8 @@ public class PasswordResetService {
     userRepository.save(updated);
   }
 
-  private void enforceRateLimit(String phone) {
-    String key = "password_reset_rate:" + phone;
+  private void enforceRateLimit(String email) {
+    String key = "password_reset_rate:" + email.toLowerCase(java.util.Locale.ROOT);
     Long count = redis.opsForValue().increment(key);
     if (count != null && count == 1L) {
       redis.expire(key, RATE_LIMIT_WINDOW);

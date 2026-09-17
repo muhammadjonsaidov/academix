@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.student;
 
 import java.util.List;
-import uz.academixai.application.StudentProgressService.Progress;
+import uz.academixai.progress.application.StudentProgressService.Progress;
 
 /** academix_tz.md §2.4 {@code GET /student/progress} — exact response shape. */
 public record StudentProgressResponse(
