@@ -2,8 +2,8 @@ package uz.academixai.interfaces.web.teacher;
 
 import java.util.List;
 import java.util.UUID;
-import uz.academixai.application.TeacherAnalyticsService.ClassAnalytics;
-import uz.academixai.infrastructure.persistence.GradeRepository.StudentProgressRow;
+import uz.academixai.learning.application.TeacherAnalyticsService.ClassAnalytics;
+import uz.academixai.learning.application.port.out.ClassSubjectStatistics.StudentRow;
 
 /** academix_tz.md §2.3 {@code GET /teacher/classes/{classId}/analytics} — exact response shape. */
 public record TeacherClassAnalyticsResponse(
@@ -16,13 +16,13 @@ public record TeacherClassAnalyticsResponse(
   public record StudentSummary(
       UUID studentId, String firstName, String lastName, double avgScore, long gradedCount) {
 
-    static StudentSummary from(StudentProgressRow row) {
+    static StudentSummary from(StudentRow row) {
       return new StudentSummary(
-          row.getStudentId(),
-          row.getFirstName(),
-          row.getLastName(),
-          Math.round(row.getAvgScore() * 10) / 10.0,
-          row.getGradedCount());
+          row.studentId(),
+          row.firstName(),
+          row.lastName(),
+          Math.round(row.avgScore() * 10) / 10.0,
+          row.gradedCount());
     }
   }
 

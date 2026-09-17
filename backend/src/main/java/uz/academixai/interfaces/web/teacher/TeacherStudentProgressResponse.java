@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.teacher;
 
 import java.util.List;
-import uz.academixai.application.TeacherAnalyticsService.StudentProgress;
+import uz.academixai.learning.application.TeacherAnalyticsService.StudentProgress;
 
 /**
  * academix_tz.md §2.3 {@code GET /teacher/students/{studentId}/progress} — exact response shape.

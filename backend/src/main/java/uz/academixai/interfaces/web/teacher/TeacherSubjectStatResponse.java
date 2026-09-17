@@ -1,7 +1,7 @@
 package uz.academixai.interfaces.web.teacher;
 
 import java.util.List;
-import uz.academixai.application.TeacherAnalyticsService.SubjectStat;
+import uz.academixai.learning.application.TeacherAnalyticsService.SubjectStat;
 
 /**
  * academix_tz.md §2.3 — {@code weakAreas}/{@code strongAreas} always empty: no topic-level tracking

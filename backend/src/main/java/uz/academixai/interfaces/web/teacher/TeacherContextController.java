@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.TeacherAnalyticsService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.learning.application.TeacherAnalyticsService;
 import uz.academixai.learning.application.TeacherDashboardService;
 import uz.academixai.school.application.port.in.TeacherAccess;
 
