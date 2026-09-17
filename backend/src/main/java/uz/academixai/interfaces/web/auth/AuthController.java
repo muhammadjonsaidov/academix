@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.PasswordResetService;
 import uz.academixai.identity.application.AuthenticationService;
+import uz.academixai.identity.application.PasswordResetService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.infrastructure.security.JwtService;
 

@@ -14,11 +14,11 @@ import uz.academixai.shared.error.ApiException;
  * no usage) — CLAUDE.md records the decision to defer the real integration until a broad enough
  * need justified it. The counter pattern below is what {@link
  * uz.academixai.notification.application.TelegramLinkService} and {@link
- * uz.academixai.application.PasswordResetService} each already hand-rolled; this class exists so
- * the three limits added afterwards (login, file upload, AI chat — academix_tz.md §5.3) share one
- * implementation instead of becoming copies three, four and five. Those two earlier services are
- * deliberately left untouched: they work, and rewriting live auth-adjacent code for tidiness alone
- * isn't worth the risk. Migrate them if either needs changing for another reason.
+ * uz.academixai.identity.application.PasswordResetService} each already hand-rolled; this class
+ * exists so the three limits added afterwards (login, file upload, AI chat — academix_tz.md §5.3)
+ * share one implementation instead of becoming copies three, four and five. Those two earlier
+ * services are deliberately left untouched: they work, and rewriting live auth-adjacent code for
+ * tidiness alone isn't worth the risk. Migrate them if either needs changing for another reason.
  *
  * <p>Fixed-window, not sliding: a caller can technically issue {@code 2 * max} requests across a
  * window boundary. Accepted deliberately — these limits exist to stop brute-force and runaway-cost

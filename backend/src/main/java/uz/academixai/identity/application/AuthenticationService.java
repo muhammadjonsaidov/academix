@@ -10,7 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import uz.academixai.identity.application.port.out.AccessTokenIssuer;
 import uz.academixai.identity.application.port.out.AccountRepository;
-import uz.academixai.identity.application.port.out.LoginAttemptLimiter;
+import uz.academixai.identity.application.port.out.AttemptLimiter;
 import uz.academixai.identity.application.port.out.RefreshSessionStore;
 import uz.academixai.identity.application.port.out.SchoolContextLookup;
 import uz.academixai.identity.domain.Account;
@@ -29,7 +29,7 @@ public class AuthenticationService {
   private final AccessTokenIssuer tokenIssuer;
   private final RefreshSessionStore refreshSessionStore;
   private final SchoolContextLookup schoolContextLookup;
-  private final LoginAttemptLimiter loginAttemptLimiter;
+  private final AttemptLimiter attemptLimiter;
 
   public AuthenticationService(
       AccountRepository accounts,
@@ -37,13 +37,13 @@ public class AuthenticationService {
       AccessTokenIssuer tokenIssuer,
       RefreshSessionStore refreshSessionStore,
       SchoolContextLookup schoolContextLookup,
-      LoginAttemptLimiter loginAttemptLimiter) {
+      AttemptLimiter attemptLimiter) {
     this.accounts = accounts;
     this.passwordEncoder = passwordEncoder;
     this.tokenIssuer = tokenIssuer;
     this.refreshSessionStore = refreshSessionStore;
     this.schoolContextLookup = schoolContextLookup;
-    this.loginAttemptLimiter = loginAttemptLimiter;
+    this.attemptLimiter = attemptLimiter;
   }
 
   public record LoginResult(String accessToken, String refreshToken, Account account) {}
@@ -61,7 +61,7 @@ public class AuthenticationService {
       throw invalidCredentials();
     }
 
-    loginAttemptLimiter.reset(loginAttemptsKey(normalizedIdentifier));
+    attemptLimiter.reset(loginAttemptsKey(normalizedIdentifier));
     account = accounts.save(account.withLastLoginAt(LocalDateTime.now()));
     UUID schoolId = schoolContextLookup.resolve(account).orElse(null);
     String accessToken = tokenIssuer.issueAccessToken(account.id(), account.role(), schoolId);
@@ -134,7 +134,7 @@ public class AuthenticationService {
   }
 
   private void enforceNotBlocked(String identifier) {
-    if (loginAttemptLimiter.isBlocked(loginBlockKey(identifier))) {
+    if (attemptLimiter.isBlocked(loginBlockKey(identifier))) {
       throw rateLimitExceeded(
           "Juda ko'p muvaffaqiyatsiz urinish. Hisobingiz vaqtincha bloklandi.",
           "15 daqiqadan keyin qayta urinib ko'ring yoki parolni tiklang.");
@@ -143,9 +143,9 @@ public class AuthenticationService {
 
   private void recordFailedAttempt(String identifier) {
     String attemptsKey = loginAttemptsKey(identifier);
-    if (loginAttemptLimiter.record(attemptsKey, LOGIN_ATTEMPT_WINDOW) >= MAX_LOGIN_ATTEMPTS) {
-      loginAttemptLimiter.block(loginBlockKey(identifier), LOGIN_BLOCK_DURATION);
-      loginAttemptLimiter.reset(attemptsKey);
+    if (attemptLimiter.record(attemptsKey, LOGIN_ATTEMPT_WINDOW) >= MAX_LOGIN_ATTEMPTS) {
+      attemptLimiter.block(loginBlockKey(identifier), LOGIN_BLOCK_DURATION);
+      attemptLimiter.reset(attemptsKey);
     }
   }
 

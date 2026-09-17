@@ -2,16 +2,16 @@ package uz.academixai.identity.infrastructure.ratelimit;
 
 import java.time.Duration;
 import org.springframework.stereotype.Component;
-import uz.academixai.identity.application.port.out.LoginAttemptLimiter;
+import uz.academixai.identity.application.port.out.AttemptLimiter;
 import uz.academixai.infrastructure.ratelimit.RedisRateLimiter;
 
 /** Redis adapter for Identity's login-attempt rate-limit port. */
 @Component
-public class RedisLoginAttemptLimiter implements LoginAttemptLimiter {
+public class RedisAttemptLimiter implements AttemptLimiter {
 
   private final RedisRateLimiter rateLimiter;
 
-  public RedisLoginAttemptLimiter(RedisRateLimiter rateLimiter) {
+  public RedisAttemptLimiter(RedisRateLimiter rateLimiter) {
     this.rateLimiter = rateLimiter;
   }
 
