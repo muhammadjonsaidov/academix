@@ -21,11 +21,12 @@ import org.junit.jupiter.api.Test;
  * security policy, or be on the explicitly-justified {@link #NOT_YET_PROTECTED} list.
  *
  * <p>This exists because the gap was invisible: 10 tables were protected and 26 were not, and
- * nothing in the build said so. Reviewing migrations by hand does not scale, and the failure mode
- * is silent (a missing policy looks exactly like working code until someone reads another tenant's
- * data). The list below is therefore not an escape hatch — it is the backlog, with a reason per
- * entry, and adding a new unprotected tenant table fails the build until it is either protected or
- * justified here.
+ * nothing in the build said so. The list below is what remains of that backlog — it shrinks as
+ * policies land. Reviewing migrations by hand does not scale, and the failure mode is silent (a
+ * missing policy looks exactly like working code until someone reads another tenant's data). The
+ * list below is therefore not an escape hatch — it is the backlog, with a reason per entry, and
+ * adding a new unprotected tenant table fails the build until it is either protected or justified
+ * here.
  *
  * <p>See {@code docs/architecture/mvp-production-roadmap.md} ("Majburiy cross-cutting qoidalar"):
  * every tenant-scoped table gets {@code school_id NOT NULL}, a composite index and an RLS policy.
@@ -266,17 +267,6 @@ class TenantRlsCoverageTest {
         "Newest tenant data (V44) and the only tenant table with no school_id at all — chunks "
             + "derive their tenant through teacher_syllabuses, so the two must be backfilled "
             + "together. The writer is already scoped.");
-    pending.put(
-        "reports",
-        "Has school_id, but ParentReportService reads it outside a tenant scope; that caller must "
-            + "move to TenantScope before the policy lands.");
-    pending.put(
-        "ai_usage_log",
-        "Has school_id and is written inside consumer/request scopes; needs only the policy once "
-            + "the budget reads in scheduled work are confirmed scoped.");
-    pending.put(
-        "import_column_mappings",
-        "Admin-only import mapping with school_id; needs only the policy.");
     pending.put(
         "outbox_events",
         "Cross-tenant publisher and a nullable school_id (events written during onboarding, before "
