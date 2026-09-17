@@ -10,13 +10,13 @@ import org.junit.jupiter.api.Test;
 import uz.academixai.domain.Role;
 import uz.academixai.domain.SignalSeverity;
 import uz.academixai.infrastructure.persistence.ClassSubjectTeacherRepository;
-import uz.academixai.infrastructure.persistence.GradeRepository;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
 import uz.academixai.infrastructure.persistence.PsychologicalSignalRepository;
 import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.infrastructure.persistence.UserRepository;
+import uz.academixai.reporting.application.port.out.AnalyticsStatistics;
 
 class AdminDashboardServiceTest {
 
@@ -29,7 +29,7 @@ class AdminDashboardServiceTest {
     SubjectRepository subjects = mock(SubjectRepository.class);
     ClassSubjectTeacherRepository assignments = mock(ClassSubjectTeacherRepository.class);
     HomeworkSubmissionRepository submissions = mock(HomeworkSubmissionRepository.class);
-    GradeRepository grades = mock(GradeRepository.class);
+    AnalyticsStatistics statistics = mock(AnalyticsStatistics.class);
     PsychologicalSignalRepository signals = mock(PsychologicalSignalRepository.class);
 
     when(classes.countBySchoolIdAndIsActiveTrue(schoolId)).thenReturn(2L);
@@ -40,12 +40,12 @@ class AdminDashboardServiceTest {
     when(submissions.countDistinctStudentsSubmittedSince(
             org.mockito.ArgumentMatchers.eq(schoolId), org.mockito.ArgumentMatchers.any()))
         .thenReturn(0);
-    when(grades.classProgress(
+    when(statistics.classComparison(
             org.mockito.ArgumentMatchers.eq(schoolId),
             org.mockito.ArgumentMatchers.isNull(),
             org.mockito.ArgumentMatchers.any()))
         .thenReturn(List.of());
-    when(grades.teacherRanking(schoolId)).thenReturn(List.of());
+    when(statistics.teacherRanking(schoolId)).thenReturn(List.of());
     when(signals.countUnresolvedBySchoolAndSeverity(schoolId, SignalSeverity.HIGH.name()))
         .thenReturn(0);
     when(signals.countUnresolvedBySchoolAndSeverity(schoolId, SignalSeverity.MEDIUM.name()))
@@ -53,7 +53,7 @@ class AdminDashboardServiceTest {
 
     AdminDashboardService.Dashboard dashboard =
         new AdminDashboardService(
-                users, students, classes, subjects, assignments, submissions, grades, signals)
+                users, students, classes, subjects, assignments, submissions, statistics, signals)
             .dashboard(schoolId);
 
     assertThat(dashboard.totalClasses()).isEqualTo(2);

@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.AdminAnalyticsService;
 import uz.academixai.infrastructure.cache.RedisJsonCache;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.reporting.application.AdminAnalyticsService;
 
 /**
  * academix_tz.md §2.2 "Taqqoslash (faqat admin ko'radi)" — admin-only comparison views.

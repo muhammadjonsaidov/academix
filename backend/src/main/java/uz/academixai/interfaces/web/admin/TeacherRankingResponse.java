@@ -1,17 +1,17 @@
 package uz.academixai.interfaces.web.admin;
 
 import java.util.UUID;
-import uz.academixai.infrastructure.persistence.GradeRepository.TeacherRankingRow;
+import uz.academixai.reporting.application.port.out.AnalyticsStatistics.TeacherRow;
 
 public record TeacherRankingResponse(
     UUID teacherId, String firstName, String lastName, double avgGrade, long gradedCount) {
 
-  public static TeacherRankingResponse from(TeacherRankingRow row) {
+  public static TeacherRankingResponse from(TeacherRow row) {
     return new TeacherRankingResponse(
-        row.getTeacherId(),
-        row.getFirstName(),
-        row.getLastName(),
-        Math.round(row.getAvgGrade() * 10) / 10.0,
-        row.getGradedCount());
+        row.teacherId(),
+        row.firstName(),
+        row.lastName(),
+        Math.round(row.avgGrade() * 10) / 10.0,
+        row.gradedCount());
   }
 }

@@ -7,15 +7,13 @@ import org.springframework.stereotype.Service;
 import uz.academixai.domain.Role;
 import uz.academixai.domain.SignalSeverity;
 import uz.academixai.infrastructure.persistence.ClassSubjectTeacherRepository;
-import uz.academixai.infrastructure.persistence.GradeRepository;
-import uz.academixai.infrastructure.persistence.GradeRepository.ClassProgressRow;
-import uz.academixai.infrastructure.persistence.GradeRepository.TeacherRankingRow;
 import uz.academixai.infrastructure.persistence.HomeworkSubmissionRepository;
 import uz.academixai.infrastructure.persistence.PsychologicalSignalRepository;
 import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.StudentProfileRepository;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.infrastructure.persistence.UserRepository;
+import uz.academixai.reporting.application.port.out.AnalyticsStatistics;
 
 /**
  * academix_tz.md §2.2 {@code GET /admin/dashboard} — exact response shape. {@code activeToday} and
@@ -37,7 +35,7 @@ public class AdminDashboardService {
   private final SubjectRepository subjectRepository;
   private final ClassSubjectTeacherRepository assignmentRepository;
   private final HomeworkSubmissionRepository submissionRepository;
-  private final GradeRepository gradeRepository;
+  private final AnalyticsStatistics statistics;
   private final PsychologicalSignalRepository signalRepository;
 
   public AdminDashboardService(
@@ -47,7 +45,7 @@ public class AdminDashboardService {
       SubjectRepository subjectRepository,
       ClassSubjectTeacherRepository assignmentRepository,
       HomeworkSubmissionRepository submissionRepository,
-      GradeRepository gradeRepository,
+      AnalyticsStatistics statistics,
       PsychologicalSignalRepository signalRepository) {
     this.userRepository = userRepository;
     this.studentProfileRepository = studentProfileRepository;
@@ -55,7 +53,7 @@ public class AdminDashboardService {
     this.subjectRepository = subjectRepository;
     this.assignmentRepository = assignmentRepository;
     this.submissionRepository = submissionRepository;
-    this.gradeRepository = gradeRepository;
+    this.statistics = statistics;
     this.signalRepository = signalRepository;
   }
 
@@ -69,8 +67,8 @@ public class AdminDashboardService {
       int totalAssignments,
       int activeToday,
       double homeworkSubmissionRate,
-      List<ClassProgressRow> classProgressList,
-      List<TeacherRankingRow> teacherRankings,
+      List<AnalyticsStatistics.ClassRow> classProgressList,
+      List<AnalyticsStatistics.TeacherRow> teacherRankings,
       PsychAlertCounts psychologicalAlerts) {}
 
   public Dashboard dashboard(UUID schoolId) {
@@ -89,9 +87,9 @@ public class AdminDashboardService {
     double submissionRate = totalStudents == 0 ? 0.0 : (activeInWindow * 100.0) / totalStudents;
 
     LocalDateTime scoreWindowSince = LocalDateTime.now().minusDays(DASHBOARD_SCORE_WINDOW_DAYS);
-    List<ClassProgressRow> classProgressList =
-        gradeRepository.classProgress(schoolId, null, scoreWindowSince);
-    List<TeacherRankingRow> teacherRankings = gradeRepository.teacherRanking(schoolId);
+    List<AnalyticsStatistics.ClassRow> classProgressList =
+        statistics.classComparison(schoolId, null, scoreWindowSince);
+    List<AnalyticsStatistics.TeacherRow> teacherRankings = statistics.teacherRanking(schoolId);
 
     PsychAlertCounts psychAlerts =
         new PsychAlertCounts(

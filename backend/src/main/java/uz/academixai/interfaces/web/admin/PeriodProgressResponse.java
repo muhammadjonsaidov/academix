@@ -1,12 +1,12 @@
 package uz.academixai.interfaces.web.admin;
 
 import java.time.LocalDateTime;
-import uz.academixai.infrastructure.persistence.GradeRepository.PeriodProgressRow;
+import uz.academixai.reporting.application.port.out.AnalyticsStatistics.PeriodRow;
 
 public record PeriodProgressResponse(LocalDateTime periodStart, double avgScore, long gradedCount) {
 
-  public static PeriodProgressResponse from(PeriodProgressRow row) {
+  public static PeriodProgressResponse from(PeriodRow row) {
     return new PeriodProgressResponse(
-        row.getPeriodStart(), Math.round(row.getAvgScore() * 10) / 10.0, row.getGradedCount());
+        row.periodStart(), Math.round(row.avgScore() * 10) / 10.0, row.gradedCount());
   }
 }
