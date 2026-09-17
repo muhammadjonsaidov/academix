@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import uz.academixai.infrastructure.telegram.TelegramProperties;
+import uz.academixai.notification.application.port.out.TelegramBotIdentity;
 import uz.academixai.notification.domain.TelegramConnection;
 import uz.academixai.notification.infrastructure.persistence.TelegramConnectionRepository;
 import uz.academixai.shared.error.ApiException;
@@ -37,15 +37,15 @@ public class TelegramLinkService {
 
   private final StringRedisTemplate redis;
   private final TelegramConnectionRepository connectionRepository;
-  private final TelegramProperties properties;
+  private final TelegramBotIdentity botIdentity;
 
   public TelegramLinkService(
       StringRedisTemplate redis,
       TelegramConnectionRepository connectionRepository,
-      TelegramProperties properties) {
+      TelegramBotIdentity botIdentity) {
     this.redis = redis;
     this.connectionRepository = connectionRepository;
-    this.properties = properties;
+    this.botIdentity = botIdentity;
   }
 
   public record LinkTokenResult(String linkUrl, long expiresInSeconds) {}
@@ -54,7 +54,7 @@ public class TelegramLinkService {
     enforceRateLimit(userId);
     String token = UUID.randomUUID().toString();
     redis.opsForValue().set(tokenKey(token), userId.toString(), TOKEN_TTL);
-    String linkUrl = "https://t.me/" + properties.botUsername() + "?start=" + token;
+    String linkUrl = "https://t.me/" + botIdentity.botUsername() + "?start=" + token;
     return new LinkTokenResult(linkUrl, TOKEN_TTL.toSeconds());
   }
 

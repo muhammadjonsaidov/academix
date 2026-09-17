@@ -4,11 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
-import uz.academixai.infrastructure.persistence.GradeRepository;
 import uz.academixai.progress.application.port.in.ParentProgress.SubjectProgress;
 import uz.academixai.progress.application.port.in.StudentDashboard;
 import uz.academixai.progress.application.port.in.StudentDashboard.DashboardBadge;
 import uz.academixai.progress.application.port.in.StudentDashboard.XpHistoryItem;
+import uz.academixai.progress.application.port.out.GradeAverageLookup;
 
 /**
  * academix_tz.md §2.4 {@code GET /student/progress} — exact response shape. {@code streakHistory}
@@ -21,15 +21,15 @@ public class StudentProgressService {
 
   private final ParentProgressService parentProgressService;
   private final StudentDashboard studentDashboardService;
-  private final GradeRepository gradeRepository;
+  private final GradeAverageLookup gradeAverages;
 
   public StudentProgressService(
       ParentProgressService parentProgressService,
       StudentDashboard studentDashboardService,
-      GradeRepository gradeRepository) {
+      GradeAverageLookup gradeAverages) {
     this.parentProgressService = parentProgressService;
     this.studentDashboardService = studentDashboardService;
-    this.gradeRepository = gradeRepository;
+    this.gradeAverages = gradeAverages;
   }
 
   public record Growth(double avgScore) {}
@@ -58,9 +58,8 @@ public class StudentProgressService {
     LocalDateTime thisMonthStart = now.toLocalDate().withDayOfMonth(1).atStartOfDay();
     LocalDateTime lastMonthStart = thisMonthStart.minusMonths(1);
 
-    double thisMonthAvg = gradeRepository.studentAvgScoreForWindow(studentId, thisMonthStart, now);
-    double lastMonthAvg =
-        gradeRepository.studentAvgScoreForWindow(studentId, lastMonthStart, thisMonthStart);
+    double thisMonthAvg = gradeAverages.averageScore(studentId, thisMonthStart, now);
+    double lastMonthAvg = gradeAverages.averageScore(studentId, lastMonthStart, thisMonthStart);
 
     String growth;
     if (lastMonthAvg == 0) {

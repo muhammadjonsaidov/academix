@@ -10,8 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.academixai.infrastructure.queue.NotificationTelegramQueueProducer;
-import uz.academixai.infrastructure.realtime.RealtimeEventBus;
+import uz.academixai.notification.application.port.out.TelegramDeliveryQueue;
 import uz.academixai.notification.domain.Notification;
 import uz.academixai.notification.domain.NotificationPreference;
 import uz.academixai.notification.domain.NotificationType;
@@ -20,12 +19,13 @@ import uz.academixai.notification.infrastructure.persistence.NotificationPrefere
 import uz.academixai.notification.infrastructure.persistence.NotificationPreferenceRepository;
 import uz.academixai.notification.infrastructure.persistence.NotificationRepository;
 import uz.academixai.shared.error.ApiException;
+import uz.academixai.shared.realtime.RealtimePublisher;
 
 /**
  * academix_tz.md §1.15 / §4 {@code sendNotification(userId, type, params)}. Always persists a
  * {@link Notification} row (inbox is the source of truth); Telegram delivery is async on top —
- * enqueued via {@link NotificationTelegramQueueProducer} (only after this transaction commits, so
- * the standalone {@code telegram-bot/} consumer never sees a row that doesn't durably exist yet),
+ * enqueued through {@link TelegramDeliveryQueue} (only after this transaction commits, so the
+ * standalone {@code telegram-bot/} consumer never sees a row that doesn't durably exist yet),
  * consumed and actually sent by that separate service, which flips {@code sent_to_telegram} to true
  * directly once the send genuinely succeeds. This method itself always sets it false at save time —
  * delivery outcome isn't known synchronously anymore, same graceful-degradation principle as AI
@@ -37,20 +37,20 @@ public class NotificationService {
 
   private final NotificationRepository notificationRepository;
   private final NotificationPreferenceRepository preferenceRepository;
-  private final NotificationTelegramQueueProducer telegramQueueProducer;
-  private final RealtimeEventBus realtimeEventBus;
+  private final TelegramDeliveryQueue telegramQueue;
+  private final RealtimePublisher realtimePublisher;
   private final ObjectMapper objectMapper;
 
   public NotificationService(
       NotificationRepository notificationRepository,
       NotificationPreferenceRepository preferenceRepository,
-      NotificationTelegramQueueProducer telegramQueueProducer,
-      RealtimeEventBus realtimeEventBus,
+      TelegramDeliveryQueue telegramQueue,
+      RealtimePublisher realtimePublisher,
       ObjectMapper objectMapper) {
     this.notificationRepository = notificationRepository;
     this.preferenceRepository = preferenceRepository;
-    this.telegramQueueProducer = telegramQueueProducer;
-    this.realtimeEventBus = realtimeEventBus;
+    this.telegramQueue = telegramQueue;
+    this.realtimePublisher = realtimePublisher;
     this.objectMapper = objectMapper;
   }
 
@@ -90,7 +90,7 @@ public class NotificationService {
             null);
     notificationRepository.save(NotificationEntity.fromDomain(notification));
     if (telegramEnabled) {
-      telegramQueueProducer.publish(notificationId, userId, title, body);
+      telegramQueue.enqueue(notificationId, userId, title, body);
     }
     // Live push — the frontend's NotificationBell refetches on this event. After commit, so
     // the inbox row is durably visible when the client fetches it (same rule as Telegram).
@@ -98,7 +98,7 @@ public class NotificationService {
     eventData.put("id", notificationId.toString());
     eventData.put("type", type.name());
     eventData.put("title", title == null ? "" : title);
-    realtimeEventBus.publishAfterCommit(userId, "notification.created", eventData);
+    realtimePublisher.publishAfterCommit(userId, "notification.created", eventData);
   }
 
   private static final int MAX_INBOX_PAGE = 100;

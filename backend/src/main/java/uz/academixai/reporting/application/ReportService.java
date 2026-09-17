@@ -7,16 +7,9 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import uz.academixai.infrastructure.persistence.GradeRepository;
-import uz.academixai.infrastructure.persistence.GradeRepository.ClassProgressRow;
-import uz.academixai.infrastructure.persistence.GradeRepository.StudentProgressRow;
-import uz.academixai.infrastructure.persistence.GradeRepository.SubjectProgressRow;
-import uz.academixai.infrastructure.persistence.SchoolClassEntity;
-import uz.academixai.infrastructure.persistence.SchoolClassRepository;
-import uz.academixai.infrastructure.persistence.SchoolRepository;
-import uz.academixai.infrastructure.persistence.UserEntity;
-import uz.academixai.infrastructure.persistence.UserRepository;
-import uz.academixai.infrastructure.storage.FileStorageService;
+import uz.academixai.reporting.application.port.out.GradeStatistics;
+import uz.academixai.reporting.application.port.out.ReportDirectoryLookup;
+import uz.academixai.reporting.application.port.out.ReportFileStore;
 import uz.academixai.reporting.domain.Report;
 import uz.academixai.reporting.domain.ReportType;
 import uz.academixai.reporting.infrastructure.pdf.JasperReportGenerator;
@@ -44,28 +37,22 @@ public class ReportService {
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
   private final ReportRepository reportRepository;
-  private final GradeRepository gradeRepository;
-  private final SchoolRepository schoolRepository;
-  private final SchoolClassRepository classRepository;
-  private final UserRepository userRepository;
+  private final GradeStatistics grades;
+  private final ReportDirectoryLookup directory;
   private final JasperReportGenerator reportGenerator;
-  private final FileStorageService fileStorageService;
+  private final ReportFileStore files;
 
   public ReportService(
       ReportRepository reportRepository,
-      GradeRepository gradeRepository,
-      SchoolRepository schoolRepository,
-      SchoolClassRepository classRepository,
-      UserRepository userRepository,
+      GradeStatistics grades,
+      ReportDirectoryLookup directory,
       JasperReportGenerator reportGenerator,
-      FileStorageService fileStorageService) {
+      ReportFileStore files) {
     this.reportRepository = reportRepository;
-    this.gradeRepository = gradeRepository;
-    this.schoolRepository = schoolRepository;
-    this.classRepository = classRepository;
-    this.userRepository = userRepository;
+    this.grades = grades;
+    this.directory = directory;
     this.reportGenerator = reportGenerator;
-    this.fileStorageService = fileStorageService;
+    this.files = files;
   }
 
   public Report generate(
@@ -78,7 +65,7 @@ public class ReportService {
         };
 
     String key = "reports/%s/%s.pdf".formatted(schoolId, UUID.randomUUID());
-    fileStorageService.upload(key, pdf, "application/pdf");
+    files.upload(key, pdf, "application/pdf");
 
     Report report =
         new Report(
@@ -128,24 +115,23 @@ public class ReportService {
                         "ERR_REPORT_NOT_FOUND",
                         "Hisobot topilmadi.",
                         "ID ni tekshiring yoki ro'yxatni yangilang."));
-    byte[] content = fileStorageService.download(report.fileUrl());
+    byte[] content = files.download(report.fileUrl());
     String fileName = "%s-%s.pdf".formatted(report.type(), report.quarter());
     return new ReportDownload(fileName, content);
   }
 
   private byte[] generateSchoolReportPdf(UUID schoolId, String quarter) {
-    String schoolName =
-        schoolRepository.findById(schoolId).map(s -> s.toDomain().name()).orElse("");
-    List<ClassProgressRow> classes = gradeRepository.classProgress(schoolId, null, windowSince());
+    String schoolName = directory.schoolName(schoolId).orElse("");
+    List<GradeStatistics.ClassRow> classes = grades.classProgress(schoolId, windowSince());
     List<ReportRow> rows =
         classes.stream()
             .map(
                 c ->
                     new ReportRow(
-                        c.getClassName(),
-                        "%.1f%%".formatted(c.getAvgScore()),
-                        String.valueOf(c.getGradedCount()),
-                        String.valueOf(c.getStudentCount())))
+                        c.className(),
+                        "%.1f%%".formatted(c.avgScore()),
+                        String.valueOf(c.gradedCount()),
+                        String.valueOf(c.studentCount())))
             .toList();
     return reportGenerator.generatePdf(
         "Maktab chorak hisoboti",
@@ -158,25 +144,23 @@ public class ReportService {
   }
 
   private byte[] generateClassReportPdf(UUID schoolId, UUID classId, String quarter) {
-    SchoolClassEntity schoolClass =
-        classRepository
-            .findByIdAndSchoolId(classId, schoolId)
-            .orElseThrow(ReportService::classNotFound);
-    List<StudentProgressRow> students =
-        gradeRepository.classStudentProgress(schoolId, classId, windowSince());
+    String classLabel =
+        directory.classLabel(classId, schoolId).orElseThrow(ReportService::classNotFound);
+    List<GradeStatistics.StudentRow> students =
+        grades.classStudentProgress(schoolId, classId, windowSince());
     List<ReportRow> rows =
         students.stream()
             .map(
                 s ->
                     new ReportRow(
-                        s.getFirstName() + " " + s.getLastName(),
-                        "%.1f%%".formatted(s.getAvgScore()),
-                        String.valueOf(s.getGradedCount()),
-                        String.valueOf(s.getTotalXp())))
+                        s.firstName() + " " + s.lastName(),
+                        "%.1f%%".formatted(s.avgScore()),
+                        String.valueOf(s.gradedCount()),
+                        String.valueOf(s.totalXp())))
             .toList();
     return reportGenerator.generatePdf(
         "Sinf chorak hisoboti",
-        schoolClass.toDomain().fullName() + " — " + quarter,
+        classLabel + " — " + quarter,
         LocalDateTime.now().format(DISPLAY_FORMAT),
         "O'rtacha ball",
         "Baholangan soni",
@@ -185,23 +169,23 @@ public class ReportService {
   }
 
   private byte[] generateStudentReportPdf(UUID schoolId, UUID studentUserId, String quarter) {
-    UserEntity student =
-        userRepository.findById(studentUserId).orElseThrow(ReportService::studentNotFound);
-    List<SubjectProgressRow> subjects =
-        gradeRepository.studentSubjectProgress(schoolId, studentUserId, windowSince());
+    String studentName =
+        directory.studentFullName(studentUserId).orElseThrow(ReportService::studentNotFound);
+    List<GradeStatistics.SubjectRow> subjects =
+        grades.studentSubjectProgress(schoolId, studentUserId, windowSince());
     List<ReportRow> rows =
         subjects.stream()
             .map(
                 s ->
                     new ReportRow(
-                        s.getSubjectName(),
-                        "%.1f%%".formatted(s.getAvgScore()),
-                        String.valueOf(s.getGradedCount()),
+                        s.subjectName(),
+                        "%.1f%%".formatted(s.avgScore()),
+                        String.valueOf(s.gradedCount()),
                         ""))
             .toList();
     return reportGenerator.generatePdf(
         "O'quvchi chorak hisoboti",
-        student.toDomain().firstName() + " " + student.toDomain().lastName() + " — " + quarter,
+        studentName + " — " + quarter,
         LocalDateTime.now().format(DISPLAY_FORMAT),
         "O'rtacha ball",
         "Baholangan soni",

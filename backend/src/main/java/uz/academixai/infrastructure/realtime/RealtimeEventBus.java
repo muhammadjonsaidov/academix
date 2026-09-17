@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import uz.academixai.shared.realtime.RealtimePublisher;
 
 /**
  * In-memory SSE hub — the project's real-time push channel (the one place the frontend gets events
@@ -31,7 +32,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  * rollback would silently drop the event instead of lying to the client).
  */
 @Component
-public class RealtimeEventBus {
+public class RealtimeEventBus implements RealtimePublisher {
 
   private static final Logger log = LoggerFactory.getLogger(RealtimeEventBus.class);
 
@@ -57,6 +58,7 @@ public class RealtimeEventBus {
    * Publish after the current transaction commits if one is active, otherwise immediately. See the
    * class Javadoc for why this matters for the AI/notification pipelines.
    */
+  @Override
   public void publishAfterCommit(UUID userId, String eventName, Object payload) {
     if (TransactionSynchronizationManager.isActualTransactionActive()) {
       TransactionSynchronizationManager.registerSynchronization(
