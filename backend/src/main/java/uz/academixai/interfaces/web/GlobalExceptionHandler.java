@@ -1,11 +1,15 @@
 package uz.academixai.interfaces.web;
 
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -71,6 +75,60 @@ public class GlobalExceptionHandler {
                 "ERR_METHOD_NOT_ALLOWED",
                 "Bu manzil uchun so'rov turi noto'g'ri.",
                 "API hujjatlaridagi to'g'ri HTTP metodini ishlating."));
+  }
+
+  // Bean validation on a request DTO (@Valid on the controller parameter) throws this before any
+  // controller body runs. Without the handler it fell through to Exception.class and every client
+  // mistake -- a blank phone, an over-long name -- came back as a logged 500 ERR_INTERNAL.
+  // Same ERR_VALIDATION code and ApiErrorResponse shape PasswordPolicy already uses, so a caller
+  // sees one validation contract no matter which layer rejected the payload.
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValid(
+      MethodArgumentNotValidException e) {
+    String detail =
+        e.getBindingResult().getFieldErrors().stream()
+            .map(GlobalExceptionHandler::describeFieldError)
+            .distinct()
+            .reduce((left, right) -> left + " " + right)
+            .orElse("So'rov ma'lumotlari to'g'ri emas.");
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(
+            new ApiErrorResponse(
+                400, "ERR_VALIDATION", detail, "Maydonlarni tekshirib, qayta yuboring."));
+  }
+
+  // A @Validated class-level constraint on a @PathVariable/@RequestParam raises this instead of
+  // MethodArgumentNotValidException -- same client mistake, different exception type.
+  @ExceptionHandler(ConstraintViolationException.class)
+  public ResponseEntity<ApiErrorResponse> handleConstraintViolation(
+      ConstraintViolationException e) {
+    String detail =
+        e.getConstraintViolations().stream()
+            .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+            .distinct()
+            .reduce((left, right) -> left + " " + right)
+            .orElse("So'rov ma'lumotlari to'g'ri emas.");
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(
+            new ApiErrorResponse(
+                400, "ERR_VALIDATION", detail, "Maydonlarni tekshirib, qayta yuboring."));
+  }
+
+  // Malformed or missing JSON body. Also a client mistake: before this handler it surfaced as a
+  // 500 ERR_INTERNAL with a stack trace in the logs.
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ApiErrorResponse> handleUnreadableBody(HttpMessageNotReadableException e) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(
+            new ApiErrorResponse(
+                400,
+                "ERR_VALIDATION",
+                "So'rov tanasi o'qilmadi (noto'g'ri yoki bo'sh JSON).",
+                "JSON formatini tekshirib, qayta yuboring."));
+  }
+
+  private static String describeFieldError(FieldError error) {
+    return error.getField() + ": " + error.getDefaultMessage();
   }
 
   @ExceptionHandler(Exception.class)

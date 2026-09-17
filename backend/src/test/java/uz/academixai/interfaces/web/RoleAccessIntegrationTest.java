@@ -59,12 +59,14 @@ import uz.academixai.infrastructure.security.JwtService;
  * placeholders ({@code {studentId}}, {@code {id}}, ...) are replaced with throwaway UUIDs — their
  * value is irrelevant because authorization happens before business logic.
  *
- * <p>Requests carry a minimal body that actually parses into the endpoint's DTO: Spring resolves
- * {@code @RequestBody}/{@code @RequestPart} arguments BEFORE invoking the secured method, so a
- * bodyless or non-parsing request dies with 400/500 and never reaches {@code @PreAuthorize} — that
+ * <p>Requests carry a minimal body that parses into the endpoint's DTO AND satisfies its bean
+ * validation: Spring resolves {@code @RequestBody}/{@code @RequestPart} arguments (and runs
+ * {@code @Valid} on them) BEFORE invoking the secured method, so a bodyless, non-parsing or
+ * constraint-violating request dies with 400/500 and never reaches {@code @PreAuthorize} — that
  * would falsely fail the 403 assertions. Primitive fields ({@code int}, {@code boolean}) reject
  * null, so those DTOs get concrete placeholder values; multipart endpoints send
- * {@code @RequestPart} fields as text files.
+ * {@code @RequestPart} fields as text files. When a DTO gains a new required field, its entry below
+ * must supply it.
  *
  * <p>Positive-case assertion is deliberately {@code status != 401} (never {@code 200}): the role
  * gate is what this test proves, and business logic on an empty DB may legitimately answer
@@ -346,7 +348,7 @@ class RoleAccessIntegrationTest {
             Role.ADMIN,
             """
             {"firstName":"Test","lastName":"Student","phone":"+998900000001",\
-            "classId":"%s","studentNumber":"1"}"""
+            "password":"Password1","classId":"%s","studentNumber":"1"}"""
                 .formatted(UUID.randomUUID())),
         new Endpoint(
             HttpMethod.PUT,
@@ -375,13 +377,15 @@ class RoleAccessIntegrationTest {
             "/api/v1/admin/classes",
             Role.ADMIN,
             """
-            {"grade":7,"letter":"A"}"""),
+            {"grade":7,"letter":"A","classTeacherId":"%s"}"""
+                .formatted(UUID.randomUUID())),
         new Endpoint(
             HttpMethod.PUT,
             "/api/v1/admin/classes/{classId}",
             Role.ADMIN,
             """
-            {"grade":7,"letter":"A"}"""),
+            {"grade":7,"letter":"A","classTeacherId":"%s"}"""
+                .formatted(UUID.randomUUID())),
         new Endpoint(HttpMethod.DELETE, "/api/v1/admin/classes/{classId}", Role.ADMIN),
         new Endpoint(HttpMethod.GET, "/api/v1/admin/subjects", Role.ADMIN),
         new Endpoint(
@@ -458,7 +462,8 @@ class RoleAccessIntegrationTest {
             "/api/v1/admin/students/bulk-import/commit",
             Role.ADMIN,
             """
-            {"fileToken":"token","columnMapping":{},"saveMappingAsTemplate":false}"""),
+            {"fileToken":"token","columnMapping":{"firstName":"first_name"},\
+            "saveMappingAsTemplate":false}"""),
 
         // --- Teacher (academix_tz.md §2.3) ---
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/dashboard", Role.TEACHER),
@@ -641,7 +646,11 @@ class RoleAccessIntegrationTest {
             Role.PSYCHOLOGIST),
         new Endpoint(HttpMethod.GET, "/api/v1/psychologist/watchlist", Role.PSYCHOLOGIST),
         new Endpoint(
-            HttpMethod.POST, "/api/v1/psychologist/watchlist/{studentId}", Role.PSYCHOLOGIST),
+            HttpMethod.POST,
+            "/api/v1/psychologist/watchlist/{studentId}",
+            Role.PSYCHOLOGIST,
+            """
+            {"reason":"Kuzatuvga qo'shish sababi"}"""),
         new Endpoint(
             HttpMethod.DELETE, "/api/v1/psychologist/watchlist/{studentId}", Role.PSYCHOLOGIST),
         new Endpoint(HttpMethod.GET, "/api/v1/psychologist/reports", Role.PSYCHOLOGIST));

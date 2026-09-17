@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.admin;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +39,7 @@ public class AdminPsychologistController {
   @PostMapping("/invite")
   public ResponseEntity<PsychologistResponse> invite(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody InvitePsychologistRequest request) {
+      @Valid @RequestBody InvitePsychologistRequest request) {
     var invited =
         staffService.invite(
             principal.schoolId(),

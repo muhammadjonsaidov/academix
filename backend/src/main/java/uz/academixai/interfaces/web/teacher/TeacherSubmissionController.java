@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.teacher;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -60,7 +61,7 @@ public class TeacherSubmissionController {
   public TeacherGradeResponse grade(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @PathVariable UUID submissionId,
-      @RequestBody GradeSubmissionRequest request) {
+      @Valid @RequestBody GradeSubmissionRequest request) {
     var saved =
         gradingService.grade(
             principal.schoolId(),

@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.teacher;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -52,7 +53,7 @@ public class UniqueTaskController {
       @AuthenticationPrincipal AcademixPrincipal principal,
       @PathVariable UUID assignmentId,
       @PathVariable UUID taskId,
-      @RequestBody EditUniqueTaskRequest request) {
+      @Valid @RequestBody EditUniqueTaskRequest request) {
     reviewService.editContent(
         principal.schoolId(), principal.userId(), assignmentId, taskId, request.taskContent());
     return ResponseEntity.noContent().build();

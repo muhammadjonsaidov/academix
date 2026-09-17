@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.admin;
 
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +31,7 @@ public class AdminSchoolController {
   @PutMapping
   public SchoolResponse update(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody UpdateSchoolRequest request) {
+      @Valid @RequestBody UpdateSchoolRequest request) {
     return SchoolResponse.from(
         schoolService.update(
             principal.schoolId(),

@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.admin;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,7 +32,7 @@ public class AdminParentController {
   @PostMapping
   public ParentResponse create(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody CreateParentRequest request) {
+      @Valid @RequestBody CreateParentRequest request) {
     var parent =
         parentManagementService.create(
             principal.schoolId(),

@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.teacher;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +33,7 @@ public class TeacherExamController {
   @PostMapping
   public ResponseEntity<CreateExamResponse> create(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody CreateExamRequest request) {
+      @Valid @RequestBody CreateExamRequest request) {
     var result =
         examService.create(
             principal.schoolId(),

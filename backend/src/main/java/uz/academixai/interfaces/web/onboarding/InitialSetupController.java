@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.onboarding;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +33,8 @@ public class InitialSetupController {
   }
 
   @PostMapping("/initial-setup")
-  public ResponseEntity<LoginResponse> initialSetup(@RequestBody InitialSetupRequest request) {
+  public ResponseEntity<LoginResponse> initialSetup(
+      @Valid @RequestBody InitialSetupRequest request) {
     setupService.createFirstAdministrator(
         request.firstName(),
         request.lastName(),

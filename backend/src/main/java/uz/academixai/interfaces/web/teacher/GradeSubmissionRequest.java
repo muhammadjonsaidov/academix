@@ -1,5 +1,9 @@
 package uz.academixai.interfaces.web.teacher;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
+
 /**
  * academix_tz.md §2.3 — POST /teacher/submissions/{submissionId}/grade. {@code isExcellent} isn't
  * in the spec's request body example — new field, judgment call (see ROADMAP.md Sprint 4) to let a
@@ -7,4 +11,7 @@ package uz.academixai.interfaces.web.teacher;
  * false} (Jackson's default for a primitive boolean), so this is backward compatible.
  */
 public record GradeSubmissionRequest(
-    int score, int fivePointGrade, String teacherComment, boolean isExcellent) {}
+    @Min(0) int score,
+    @Min(1) @Max(5) int fivePointGrade,
+    @Size(max = 2000) String teacherComment,
+    boolean isExcellent) {}

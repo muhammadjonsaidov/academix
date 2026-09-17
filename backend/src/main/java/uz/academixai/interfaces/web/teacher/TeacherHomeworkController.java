@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.teacher;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +39,7 @@ public class TeacherHomeworkController {
   @PostMapping
   public ResponseEntity<HomeworkResponse> create(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody CreateHomeworkRequest request) {
+      @Valid @RequestBody CreateHomeworkRequest request) {
     var created =
         homeworkService.create(
             principal.schoolId(),
@@ -76,7 +77,7 @@ public class TeacherHomeworkController {
   public HomeworkResponse update(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @PathVariable UUID assignmentId,
-      @RequestBody UpdateHomeworkRequest request) {
+      @Valid @RequestBody UpdateHomeworkRequest request) {
     var updated =
         homeworkService.update(
             principal.schoolId(),

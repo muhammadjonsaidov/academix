@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.student;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,7 +27,8 @@ public class AiChatController {
 
   @PostMapping
   public AiChatResponse chat(
-      @AuthenticationPrincipal AcademixPrincipal principal, @RequestBody AiChatRequest request) {
+      @AuthenticationPrincipal AcademixPrincipal principal,
+      @Valid @RequestBody AiChatRequest request) {
     return AiChatResponse.from(
         chatService.chat(
             principal.schoolId(),

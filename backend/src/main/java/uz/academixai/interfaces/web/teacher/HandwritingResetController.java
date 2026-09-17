@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.teacher;
 
+import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,7 +28,7 @@ public class HandwritingResetController {
   public HandwritingResetResponse reset(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @PathVariable UUID studentId,
-      @RequestBody HandwritingResetRequest request) {
+      @Valid @RequestBody HandwritingResetRequest request) {
     var result =
         handwritingService.resetProfile(
             principal.schoolId(), studentId, principal.userId(), request.reason(), request.notes());

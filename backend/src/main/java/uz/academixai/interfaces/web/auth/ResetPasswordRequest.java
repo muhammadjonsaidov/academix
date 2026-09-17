@@ -1,3 +1,7 @@
 package uz.academixai.interfaces.web.auth;
 
-public record ResetPasswordRequest(String token, String newPassword) {}
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record ResetPasswordRequest(
+    @NotBlank @Size(max = 255) String token, @NotBlank @Size(max = 72) String newPassword) {}

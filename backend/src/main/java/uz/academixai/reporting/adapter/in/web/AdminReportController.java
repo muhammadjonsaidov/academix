@@ -1,5 +1,6 @@
 package uz.academixai.reporting.adapter.in.web;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ContentDisposition;
@@ -33,7 +34,7 @@ public class AdminReportController {
   @PostMapping("/generate")
   public ReportResponse generate(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody GenerateReportRequest request) {
+      @Valid @RequestBody GenerateReportRequest request) {
     return ReportResponse.from(
         reportService.generate(
             principal.schoolId(),

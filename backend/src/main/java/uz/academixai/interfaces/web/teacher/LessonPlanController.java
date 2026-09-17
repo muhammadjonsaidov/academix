@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.teacher;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,7 +31,7 @@ public class LessonPlanController {
   @PostMapping("/generate")
   public LessonPlanResponse generate(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody GenerateLessonPlanRequest request) {
+      @Valid @RequestBody GenerateLessonPlanRequest request) {
     var plan =
         lessonPlanService.generate(
             principal.userId(),
@@ -55,7 +56,7 @@ public class LessonPlanController {
   public LessonPlanResponse update(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @PathVariable UUID planId,
-      @RequestBody UpdateLessonPlanRequest request) {
+      @Valid @RequestBody UpdateLessonPlanRequest request) {
     var plan =
         lessonPlanService.update(
             principal.userId(), planId, request.teacherEditedPlan(), request.isApproved());

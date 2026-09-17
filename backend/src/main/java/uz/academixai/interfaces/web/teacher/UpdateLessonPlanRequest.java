@@ -1,3 +1,7 @@
 package uz.academixai.interfaces.web.teacher;
 
-public record UpdateLessonPlanRequest(String teacherEditedPlan, boolean isApproved) {}
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record UpdateLessonPlanRequest(
+    @NotBlank @Size(max = 20000) String teacherEditedPlan, boolean isApproved) {}

@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.admin;
 
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,7 +34,7 @@ public class AdminBulkImportController {
   @PostMapping("/commit")
   public ImportCommitResponse commit(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody ImportCommitRequest request) {
+      @Valid @RequestBody ImportCommitRequest request) {
     return bulkImportService.commit(
         principal.schoolId(),
         request.fileToken(),

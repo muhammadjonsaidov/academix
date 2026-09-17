@@ -1,5 +1,6 @@
 package uz.academixai.notification.adapter.in.web;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -84,7 +85,7 @@ public class NotificationController {
   @PreAuthorize("isAuthenticated()")
   public List<NotificationPreferenceResponse> updatePreference(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody UpdateNotificationPreferenceRequest request) {
+      @Valid @RequestBody UpdateNotificationPreferenceRequest request) {
     notificationService.updatePreference(
         principal.userId(), request.type(), request.inAppEnabled(), request.telegramEnabled());
     return notificationService.preferences(principal.userId()).stream()

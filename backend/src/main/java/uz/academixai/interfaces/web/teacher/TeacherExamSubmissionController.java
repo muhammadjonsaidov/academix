@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.teacher;
 
+import jakarta.validation.Valid;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
@@ -55,7 +56,7 @@ public class TeacherExamSubmissionController {
       @AuthenticationPrincipal AcademixPrincipal principal,
       @PathVariable UUID examId,
       @PathVariable UUID id,
-      @RequestBody GradeExamSubmissionRequest request) {
+      @Valid @RequestBody GradeExamSubmissionRequest request) {
     examSubmissionService.grade(
         principal.schoolId(),
         principal.userId(),

@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.teacher;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -38,7 +39,7 @@ public class GradingCriteriaController {
   public List<CriteriaItemDto> update(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @PathVariable UUID subjectId,
-      @RequestBody UpdateGradingCriteriaRequest request) {
+      @Valid @RequestBody UpdateGradingCriteriaRequest request) {
     var criteria = request.criteria().stream().map(CriteriaItemDto::toDomain).toList();
     return gradingCriteriaService.upsert(principal.userId(), subjectId, criteria).stream()
         .map(CriteriaItemDto::from)

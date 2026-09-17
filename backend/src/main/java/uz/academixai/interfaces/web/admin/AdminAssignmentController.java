@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.admin;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +38,7 @@ public class AdminAssignmentController {
   @PostMapping
   public ResponseEntity<AssignmentResponse> create(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody CreateAssignmentRequest request) {
+      @Valid @RequestBody CreateAssignmentRequest request) {
     var created =
         assignmentService.create(
             principal.schoolId(), request.teacherId(), request.classId(), request.subjectId());

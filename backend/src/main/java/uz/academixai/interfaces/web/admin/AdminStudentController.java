@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.admin;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -51,7 +52,7 @@ public class AdminStudentController {
   @PostMapping
   public ResponseEntity<StudentResponse> create(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody CreateStudentRequest request) {
+      @Valid @RequestBody CreateStudentRequest request) {
     StudentProfile created =
         studentService.create(
             principal.schoolId(),
@@ -80,7 +81,7 @@ public class AdminStudentController {
   public ResponseEntity<Void> transferClass(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @PathVariable UUID studentId,
-      @RequestBody TransferClassRequest request) {
+      @Valid @RequestBody TransferClassRequest request) {
     studentService.transferClass(principal.schoolId(), studentId, request.newClassId());
     return ResponseEntity.noContent().build();
   }

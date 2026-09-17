@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.psychologist;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -62,7 +63,7 @@ public class PsychologistController {
   public ResponseEntity<Void> resolve(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @PathVariable UUID signalId,
-      @RequestBody ResolveSignalRequest request) {
+      @Valid @RequestBody ResolveSignalRequest request) {
     psychologistService.resolve(
         principal.schoolId(), signalId, request.notes(), request.actionTaken());
     return ResponseEntity.noContent().build();
@@ -87,7 +88,7 @@ public class PsychologistController {
   public ResponseEntity<Void> addToWatchlist(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @PathVariable UUID studentId,
-      @RequestBody(required = false) AddToWatchlistRequest request) {
+      @Valid @RequestBody(required = false) AddToWatchlistRequest request) {
     String reason = request == null ? null : request.reason();
     psychologistService.addToWatchlist(principal.schoolId(), principal.userId(), studentId, reason);
     return ResponseEntity.noContent().build();

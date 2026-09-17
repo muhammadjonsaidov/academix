@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.admin;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,7 +26,7 @@ public class AdminParentLinkController {
   @PostMapping("/link")
   public ResponseEntity<ParentLinkResponse> link(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody LinkParentRequest request) {
+      @Valid @RequestBody LinkParentRequest request) {
     var link =
         parentLinkService.link(
             principal.schoolId(), request.parentPhone(), request.studentId(), request.relation());

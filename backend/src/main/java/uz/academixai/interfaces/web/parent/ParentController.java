@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.parent;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ContentDisposition;
@@ -98,7 +99,7 @@ public class ParentController {
   public ResponseEntity<Void> setBiometricConsent(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @PathVariable UUID studentId,
-      @RequestBody SetBiometricConsentRequest request) {
+      @Valid @RequestBody SetBiometricConsentRequest request) {
     parentLinkService.setBiometricConsent(principal.userId(), studentId, request.consentGiven());
     return ResponseEntity.noContent().build();
   }

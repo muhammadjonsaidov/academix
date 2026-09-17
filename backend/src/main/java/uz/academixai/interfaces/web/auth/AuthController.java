@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.auth;
 
+import jakarta.validation.Valid;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -61,7 +62,7 @@ public class AuthController {
   }
 
   @PostMapping("/login")
-  public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+  public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
     var result = authenticationService.login(request.identifier(), request.password());
     var body = new LoginResponse(result.accessToken(), UserSummary.from(result.account()));
     return ResponseEntity.ok()
@@ -100,7 +101,7 @@ public class AuthController {
   @PutMapping("/profile")
   public ProfileResponse updateProfile(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody UpdateProfileRequest request) {
+      @Valid @RequestBody UpdateProfileRequest request) {
     return ProfileResponse.from(
         authenticationService.updateProfile(
             principal.userId(), request.firstName(), request.lastName(), request.email()));
@@ -109,14 +110,14 @@ public class AuthController {
   @PutMapping("/change-password")
   public ResponseEntity<Void> changePassword(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody ChangePasswordRequest request) {
+      @Valid @RequestBody ChangePasswordRequest request) {
     authenticationService.changePassword(
         principal.userId(), request.oldPassword(), request.newPassword());
     return ResponseEntity.ok().build();
   }
 
   @PostMapping("/forgot-password")
-  public ForgotPasswordResponse forgotPassword(@RequestBody ForgotPasswordRequest request) {
+  public ForgotPasswordResponse forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
     passwordResetService.forgotPassword(request.email());
     // Always the same response regardless of outcome — see PasswordResetService's Javadoc
     // (anti-enumeration: a caller can't tell "no account" or "sent" apart).
@@ -125,7 +126,7 @@ public class AuthController {
   }
 
   @PostMapping("/reset-password")
-  public ResponseEntity<Void> resetPassword(@RequestBody ResetPasswordRequest request) {
+  public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
     passwordResetService.resetPassword(request.token(), request.newPassword());
     return ResponseEntity.ok().build();
   }

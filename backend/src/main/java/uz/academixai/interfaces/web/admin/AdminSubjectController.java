@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.admin;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -43,7 +44,7 @@ public class AdminSubjectController {
   @PostMapping
   public SubjectResponse create(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody CreateSubjectRequest request) {
+      @Valid @RequestBody CreateSubjectRequest request) {
     return SubjectResponse.from(
         subjectCatalogService.create(
             principal.schoolId(), request.name(), request.type(), request.icon()));

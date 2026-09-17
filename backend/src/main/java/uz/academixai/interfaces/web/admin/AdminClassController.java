@@ -1,5 +1,6 @@
 package uz.academixai.interfaces.web.admin;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +37,7 @@ public class AdminClassController {
   @PostMapping
   public ResponseEntity<ClassResponse> create(
       @AuthenticationPrincipal AcademixPrincipal principal,
-      @RequestBody CreateClassRequest request) {
+      @Valid @RequestBody CreateClassRequest request) {
     var created =
         classService.create(
             principal.schoolId(), request.grade(), request.letter(), request.classTeacherId());
@@ -47,7 +48,7 @@ public class AdminClassController {
   public ClassResponse update(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @PathVariable UUID classId,
-      @RequestBody CreateClassRequest request) {
+      @Valid @RequestBody CreateClassRequest request) {
     var updated =
         classService.update(
             principal.schoolId(),
