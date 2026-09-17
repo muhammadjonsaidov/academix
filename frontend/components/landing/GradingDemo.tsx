@@ -147,7 +147,7 @@ export function GradingDemo() {
               className={cn(
                 "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors duration-300",
                 pipelineActive[p.key]
-                  ? "border-ai-soft bg-ai-soft text-ai"
+                  ? "border-ai-soft bg-ai-soft text-foreground"
                   : stage === "done" && p.key !== "grade"
                     ? "border-success/30 bg-success-bg text-success"
                     : "border-border bg-card text-muted-foreground",
@@ -232,7 +232,7 @@ export function GradingDemo() {
             className={cn(
               "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
               sampleIndex === i
-                ? "border-ai-soft bg-ai-soft text-ai"
+                ? "border-ai-soft bg-ai-soft text-foreground"
                 : "border-border bg-card text-muted-foreground hover:border-ai-soft/60 hover:text-foreground",
             )}
           >

@@ -42,10 +42,16 @@ const nextConfig: NextConfig = {
       ? new URL(apiBase).origin
       : "http://localhost:8080";
     const connectSrc = ["'self'", apiOrigin].join(" ");
+    // Next's development client uses eval for Fast Refresh/devtools. Keep this
+    // allowance out of production, where the optimized client does not need it.
+    const scriptSrc =
+      process.env.NODE_ENV === "development"
+        ? "'self' 'unsafe-inline' 'unsafe-eval'"
+        : "'self' 'unsafe-inline'";
 
     const contentSecurityPolicy = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      `script-src ${scriptSrc}`,
       "style-src 'self' 'unsafe-inline'",
       `img-src 'self' data: blob:`,
       `connect-src ${connectSrc}`,
