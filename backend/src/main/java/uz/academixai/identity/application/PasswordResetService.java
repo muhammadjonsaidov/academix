@@ -16,9 +16,9 @@ import uz.academixai.shared.error.ApiException;
 /**
  * academix_tz.md §2.1 forgot-password/reset-password — ADMIN/TEACHER/PARENT/PSYCHOLOGIST only
  * (users with an {@code email}; STUDENT reset is a separate class-teacher-assisted flow, see {@code
- * uz.academixai.application.StudentPasswordResetService}). Redis one-time token, same shape as
- * {@code TelegramLinkService}'s deep-link token (this project's existing template for this exact
- * pattern) — single-use, deleted on consumption.
+ * uz.academixai.identity.application.StudentPasswordResetService}). Redis one-time token, same
+ * shape as {@code TelegramLinkService}'s deep-link token (this project's existing template for this
+ * exact pattern) — single-use, deleted on consumption.
  *
  * <p><b>Anti-enumeration by design</b>: {@link #forgotPassword} always returns success and never
  * reveals whether the email address belongs to an active account. A caller cannot distinguish "no
