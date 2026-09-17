@@ -11,8 +11,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,6 +24,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -34,6 +37,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import uz.academixai.TestcontainersConfiguration;
 import uz.academixai.domain.Role;
 import uz.academixai.infrastructure.persistence.UserEntity;
@@ -102,6 +106,11 @@ class RoleAccessIntegrationTest {
   }
 
   @Autowired private MockMvc mockMvc;
+
+  @Autowired
+  @Qualifier("requestMappingHandlerMapping")
+  private RequestMappingHandlerMapping handlerMapping;
+
   @Autowired private JwtService jwtService;
   @Autowired private UserRepository userRepository;
   @Autowired private PasswordEncoder passwordEncoder;
@@ -171,6 +180,57 @@ class RoleAccessIntegrationTest {
       builder.header("Authorization", token);
     }
     return builder;
+  }
+
+  /**
+   * The matrix above is hand-maintained, so on its own it proves nothing about endpoints nobody
+   * remembered to add to it. This compares it against what Spring actually registered: any
+   * controller mapping reachable under /api/v1 that is absent from the three lists fails here.
+   */
+  @Test
+  void everyRegisteredEndpointIsCoveredByTheMatrix() {
+    Set<String> registered = new HashSet<>();
+    handlerMapping
+        .getHandlerMethods()
+        .forEach(
+            (info, method) -> {
+              if (info.getPathPatternsCondition() == null) {
+                return;
+              }
+              for (String pattern : info.getPathPatternsCondition().getPatternValues()) {
+                if (!pattern.startsWith("/api/v1/")) {
+                  continue;
+                }
+                info.getMethodsCondition()
+                    .getMethods()
+                    .forEach(verb -> registered.add(verb.name() + " " + pattern));
+              }
+            });
+
+    Set<String> declared = new HashSet<>();
+    Stream.of(roleEndpoints(), commonEndpointList(), publicEndpointList())
+        .flatMap(List::stream)
+        .forEach(endpoint -> declared.add(matrixKey(endpoint)));
+
+    Set<String> missing = new HashSet<>(registered);
+    missing.removeAll(declared);
+
+    Set<String> stale = new HashSet<>(declared);
+    stale.removeAll(registered);
+    stale.removeIf(entry -> entry.endsWith("/actuator/health"));
+
+    assertThat(missing)
+        .as("Bu endpoint'lar Spring'da mavjud, lekin RBAC matritsasida yo'q")
+        .isEmpty();
+    assertThat(stale).as("RBAC matritsasi endi mavjud bo'lmagan endpoint'ni sanayapti").isEmpty();
+  }
+
+  /**
+   * The matrix writes paths with their query string ("?phone=..."); Spring registers only the
+   * pattern, so compare without it.
+   */
+  private static String matrixKey(Endpoint endpoint) {
+    return endpoint.method().name() + " " + endpoint.path().split("\\?", 2)[0];
   }
 
   private static byte[] uuidBytes() {
@@ -316,22 +376,37 @@ class RoleAccessIntegrationTest {
         .perform(post("/api/v1/auth/refresh").cookie(new Cookie("academix_refresh", refreshCookie)))
         .andExpect(status().isOk());
 
-    // The remaining public endpoints answer business responses (never a security 401) even
-    // with no token and an empty DB. login/refresh are already proven above via the real flow
-    // (login with a bogus {} body answers 401 ERR_INVALID_CREDENTIALS — a business 401, so the
-    // negative assertion below would be meaningless for them).
+    // The remaining public endpoints answer business responses (never a filter 401) with no token.
+    // An empty login/initial-setup body now fails bean validation with 400 before any service runs,
+    // which is exactly the "reached the handler" proof this assertion wants.
     for (Endpoint endpoint : publicEndpointList()) {
+      if (PERMIT_ALL_BUT_SELF_REJECTING.contains(endpoint.path())) {
+        continue;
+      }
       int status = performForStatus(endpoint, null);
       assertThat(status).as("public endpoint %s", endpoint).isNotEqualTo(401);
     }
   }
 
+  /**
+   * Every endpoint SecurityConfig opens without a token (its requestMatchers block is the source of
+   * truth). The anonymous assertion below skips {@link #PERMIT_ALL_BUT_SELF_REJECTING}: those are
+   * reachable without a token by design, yet answer 401 themselves when the credential they exist
+   * to exchange is absent, which is a business answer rather than a filter rejection.
+   */
   private static List<Endpoint> publicEndpointList() {
     return List.of(
+        new Endpoint(HttpMethod.POST, "/api/v1/auth/login", null),
+        new Endpoint(HttpMethod.POST, "/api/v1/auth/refresh", null),
         new Endpoint(HttpMethod.POST, "/api/v1/auth/forgot-password", null),
         new Endpoint(HttpMethod.POST, "/api/v1/auth/reset-password", null),
+        new Endpoint(HttpMethod.GET, "/api/v1/onboarding/status", null),
+        new Endpoint(HttpMethod.POST, "/api/v1/onboarding/initial-setup", null),
         new Endpoint(HttpMethod.GET, "/actuator/health", null));
   }
+
+  /** permitAll, but the handler itself answers 401 when its credential is missing. */
+  private static final Set<String> PERMIT_ALL_BUT_SELF_REJECTING = Set.of("/api/v1/auth/refresh");
 
   // ---------------------------------------------------------------------------------------------
   // Endpoint matrix
@@ -436,6 +511,7 @@ class RoleAccessIntegrationTest {
         new Endpoint(HttpMethod.GET, "/api/v1/admin/analytics/school-progress", Role.ADMIN),
         new Endpoint(HttpMethod.GET, "/api/v1/admin/analytics/ai-usage", Role.ADMIN),
         new Endpoint(HttpMethod.GET, "/api/v1/admin/reports", Role.ADMIN),
+        new Endpoint(HttpMethod.GET, "/api/v1/admin/reports/{reportId}/download", Role.ADMIN),
         new Endpoint(
             HttpMethod.POST,
             "/api/v1/admin/reports/generate",
@@ -659,6 +735,9 @@ class RoleAccessIntegrationTest {
   private static List<Endpoint> commonEndpointList() {
     return List.of(
         // --- Common to all roles (isAuthenticated) ---
+        // Long-lived SSE stream; SecurityConfig's anyRequest().authenticated() gates it, and the
+        // controller degrades to a completed stream for a null principal.
+        new Endpoint(HttpMethod.GET, "/api/v1/realtime/events", null),
         new Endpoint(HttpMethod.GET, "/api/v1/notifications", null),
         new Endpoint(HttpMethod.PUT, "/api/v1/notifications/{id}/read", null),
         new Endpoint(HttpMethod.PUT, "/api/v1/notifications/read-all", null),
