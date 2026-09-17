@@ -1,39 +1,36 @@
-package uz.academixai.application;
+package uz.academixai.learning.application;
 
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import uz.academixai.application.port.out.ai.GradingCriterion;
 import uz.academixai.domain.CriteriaItem;
-import uz.academixai.domain.SubjectGradingCriteria;
-import uz.academixai.infrastructure.persistence.SubjectGradingCriteriaEntity;
-import uz.academixai.infrastructure.persistence.SubjectGradingCriteriaRepository;
+import uz.academixai.learning.application.port.out.GradingCriteriaStore;
+import uz.academixai.shared.ai.GradingCriterion;
 import uz.academixai.shared.error.ApiException;
 
 /**
  * academix_tz.md §1.19/§2.3 "Baholash mezonlari". No school scoping in the spec entity — a
  * teacher's criteria set is keyed by (subjectId, teacherId) alone, one row per pair.
+ *
+ * <p>Moved here from the legacy {@code application} package: criteria are a Learning concept, and
+ * the persistence shape they happened to live in is now behind {@link GradingCriteriaStore}.
  */
 @Service
 public class GradingCriteriaService {
 
-  private final SubjectGradingCriteriaRepository repository;
+  private final GradingCriteriaStore store;
 
-  public GradingCriteriaService(SubjectGradingCriteriaRepository repository) {
-    this.repository = repository;
+  public GradingCriteriaService(GradingCriteriaStore store) {
+    this.store = store;
   }
 
   /** Returns an empty list when the teacher hasn't configured criteria for this subject yet. */
   public List<CriteriaItem> get(UUID teacherId, UUID subjectId) {
-    return repository
-        .findBySubjectIdAndTeacherId(subjectId, teacherId)
-        .map(SubjectGradingCriteriaEntity::toDomain)
-        .map(SubjectGradingCriteria::criteria)
-        .orElse(List.of());
+    return store.criteria(teacherId, subjectId);
   }
 
-  /** academix_backend_tdd.md §6.4 — used by AIAnalysisService to build the Qwen grading prompt. */
+  /** academix_backend_tdd.md §6.4 — used by the AI grading pipeline to build the grading prompt. */
   public List<GradingCriterion> getForGrading(UUID teacherId, UUID subjectId) {
     return get(teacherId, subjectId).stream()
         .map(item -> new GradingCriterion(item.name(), item.weightPercent()))
@@ -57,16 +54,7 @@ public class GradingCriteriaService {
           "Og'irliklar yig'indisini 100% ga tenglashtiring.");
     }
 
-    SubjectGradingCriteriaEntity entity =
-        repository
-            .findBySubjectIdAndTeacherId(subjectId, teacherId)
-            .orElseGet(
-                () ->
-                    new SubjectGradingCriteriaEntity(
-                        UUID.randomUUID(), subjectId, teacherId, criteria));
-    SubjectGradingCriteria updated =
-        new SubjectGradingCriteria(entity.getId(), subjectId, teacherId, criteria);
-    repository.save(SubjectGradingCriteriaEntity.fromDomain(updated));
+    store.replace(teacherId, subjectId, criteria);
     return criteria;
   }
 }

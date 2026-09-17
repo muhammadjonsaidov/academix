@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
-import uz.academixai.application.GradingCriteriaService;
 import uz.academixai.domain.AIFeedback;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.SubmissionStatus;
@@ -21,6 +20,7 @@ import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.intelligence.application.port.out.HomeworkAnalysisStore;
 import uz.academixai.intelligence.domain.GradingCriterion;
+import uz.academixai.learning.application.GradingCriteriaService;
 
 /** JPA compatibility adapter over Learning's current homework-analysis tables. */
 @Repository

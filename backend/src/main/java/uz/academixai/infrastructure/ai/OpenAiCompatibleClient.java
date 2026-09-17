@@ -10,17 +10,17 @@ import java.util.stream.Collectors;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import uz.academixai.application.port.out.ai.AiGradingResult;
-import uz.academixai.application.port.out.ai.AiProvider;
-import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
-import uz.academixai.application.port.out.ai.EmbeddingProvider;
-import uz.academixai.application.port.out.ai.GradingCriterion;
-import uz.academixai.application.port.out.ai.PsychologyAnalysisResult;
-import uz.academixai.application.port.out.ai.PsychologySignalCandidate;
 import uz.academixai.domain.CriteriaScore;
 import uz.academixai.domain.LessonActivity;
 import uz.academixai.domain.LessonPlanContent;
 import uz.academixai.domain.StepAnalysis;
+import uz.academixai.shared.ai.AiGradingResult;
+import uz.academixai.shared.ai.AiProvider;
+import uz.academixai.shared.ai.AiProviderUnavailableException;
+import uz.academixai.shared.ai.EmbeddingProvider;
+import uz.academixai.shared.ai.GradingCriterion;
+import uz.academixai.shared.ai.PsychologyAnalysisResult;
+import uz.academixai.shared.ai.PsychologySignalCandidate;
 
 /**
  * OpenAI-compatible {@code /chat/completions} client. The provider, base URL, and models are

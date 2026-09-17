@@ -1,4 +1,4 @@
-package uz.academixai.application.port.out.ai;
+package uz.academixai.shared.ai;
 
 /** A possible psychology signal returned by an AI provider. */
 public record PsychologySignalCandidate(

@@ -8,8 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import uz.academixai.application.port.out.ai.AiProvider;
-import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
 import uz.academixai.domain.LessonPlan;
 import uz.academixai.domain.LessonPlanContent;
 import uz.academixai.infrastructure.persistence.LessonPlanEntity;
@@ -22,6 +20,8 @@ import uz.academixai.infrastructure.persistence.TeacherSyllabusEntity;
 import uz.academixai.infrastructure.persistence.TeacherSyllabusRepository;
 import uz.academixai.learning.application.SyllabusKnowledgeService;
 import uz.academixai.learning.domain.SyllabusProcessingStatus;
+import uz.academixai.shared.ai.AiProvider;
+import uz.academixai.shared.ai.AiProviderUnavailableException;
 import uz.academixai.shared.error.ApiException;
 
 /**

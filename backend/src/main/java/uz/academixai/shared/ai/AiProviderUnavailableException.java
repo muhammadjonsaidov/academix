@@ -1,4 +1,4 @@
-package uz.academixai.application.port.out.ai;
+package uz.academixai.shared.ai;
 
 /** Signals that an AI provider call cannot complete. */
 public class AiProviderUnavailableException extends RuntimeException {

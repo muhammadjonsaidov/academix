@@ -2,11 +2,11 @@ package uz.academixai.intelligence.infrastructure.ai;
 
 import java.util.List;
 import org.springframework.stereotype.Component;
-import uz.academixai.application.port.out.ai.AiProvider;
-import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
 import uz.academixai.intelligence.application.port.out.GradingAi;
 import uz.academixai.intelligence.domain.GradingAnalysis;
 import uz.academixai.intelligence.domain.GradingCriterion;
+import uz.academixai.shared.ai.AiProvider;
+import uz.academixai.shared.ai.AiProviderUnavailableException;
 
 /** Compatibility adapter from the shared OpenAI-compatible client to the Intelligence port. */
 @Component
@@ -28,7 +28,7 @@ public class LegacyGradingAi implements GradingAi {
               criteria.stream()
                   .map(
                       item ->
-                          new uz.academixai.application.port.out.ai.GradingCriterion(
+                          new uz.academixai.shared.ai.GradingCriterion(
                               item.name(), item.weightPercent()))
                   .toList(),
               text);

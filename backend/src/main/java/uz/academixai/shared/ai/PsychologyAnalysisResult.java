@@ -1,4 +1,4 @@
-package uz.academixai.application.port.out.ai;
+package uz.academixai.shared.ai;
 
 import java.util.List;
 

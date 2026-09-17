@@ -1,9 +1,9 @@
 package uz.academixai.intelligence.infrastructure.ai;
 
 import org.springframework.stereotype.Component;
-import uz.academixai.application.port.out.ai.AiProvider;
-import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
 import uz.academixai.intelligence.application.port.out.TutorAi;
+import uz.academixai.shared.ai.AiProvider;
+import uz.academixai.shared.ai.AiProviderUnavailableException;
 
 /** Compatibility adapter from the shared provider client to Intelligence tutor chat. */
 @Component

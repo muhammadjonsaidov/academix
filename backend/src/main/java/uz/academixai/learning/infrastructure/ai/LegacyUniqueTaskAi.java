@@ -1,8 +1,8 @@
 package uz.academixai.learning.infrastructure.ai;
 
 import org.springframework.stereotype.Component;
-import uz.academixai.application.port.out.ai.AiProvider;
 import uz.academixai.learning.application.port.out.UniqueTaskAi;
+import uz.academixai.shared.ai.AiProvider;
 
 /** Explicit adapter until the Intelligence context publishes its generation API. */
 @Component

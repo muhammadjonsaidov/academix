@@ -7,11 +7,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
-import uz.academixai.application.port.out.ai.AiGradingResult;
-import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
-import uz.academixai.application.port.out.ai.GradingCriterion;
 import uz.academixai.domain.CriteriaScore;
 import uz.academixai.domain.LessonPlanContent;
+import uz.academixai.shared.ai.AiGradingResult;
+import uz.academixai.shared.ai.AiProviderUnavailableException;
+import uz.academixai.shared.ai.GradingCriterion;
 
 /**
  * Pure parsing-logic test against the exact grading JSON shape documented in academix_tz.md §3.2 —

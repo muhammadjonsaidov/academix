@@ -1,9 +1,9 @@
 package uz.academixai.wellbeing.infrastructure.ai;
 
 import org.springframework.stereotype.Component;
-import uz.academixai.application.port.out.ai.AiProvider;
-import uz.academixai.application.port.out.ai.AiProviderUnavailableException;
-import uz.academixai.application.port.out.ai.PsychologyAnalysisResult;
+import uz.academixai.shared.ai.AiProvider;
+import uz.academixai.shared.ai.AiProviderUnavailableException;
+import uz.academixai.shared.ai.PsychologyAnalysisResult;
 import uz.academixai.wellbeing.application.BehaviorAnalysisUnavailableException;
 import uz.academixai.wellbeing.application.port.out.BehaviorAnalyzer;
 import uz.academixai.wellbeing.domain.BehaviorAnalysis;

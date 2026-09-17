@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uz.academixai.application.GradingCriteriaService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.learning.application.GradingCriteriaService;
 
 /** academix_tz.md §2.3 "Baholash mezonlari" — exact contract, don't drift path/shape from spec. */
 @RestController
