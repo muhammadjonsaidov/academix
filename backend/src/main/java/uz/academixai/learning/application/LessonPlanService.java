@@ -1,4 +1,4 @@
-package uz.academixai.application;
+package uz.academixai.learning.application;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -10,16 +10,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.LessonPlan;
 import uz.academixai.domain.LessonPlanContent;
-import uz.academixai.infrastructure.persistence.LessonPlanEntity;
-import uz.academixai.infrastructure.persistence.LessonPlanRepository;
-import uz.academixai.infrastructure.persistence.SchoolClassEntity;
-import uz.academixai.infrastructure.persistence.SchoolClassRepository;
-import uz.academixai.infrastructure.persistence.SubjectEntity;
-import uz.academixai.infrastructure.persistence.SubjectRepository;
-import uz.academixai.infrastructure.persistence.TeacherSyllabusEntity;
-import uz.academixai.infrastructure.persistence.TeacherSyllabusRepository;
-import uz.academixai.learning.application.SyllabusKnowledgeService;
+import uz.academixai.learning.application.port.out.ClassGradeLookup;
+import uz.academixai.learning.application.port.out.LessonPlanStore;
+import uz.academixai.learning.application.port.out.SubjectNameLookup;
+import uz.academixai.learning.application.port.out.SyllabusStore;
 import uz.academixai.learning.domain.SyllabusProcessingStatus;
+import uz.academixai.learning.domain.TeacherSyllabus;
 import uz.academixai.shared.ai.AiProvider;
 import uz.academixai.shared.ai.AiProviderUnavailableException;
 import uz.academixai.shared.error.ApiException;
@@ -34,39 +30,44 @@ import uz.academixai.shared.error.ApiException;
  * LessonPlan.subjectId} is NOT NULL. {@code subjectId} is derived from the referenced syllabus,
  * which makes {@code syllabusId} effectively required here even though the spec doesn't say so
  * explicitly.
+ *
+ * <p>Moved here from the legacy {@code application} package. It reached four repositories directly;
+ * three of those facts already had Learning ports ({@link SyllabusStore}, {@link
+ * SubjectNameLookup}) and only the class grade needed a new one, so the move deleted three
+ * dependencies rather than adding four.
  */
 @Service
 public class LessonPlanService {
 
   private static final Logger log = LoggerFactory.getLogger(LessonPlanService.class);
 
-  private final LessonPlanRepository lessonPlanRepository;
-  private final TeacherSyllabusRepository syllabusRepository;
-  private final SubjectRepository subjectRepository;
-  private final SchoolClassRepository classRepository;
+  private final LessonPlanStore lessonPlans;
+  private final SyllabusStore syllabuses;
+  private final SubjectNameLookup subjectNames;
+  private final ClassGradeLookup classGrades;
   private final AiProvider aiClient;
   private final SyllabusKnowledgeService syllabusKnowledge;
 
   public LessonPlanService(
-      LessonPlanRepository lessonPlanRepository,
-      TeacherSyllabusRepository syllabusRepository,
-      SubjectRepository subjectRepository,
-      SchoolClassRepository classRepository,
+      LessonPlanStore lessonPlans,
+      SyllabusStore syllabuses,
+      SubjectNameLookup subjectNames,
+      ClassGradeLookup classGrades,
       AiProvider aiClient,
       SyllabusKnowledgeService syllabusKnowledge) {
-    this.lessonPlanRepository = lessonPlanRepository;
-    this.syllabusRepository = syllabusRepository;
-    this.subjectRepository = subjectRepository;
-    this.classRepository = classRepository;
+    this.lessonPlans = lessonPlans;
+    this.syllabuses = syllabuses;
+    this.subjectNames = subjectNames;
+    this.classGrades = classGrades;
     this.aiClient = aiClient;
     this.syllabusKnowledge = syllabusKnowledge;
   }
 
   public LessonPlan generate(
       UUID teacherId, UUID syllabusId, String topic, LocalDate lessonDate, UUID classId) {
-    TeacherSyllabusEntity syllabus =
-        syllabusRepository
-            .findByIdAndTeacherId(syllabusId, teacherId)
+    TeacherSyllabus syllabus =
+        syllabuses
+            .findOwned(teacherId, syllabusId)
             .orElseThrow(
                 () ->
                     new ApiException(
@@ -74,19 +75,19 @@ public class LessonPlanService {
                         "ERR_SYLLABUS_NOT_FOUND",
                         "Darslik topilmadi.",
                         "syllabusId ni tekshiring."));
-    UUID subjectId = syllabus.toDomain().subjectId();
-    if (!syllabus.getClassId().equals(classId)) {
+    UUID subjectId = syllabus.subjectId();
+    if (!syllabus.classId().equals(classId)) {
       throw new ApiException(
           HttpStatus.BAD_REQUEST,
           "ERR_SYLLABUS_CLASS_MISMATCH",
           "Darslik tanlangan sinfga tegishli emas.",
           "Darslik va sinfni bir xil qilib tanlang.");
     }
-    if (syllabus.getProcessingStatus() != SyllabusProcessingStatus.READY) {
+    if (syllabus.processingStatus() != SyllabusProcessingStatus.READY) {
       throw new ApiException(
           HttpStatus.CONFLICT,
           "ERR_SYLLABUS_NOT_READY",
-          syllabus.getProcessingStatus() == SyllabusProcessingStatus.FAILED
+          syllabus.processingStatus() == SyllabusProcessingStatus.FAILED
               ? "Darslik AI uchun tayyorlanmadi. Uni qayta yuklang."
               : "Darslik hali AI uchun tayyorlanmoqda.",
           "Darslik tayyor bo'lgach qayta urinib ko'ring.");
@@ -117,31 +118,18 @@ public class LessonPlanService {
             false,
             lessonDate,
             LocalDateTime.now());
-    return lessonPlanRepository.save(LessonPlanEntity.fromDomain(plan)).toDomain();
+    return lessonPlans.save(plan);
   }
 
   public List<LessonPlan> list(UUID teacherId, UUID subjectId, UUID classId) {
-    var entities =
-        switch ((subjectId != null ? 1 : 0) + (classId != null ? 2 : 0)) {
-          case 3 ->
-              lessonPlanRepository.findByTeacherIdAndSubjectIdAndClassIdOrderByLessonDateDesc(
-                  teacherId, subjectId, classId);
-          case 2 ->
-              lessonPlanRepository.findByTeacherIdAndClassIdOrderByLessonDateDesc(
-                  teacherId, classId);
-          case 1 ->
-              lessonPlanRepository.findByTeacherIdAndSubjectIdOrderByLessonDateDesc(
-                  teacherId, subjectId);
-          default -> lessonPlanRepository.findByTeacherIdOrderByLessonDateDesc(teacherId);
-        };
-    return entities.stream().map(LessonPlanEntity::toDomain).toList();
+    return lessonPlans.list(teacherId, subjectId, classId);
   }
 
   public LessonPlan update(
       UUID teacherId, UUID planId, String teacherEditedPlan, boolean isApproved) {
-    LessonPlanEntity entity =
-        lessonPlanRepository
-            .findByIdAndTeacherId(planId, teacherId)
+    LessonPlan existing =
+        lessonPlans
+            .findOwned(teacherId, planId)
             .orElseThrow(
                 () ->
                     new ApiException(
@@ -149,7 +137,6 @@ public class LessonPlanService {
                         "ERR_LESSON_PLAN_NOT_FOUND",
                         "Dars rejasi topilmadi.",
                         "ID ni tekshiring."));
-    LessonPlan existing = entity.toDomain();
     LessonPlan updated =
         new LessonPlan(
             existing.id(),
@@ -163,7 +150,7 @@ public class LessonPlanService {
             isApproved,
             existing.lessonDate(),
             existing.createdAt());
-    return lessonPlanRepository.save(LessonPlanEntity.fromDomain(updated)).toDomain();
+    return lessonPlans.save(updated);
   }
 
   private LessonPlanContent callGenerate(
@@ -185,9 +172,8 @@ public class LessonPlanService {
   }
 
   private String subjectAndGrade(UUID subjectId, UUID classId) {
-    String subjectName =
-        subjectRepository.findById(subjectId).map(SubjectEntity::getName).orElse("Fan");
-    Integer grade = classRepository.findById(classId).map(SchoolClassEntity::getGrade).orElse(null);
+    String subjectName = subjectNames.name(subjectId);
+    Integer grade = classGrades.gradeOf(classId).orElse(null);
     return grade == null ? subjectName : subjectName + " " + grade + "-sinf";
   }
 }
