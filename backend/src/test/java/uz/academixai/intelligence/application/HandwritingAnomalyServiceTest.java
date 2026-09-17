@@ -1,4 +1,4 @@
-package uz.academixai.application;
+package uz.academixai.intelligence.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

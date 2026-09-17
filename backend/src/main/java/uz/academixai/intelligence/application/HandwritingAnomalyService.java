@@ -1,4 +1,4 @@
-package uz.academixai.application;
+package uz.academixai.intelligence.application;
 
 import java.util.List;
 import java.util.Map;
@@ -8,10 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import uz.academixai.infrastructure.persistence.HandwritingProfileEntity;
-import uz.academixai.infrastructure.persistence.HandwritingProfileRepository;
-import uz.academixai.infrastructure.persistence.HandwritingResetLogEntity;
-import uz.academixai.infrastructure.persistence.HandwritingResetLogRepository;
+import uz.academixai.intelligence.application.port.out.HandwritingResetAudit;
 import uz.academixai.shared.tenancy.TenantScope;
 
 /**
@@ -40,6 +37,11 @@ import uz.academixai.shared.tenancy.TenantScope;
  * would have failed on the real restricted role the app uses. Per-school statistics — a more
  * meaningful outlier set, since a teacher is only comparable to colleagues in the same school — is
  * a deliberate follow-up, not a silent omission.
+ *
+ * <p>Moved here from the legacy {@code application} package, next to the handwriting model it
+ * audits. The two repository reads became {@link HandwritingResetAudit}: the audit's own statistics
+ * (mean, variance, the z-score cut) stay here, where they can be read alongside the rule they
+ * implement.
  */
 @Service
 public class HandwritingAnomalyService {
@@ -48,16 +50,11 @@ public class HandwritingAnomalyService {
   private static final int STUDENT_RESET_FLAG_THRESHOLD = 2;
   private static final double OUTLIER_Z_SCORE = 2.0;
 
-  private final HandwritingProfileRepository profileRepository;
-  private final HandwritingResetLogRepository resetLogRepository;
+  private final HandwritingResetAudit audit;
   private final TenantScope tenantScope;
 
-  public HandwritingAnomalyService(
-      HandwritingProfileRepository profileRepository,
-      HandwritingResetLogRepository resetLogRepository,
-      TenantScope tenantScope) {
-    this.profileRepository = profileRepository;
-    this.resetLogRepository = resetLogRepository;
+  public HandwritingAnomalyService(HandwritingResetAudit audit, TenantScope tenantScope) {
+    this.audit = audit;
     this.tenantScope = tenantScope;
   }
 
@@ -86,20 +83,13 @@ public class HandwritingAnomalyService {
   }
 
   private AnomalyReport computeAnomaliesInSystemScope() {
-    List<UUID> flaggedStudents =
-        profileRepository.findAll().stream()
-            .filter(p -> p.getResetCountThisQuarter() >= STUDENT_RESET_FLAG_THRESHOLD)
-            .map(HandwritingProfileEntity::getStudentId)
-            .toList();
+    List<UUID> flaggedStudents = audit.studentIdsWithAtLeastResets(STUDENT_RESET_FLAG_THRESHOLD);
 
     Map<UUID, Long> resetsByTeacher =
-        resetLogRepository.findAll().stream()
-            .map(HandwritingResetLogEntity::toDomain)
-            .collect(Collectors.groupingBy(entry -> entry.teacherId(), Collectors.counting()));
+        audit.initiatingTeacherIds().stream()
+            .collect(Collectors.groupingBy(teacherId -> teacherId, Collectors.counting()));
 
-    List<UUID> flaggedTeachers = outlierTeachers(resetsByTeacher);
-
-    return new AnomalyReport(flaggedStudents, flaggedTeachers);
+    return new AnomalyReport(flaggedStudents, outlierTeachers(resetsByTeacher));
   }
 
   /**
