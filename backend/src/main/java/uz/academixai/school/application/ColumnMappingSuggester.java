@@ -1,4 +1,4 @@
-package uz.academixai.infrastructure.importing;
+package uz.academixai.school.application;
 
 import java.text.Normalizer;
 import java.util.LinkedHashMap;

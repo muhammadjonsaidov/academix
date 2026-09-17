@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import uz.academixai.application.BulkImportService;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.school.application.BulkImportService;
 
 /** academix_tz.md §2.2 "Ommaviy import" — exact contract, don't drift path/shape from the spec. */
 @RestController
@@ -25,14 +25,14 @@ public class AdminBulkImportController {
   }
 
   @PostMapping("/analyze")
-  public ImportAnalyzeResponse analyze(
+  public BulkImportService.ImportAnalyzeResponse analyze(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @RequestParam("file") MultipartFile file) {
     return bulkImportService.analyze(principal.schoolId(), file);
   }
 
   @PostMapping("/commit")
-  public ImportCommitResponse commit(
+  public BulkImportService.ImportCommitResponse commit(
       @AuthenticationPrincipal AcademixPrincipal principal,
       @Valid @RequestBody ImportCommitRequest request) {
     return bulkImportService.commit(
