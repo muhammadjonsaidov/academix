@@ -91,6 +91,20 @@ management:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      # Kubernetes-style probes, so an orchestrator can tell "the JVM died" apart from "a
+      # dependency is unhappy". liveness deliberately holds nothing but livenessState: putting
+      # db/redis/rabbit in it would restart a perfectly healthy process on a Redis blip.
+      # readiness holds exactly those dependencies, so a failing instance is taken out of the
+      # load balancer and gets a chance to recover instead of being killed.
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db,redis,rabbit
   health:
     mail:
       # The mail health contributor opens a real SMTP connection to smtp.gmail.com on every

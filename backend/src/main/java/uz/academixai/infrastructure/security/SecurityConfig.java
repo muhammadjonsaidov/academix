@@ -93,7 +93,14 @@ public class SecurityConfig {
                       "/api/v1/auth/reset-password",
                       "/api/v1/onboarding/status",
                       "/api/v1/onboarding/initial-setup",
-                      "/actuator/health")
+                      // Not just "/actuator/health": Spring Security matches these exactly, so the
+                      // probe paths underneath stayed authenticated — an orchestrator calling
+                      // /actuator/health/liveness would have received a 401 and concluded the
+                      // instance was unhealthy. Details stay hidden (show-details defaults to
+                      // never), so nothing beyond UP/DOWN is revealed.
+                      "/actuator/health",
+                      "/actuator/health/liveness",
+                      "/actuator/health/readiness")
                   .permitAll();
               if (swaggerPublic) {
                 auth.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**")
