@@ -1,26 +1,28 @@
 ---
 name: add-queue-consumer
-description: Add or change a RabbitMQ consumer for one of AcademiX's 3 AI-pipeline queues (homework.submissions.queue, homework.generation.queue, exam.submissions.queue), matching the exact retry/DLX/TTL topology in academix_backend_tdd.md. Use whenever wiring async job processing for submissions, generation, or exam grading. Trigger for "add a queue consumer", "wire the RabbitMQ listener", "queue worker", "async job processing".
+description: Add or change asynchronous work in the AcademiX backend — RabbitMQ queues, listeners, the transactional outbox, retry/DLX/TTL. Use for homework/exam AI processing, notification delivery, or any new background job. Trigger for "add a queue consumer", "RabbitMQ listener", "queue worker", "async job processing", "outbox".
 ---
 
-# Add an AcademiX queue consumer
+# AcademiX async work
 
-## The three queues — don't blur their configs together
-
+## Current queues
 | Queue | Job | Retry | TTL |
 |---|---|---|---|
-| `homework.submissions.queue` | OCR + combined grading/plagiarism Qwen call | 3x → DLX | 10 min |
-| `homework.generation.queue` | Per-student unique task generation (2-layer verify) | 3x → DLX | (not separately specified — confirm with user rather than assume it matches submissions' 10min) |
-| `exam.submissions.queue` | Bulk exam OCR+grading, no plagiarism | 3x → DLX | 15 min (longer — bulk uploads spike 30+ messages at once) |
+| `homework.submissions.queue` | OCR + one merged grading/plagiarism AI call | 3x → DLX | 10 min |
+| `exam.submissions.queue` | Bulk exam OCR + grading (no plagiarism) | 3x → DLX | 15 min |
+| notification Telegram queue | Delivery, consumed by the separate `telegram-bot` service | 3x → DLQ | — |
 
-## Steps
+Config lives in `infrastructure/queue/*QueueConfig`; pick retry/TTL deliberately for a new queue and document it in `academix_backend_tdd.md`.
 
-1. Confirm which queue this consumer is for and use its exact retry×3 → dead-letter-exchange, TTL from the table above — don't invent a different retry count or reuse another queue's TTL.
-2. **Budget check happens inside the consumer, before the AI call** — not at the point of message publish. A message sitting in queue doesn't consume budget; the actual Qwen/Vision call does. See the `wire-ai-integration` skill for the budget-check and graceful-degradation rules (never hard-fail the message; on exhausted budget, homework grading degrades to `AI_SKIPPED` and the message is still acked as successfully processed).
-3. **State machine transitions** the consumer is responsible for: `SUBMITTED → AI_PROCESSING` (on dequeue) → `AI_DONE` or `AI_SKIPPED` (on completion) — never leave a submission stuck in `AI_PROCESSING` on consumer failure; a DLX-routed message after 3 failed retries should still resolve the submission to some terminal-ish state the teacher can see and act on, not just vanish into the dead-letter exchange silently.
-4. **Circuit breaker**: the consumer's Qwen call must go through the Resilience4j circuit breaker (50% failure rate or 75% slow-call rate >10s over a 10-call window trips it, 60s open state) — don't call Qwen directly from inside the consumer bypassing whatever wraps this.
-5. **RLS**: the consumer runs outside an HTTP request context, so there's no JWT to derive `school_id` from automatically — make sure the consumer explicitly sets `SET LOCAL app.current_school_id` from the message payload (which must carry `schoolId`) before touching any RLS-scoped table, or every query in the consumer will silently return nothing (RLS defaults deny, not allow).
+## How to publish
+Never publish inside the request transaction. Write an `outbox_events` row through `OutboxService` in the same transaction as the data; `OutboxDispatcher` publishes after commit (retry with backoff). Add your payload type to the dispatcher's switch.
 
-## After writing
+## How to consume
+1. The message carries `schoolId`; enter `TenantScope.runAsTenant(schoolId, …)` before touching any table — there's no HTTP request to set RLS scope, and an unscoped query on an RLS table fails loudly (`invalid input syntax for type uuid: ""`).
+2. Make it idempotent: claim the work atomically (see `claimForAnalysis`) so a redelivery is a no-op.
+3. Budget checks happen in the consumer, right before the AI call (see `wire-ai-integration`). Exhausted budget → `AI_SKIPPED`, message acked.
+4. Status flow: `SUBMITTED → AI_PROCESSING → AI_DONE | AI_SKIPPED`; never leave work stuck in `AI_PROCESSING`.
+5. AI/Vision calls go through the Resilience4j-wrapped clients, not raw HTTP.
 
-Suggest `write-integration-test` for the retry/DLX/TTL behavior specifically — this is exactly the kind of timing-dependent behavior a mock would paper over.
+## Test it
+Use Testcontainers (real RabbitMQ/Postgres) — see `write-integration-test`.

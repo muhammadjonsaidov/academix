@@ -16,8 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.domain.Role;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.school.application.StaffManagementService;
+import uz.academixai.shared.feature.ConditionalOnPsychologyModule;
 
 /** Deviation, judgment call — see StaffManagementService. Mirrors AdminTeacherController. */
+@ConditionalOnPsychologyModule
 @RestController
 @RequestMapping("/api/v1/admin/psychologists")
 @PreAuthorize("hasRole('ADMIN')")

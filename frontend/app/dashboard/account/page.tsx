@@ -11,7 +11,7 @@ import {
   Send,
   UserRound,
 } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { fieldClass, FormField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,7 @@ import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useTelegramStore } from "@/stores/useTelegramStore";
 import type { ApiErrorResponse, Role } from "@/types/auth";
 import type { NotificationType } from "@/types/notification";
+import { FEATURES } from "@/lib/features";
 
 const ROLE_LABEL: Record<Role, string> = {
   ADMIN: "Administrator",
@@ -604,8 +605,10 @@ function NotificationPreferencesCard() {
               </div>
             ))}
             <p className="pt-2 text-xs text-muted-foreground">
-              Psixologik signallar xavfsizlik qoidasi bo&apos;yicha doim yuboriladi. Ilova kanali
-              o&apos;chirilsa, Telegram ham o&apos;chadi.
+              {FEATURES.psychology
+                ? "Psixologik signallar xavfsizlik qoidasi bo'yicha doim yuboriladi. "
+                : ""}
+              Ilova kanali o&apos;chirilsa, Telegram ham o&apos;chadi.
             </p>
           </div>
         )}

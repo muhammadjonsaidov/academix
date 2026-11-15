@@ -16,15 +16,13 @@ import uz.academixai.shared.error.ApiException;
 /**
  * academix_tz.md §2.1 — class-teacher-assisted STUDENT password reset. Students have no {@code
  * email} (the email-based flow only covers ADMIN/TEACHER/PARENT/PSYCHOLOGIST), so there's no email
- * channel to reset through — this mirrors the handwriting reset's exact ownership-check + audit-log
- * shape (the closest real analog: same teacher-initiated-on-a-student pattern), generating a
- * temporary password the teacher relays to the student directly instead of a token/link.
+ * channel to reset through — the student's own class teacher resets it (ownership check + audit
+ * log), generating a temporary password the teacher relays to the student directly instead of a
+ * token/link.
  *
- * <p>No forced-change-on-next-login and no reset-count limit, unlike handwriting reset — a
- * deliberate, documented judgment call (see the spec addition's own comment): this is lower-stakes
- * than handwriting biometrics (no anti-fraud property being reset), and misuse is already bounded
- * by the same ownership check (only that student's own class teacher can call this) trusted
- * elsewhere in this codebase.
+ * <p>No forced-change-on-next-login and no reset-count limit — a deliberate, documented judgment
+ * call (see the spec addition's own comment): misuse is bounded by the ownership check (only that
+ * student's own class teacher can call this).
  *
  * <p>Moved here from the legacy {@code application} package: setting a password is Identity's use
  * case, and the three facts it needs from elsewhere — the student's class, that class' teacher, and
@@ -56,10 +54,10 @@ public class StudentPasswordResetService {
   }
 
   /**
-   * {@code noRollbackFor}: same reasoning as the handwriting reset — the ownership-check guards
-   * below throw before any write, so allowing the shared per-request transaction ({@code
-   * RlsTransactionFilter}) to commit normally on a clean 403/404 is safe and avoids corrupting the
-   * response for real browser clients (see CLAUDE.md's documented incident).
+   * {@code noRollbackFor}: the ownership-check guards below throw before any write, so allowing the
+   * shared per-request transaction ({@code RlsTransactionFilter}) to commit normally on a clean
+   * 403/404 is safe and avoids corrupting the response for real browser clients (see CLAUDE.md's
+   * documented incident).
    */
   @Transactional(noRollbackFor = ApiException.class)
   public String resetPassword(UUID schoolId, UUID studentId, UUID teacherId) {

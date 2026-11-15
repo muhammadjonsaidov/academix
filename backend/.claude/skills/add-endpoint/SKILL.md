@@ -1,25 +1,28 @@
 ---
 name: add-endpoint
-description: Add a REST endpoint to the AcademiX backend matching the exact contract in academix_tz.md §2 (path, method, request/response shape) plus this project's RLS, auth, and error-code conventions. Use whenever adding, changing, or exposing a new API route/controller action. Trigger for "add an endpoint", "new route", "expose this via REST", "implement this API".
+description: Add or change a REST endpoint in the AcademiX backend — controller, use case, auth, RLS scope, validation, error codes, RBAC test matrix. Use whenever adding, changing or exposing an API route. Trigger for "add an endpoint", "new route", "expose this via REST", "implement this API".
 ---
 
 # Add an AcademiX REST endpoint
 
-## Before writing anything
+## Shape the contract
+- Look for it in `academix_tz.md` §2 (by role: 2.1 Auth … 2.8 Notifications). Use the documented path/JSON shape when it exists. If it doesn't, or the documented shape is wrong for the product, design a sensible one, implement it, and **update §2 in the same change** — the spec is the reference, not a lock.
+- Path prefix by role: `/api/v1/{admin|teacher|student|parent|psychologist}/...`; shared ones under `/api/v1/auth`, `/api/v1/notifications`.
 
-1. **Find the exact contract.** Grep `academix_tz.md` §2 for the endpoint — it's organized by role (`2.1 Auth`, `2.2 Admin`, `2.3 Teacher`, `2.4 Student`, `2.5 Parent`, `2.6 Psychologist`, `2.7 Telegram`). Read the full request/response JSON shape as written — field names and casing are exact, not illustrative.
-2. **If the endpoint isn't in the spec**, don't invent a shape from scratch silently — this is new surface the spec doesn't cover; confirm the contract with the user before implementing (once confirmed, it's a real gap worth suggesting they add to `academix_tz.md`, via explicit human edit — not something this session edits itself, per the `spec-guard` hook).
+## Where the code goes
+- Use case in the owning context: `<context>/application/` behind a `port/in` interface; persistence and other contexts through `port/out` + an adapter in `<context>/infrastructure/`. Controller in `<context>/adapter/in/web/` (or `interfaces/web/<role>/` while that context still keeps its controllers in the legacy tree). `ContextBoundaryTest` fails the build if `application` imports infrastructure or another context's infrastructure.
+- Request DTOs get bean validation (`@Valid`, Uzbek messages like the existing ones). Errors are `ApiException(status, "ERR_…", message, mitigation)` → the project's 4-field error body, not RFC 7807.
 
-## Conventions to follow exactly
+## Rules that bite
+- `@PreAuthorize("hasRole('…')")` on the controller; never trust a client-sent role.
+- RLS is automatic for authenticated requests (`RlsTransactionFilter` → `TenantScope.runAsTenant`). Don't hand-write `SET LOCAL`.
+- The request runs in ONE transaction: a `@Transactional` method that throws `ApiException` needs `noRollbackFor = ApiException.class`; per-item partial success needs `REQUIRES_NEW` on another bean. See `LESSONS.md`.
+- Visibility: students never see plagiarism scores; parents only their own child; psychologists no lesson content.
+- AI-triggering paths check `AiBudgetService.isWithinAiBudget` and degrade, never hard-fail (see `wire-ai-integration`).
+- Bulk "approve all" must skip `flaggedForReview=true` items server-side.
+- Optional-module endpoints (psychology) get `@ConditionalOnProperty(prefix = "academix.features.psychology", name = "enabled", havingValue = "true")`.
 
-- **Path prefix by role**: `/api/v1/{admin|teacher|student|parent|psychologist}/...`, or `/api/v1/auth/...` / `/api/v1/notifications/telegram/...` for the shared ones.
-- **RLS**: if the endpoint touches an RLS-covered table (see backend TDD §4's 9-table list), the request-handling path must run inside a transaction that sets `SET LOCAL app.current_school_id = '<uuid-from-jwt>'` before querying — don't rely on an app-level `WHERE school_id = ...` as the only guard.
-- **Auth**: `@PreAuthorize` role check matching the path's role segment. Never trust a client-supplied role claim.
-- **Cross-role visibility rules** (don't leak fields across roles): student responses never include `plagiarismScore`/`plagiarismType`/`handwritingMatchScore`; parent responses never include other students' data or class-level comparisons; psychologist responses never include lesson/homework content.
-- **Error responses**: this project uses a custom 4-column shape (`status`, internal `code` like `ERR_INVALID_FILE`/`ERR_RESET_LIMIT_EXCEEDED`, human `message`, `mitigation`) — see backend TDD's error-code table. This is explicitly NOT RFC 7807 Problem Detail JSON; don't default to Spring's standard error body.
-- **AI-triggering endpoints** (submission, exam upload, chat, unique-task generation) must call the budget check (`AIAnalysisService.isWithinAiBudget`) before invoking Qwen/Vision, and degrade gracefully (never hard-block) per TZ §8 — see the `wire-ai-integration` skill for that part specifically.
-- **flaggedForReview / fallbackToStandard**: any bulk "approve all" endpoint must exclude items carrying `flaggedForReview=true` server-side, not just rely on the frontend to hide them.
-
-## After writing
-
-Suggest running `spec-compliance-reviewer` against the new endpoint to confirm the path, shape, and error codes match the spec exactly before merging.
+## Before you're done
+- Add the endpoint to `RoleAccessIntegrationTest`'s matrix (the test fails on any unlisted endpoint), with a body that passes validation.
+- Mirror the response type in `frontend/types/` by hand (no codegen).
+- `./gradlew spotlessApply test` on JDK 21.

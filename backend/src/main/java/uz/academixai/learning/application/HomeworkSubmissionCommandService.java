@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import uz.academixai.domain.AssignmentType;
 import uz.academixai.domain.HomeworkAssignment;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.SubmissionStatus;
@@ -17,7 +16,6 @@ import uz.academixai.learning.application.port.out.HomeworkImageStorage;
 import uz.academixai.learning.application.port.out.HomeworkSubmissionPublisher;
 import uz.academixai.learning.application.port.out.HomeworkSubmissionStore;
 import uz.academixai.learning.application.port.out.StudentClassLookup;
-import uz.academixai.learning.application.port.out.StudentUniqueTaskStore;
 import uz.academixai.learning.application.port.out.UploadQuota;
 import uz.academixai.shared.error.ApiException;
 
@@ -32,7 +30,6 @@ public class HomeworkSubmissionCommandService implements HomeworkSubmissionComma
   private final HomeworkAssignmentStore assignments;
   private final HomeworkSubmissionStore submissions;
   private final StudentClassLookup studentClasses;
-  private final StudentUniqueTaskStore uniqueTasks;
   private final UploadQuota uploadQuota;
   private final FileSafetyScanner safetyScanner;
   private final HomeworkImageStorage images;
@@ -42,7 +39,6 @@ public class HomeworkSubmissionCommandService implements HomeworkSubmissionComma
       HomeworkAssignmentStore assignments,
       HomeworkSubmissionStore submissions,
       StudentClassLookup studentClasses,
-      StudentUniqueTaskStore uniqueTasks,
       UploadQuota uploadQuota,
       FileSafetyScanner safetyScanner,
       HomeworkImageStorage images,
@@ -50,7 +46,6 @@ public class HomeworkSubmissionCommandService implements HomeworkSubmissionComma
     this.assignments = assignments;
     this.submissions = submissions;
     this.studentClasses = studentClasses;
-    this.uniqueTasks = uniqueTasks;
     this.uploadQuota = uploadQuota;
     this.safetyScanner = safetyScanner;
     this.images = images;
@@ -65,7 +60,7 @@ public class HomeworkSubmissionCommandService implements HomeworkSubmissionComma
       SubmissionType type,
       String textContent,
       Image image) {
-    HomeworkAssignment assignment = requirePublishedAssignment(schoolId, assignmentId);
+    HomeworkAssignment assignment = requireAssignment(schoolId, assignmentId);
     requireStudentInClass(schoolId, studentId, assignment.classId());
     if (submissions.existsByAssignmentIdAndStudentId(assignmentId, studentId)) {
       throw new ApiException(
@@ -77,20 +72,12 @@ public class HomeworkSubmissionCommandService implements HomeworkSubmissionComma
     validatePayload(type, textContent, image);
 
     String imageUrl = image == null ? null : storeImage(schoolId, assignmentId, studentId, image);
-    UUID studentTaskId =
-        assignment.type() == AssignmentType.UNIQUE_GENERATED
-            ? uniqueTasks
-                .findByAssignmentIdAndStudentId(assignmentId, studentId)
-                .map(task -> task.id())
-                .orElse(null)
-            : null;
     HomeworkSubmission saved =
         submissions.save(
             new HomeworkSubmission(
                 UUID.randomUUID(),
                 schoolId,
                 assignmentId,
-                studentTaskId,
                 studentId,
                 type,
                 textContent,
@@ -103,15 +90,10 @@ public class HomeworkSubmissionCommandService implements HomeworkSubmissionComma
     return saved;
   }
 
-  private HomeworkAssignment requirePublishedAssignment(UUID schoolId, UUID assignmentId) {
-    HomeworkAssignment assignment =
-        assignments
-            .findByIdAndSchoolId(assignmentId, schoolId)
-            .orElseThrow(HomeworkSubmissionCommandService::homeworkNotFound);
-    if (!assignment.tasksPublished()) {
-      throw homeworkNotFound();
-    }
-    return assignment;
+  private HomeworkAssignment requireAssignment(UUID schoolId, UUID assignmentId) {
+    return assignments
+        .findByIdAndSchoolId(assignmentId, schoolId)
+        .orElseThrow(HomeworkSubmissionCommandService::homeworkNotFound);
   }
 
   private void requireStudentInClass(UUID schoolId, UUID studentId, UUID classId) {

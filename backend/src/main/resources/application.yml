@@ -140,6 +140,12 @@ academix:
   # loads signature DBs for minutes on first boot, so requiring it would make the documented
   # local stack far heavier. Production must set ACADEMIX_CLAMAV_ENABLED=true; ClamAvScanner
   # logs a WARN on every startup while it's off so this can't be silently forgotten.
+  features:
+    # Psychological well-being monitoring + the Psychologist role is a paid add-on module
+    # (BIZNES_MODEL.md: "psixolog moduli +25%"). Off by default: no nightly AI analysis, and the
+    # psychologist / teacher-signal / admin-psychologist endpoints are not registered (404).
+    psychology:
+      enabled: ${ACADEMIX_FEATURE_PSYCHOLOGY:false}
   clamav:
     enabled: ${ACADEMIX_CLAMAV_ENABLED:false}
     host: ${CLAMAV_HOST:localhost}
@@ -153,12 +159,6 @@ academix:
       base-url: ${AI_BASE_URL:https://api.deepseek.com/}
       model-text: ${AI_MODEL_TEXT:deepseek-flash}
       model-vision: ${AI_MODEL_VISION:${QWEN_MODEL_VISION:qwen3.7-plus}}
-      # The vector column is fixed at 1024 dimensions. Keep this in sync with V44; changing it
-      # requires a deliberate re-index migration, never an accidental provider-default change.
-      embedding-api-key: ${AI_EMBEDDING_API_KEY:${QWEN_EMBEDDING_API_KEY:${AI_API_KEY:}}}
-      embedding-base-url: ${AI_EMBEDDING_BASE_URL:${QWEN_EMBEDDING_BASE_URL:https://dashscope-intl.aliyuncs.com/compatible-mode/v1}}
-      model-embedding: ${AI_MODEL_EMBEDDING:${QWEN_MODEL_EMBEDDING:qwen3.7-text-embedding}}
-      embedding-dimensions: ${AI_EMBEDDING_DIMENSIONS:${QWEN_EMBEDDING_DIMENSIONS:1024}}
     google-vision:
       api-key: ${GOOGLE_VISION_API_KEY:}
   telegram:

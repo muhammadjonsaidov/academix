@@ -11,6 +11,7 @@ public enum NotificationType {
   PSYCHOLOGICAL_ALERT,
   LATE_SUBMISSION,
   CLASS_PROGRESS_REPORT,
+  /** Retired with handwriting biometrics — never sent any more, kept so old rows still load. */
   HANDWRITING_PROFILE_RESET,
   AI_BUDGET_LOW
 }

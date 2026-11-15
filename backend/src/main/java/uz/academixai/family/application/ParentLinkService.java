@@ -66,9 +66,7 @@ public class ParentLinkService implements ParentChildAccess {
             parent.id(),
             studentId,
             relation,
-            true,
-            existing != null && existing.biometricConsentGiven(),
-            existing != null ? existing.consentGivenAt() : null);
+            true);
     return links.save(link);
   }
 
@@ -114,36 +112,6 @@ public class ParentLinkService implements ParentChildAccess {
             LocalDateTime.now(),
             null,
             schoolId));
-  }
-
-  /**
-   * academix_tz.md §5.6 — {@code PUT /parent/children/{studentId}/consent/biometric}. Consent does
-   * NOT gate handwriting collection (functional necessity for plagiarism defense per §5.6) — it
-   * only gates disclosure to the parent, i.e. this is a transparency flag, not a permission check
-   * anywhere in the handwriting pipeline.
-   */
-  public ParentStudentLink setBiometricConsent(
-      UUID parentUserId, UUID studentId, boolean consentGiven) {
-    ParentStudentLink link =
-        links
-            .find(parentUserId, studentId)
-            .filter(ParentStudentLink::isActive)
-            .orElseThrow(
-                () ->
-                    new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "ERR_STUDENT_NOT_FOUND",
-                        "Bu farzandingiz emas.",
-                        "Bog'lanish topilmadi."));
-    return links.save(
-        new ParentStudentLink(
-            link.id(),
-            link.parentUserId(),
-            link.studentUserId(),
-            link.relation(),
-            link.isActive(),
-            consentGiven,
-            consentGiven ? LocalDateTime.now() : null));
   }
 
   /** Shared authorization check other contexts call — "is this really your child". */

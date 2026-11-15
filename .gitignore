@@ -69,6 +69,7 @@ test-results/
 
 # Internal/spec docs — kept locally, not on GitHub (private→public repo prep)
 /CLAUDE.md
+/LESSONS.md
 /ROADMAP.md
 /academix_tz.md
 /academix_backend_tdd.md

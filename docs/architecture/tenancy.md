@@ -12,7 +12,7 @@ All database work goes through `uz.academixai.shared.tenancy.TenantScope`:
 | Scope | Used by | Effect |
 |---|---|---|
 | `runAsTenant(schoolId, userId, work)` | HTTP requests (via `RlsTransactionFilter`), queue consumers, batch acceptors, the Wellbeing activity lookup | one transaction with `app.current_school_id` + `app.current_user_id`, RLS applies |
-| `runAsSystem(work)` | the outbox publisher, the weekly handwriting audit, the pre-authentication school lookup | one transaction entered as the `academix_system` role, RLS bypassed |
+| `runAsSystem(work)` | the outbox publisher and the pre-authentication school lookup | one transaction entered as the `academix_system` role, RLS bypassed |
 
 Unscoped access is deliberately not offered. A forgotten scope therefore fails loudly at the
 database rather than quietly returning another tenant's rows.
@@ -56,14 +56,15 @@ justified backlog inside that test, each with the concrete remaining work.
 The two blockers that unlock most of the list:
 
 1. **`school_id` backfill for child tables** (`grades`, `ai_feedbacks`, `exam_grades`,
-   `xp_history`, `student_badges`, `handwriting_profiles`, `psychological_signals`,
-   `psychology_watchlist`, `parent_student_links`, `student_unique_tasks`, `syllabus_chunks`).
+   `xp_history`, `student_badges`, `psychological_signals`, `psychology_watchlist`,
+   `parent_student_links`). `handwriting_profiles`, `student_unique_tasks`, `teacher_syllabuses`,
+   `lesson_plans` and `syllabus_chunks` are also on the backlog, but their features were removed in
+   the 2026-11 scope cut — dropping those tables is the cleaner fix than protecting them.
    A policy without the column would hide rows; the column has to exist and be set on every insert
    path first.
-2. **The last two unscoped workers.** `BehaviorAnalysisService` writes signals after its scoped
-   read has already committed (each student's read and writes must share one scope), and
-   `SyllabusIngestionListener` consumes a message that carries no `schoolId`. Both are small,
-   bounded changes.
+2. **The last unscoped worker.** `BehaviorAnalysisService` (optional psychology module) writes
+   signals after its scoped read has already committed — each student's read and writes must share
+   one scope. A small, bounded change.
 
 Because the backlog lives in a test rather than in a document, adding a new tenant table without a
 policy fails the build until someone either protects it or writes down why they cannot.

@@ -65,9 +65,6 @@ public class AIFeedbackEntity {
   @Column(name = "plagiarism_type")
   private PlagiarismType plagiarismType;
 
-  @Column(name = "handwriting_match_score")
-  private float handwritingMatchScore;
-
   @Column(name = "processed_at")
   private LocalDateTime processedAt;
 
@@ -85,7 +82,6 @@ public class AIFeedbackEntity {
       String highlightedErrors,
       float plagiarismScore,
       PlagiarismType plagiarismType,
-      float handwritingMatchScore,
       LocalDateTime processedAt) {
     this.id = id;
     this.submissionId = submissionId;
@@ -98,7 +94,6 @@ public class AIFeedbackEntity {
     this.highlightedErrors = highlightedErrors;
     this.plagiarismScore = plagiarismScore;
     this.plagiarismType = plagiarismType;
-    this.handwritingMatchScore = handwritingMatchScore;
     this.processedAt = processedAt;
   }
 
@@ -115,7 +110,6 @@ public class AIFeedbackEntity {
         domain.highlightedErrors(),
         domain.plagiarismScore(),
         domain.plagiarismType(),
-        domain.handwritingMatchScore(),
         domain.processedAt());
   }
 
@@ -132,7 +126,6 @@ public class AIFeedbackEntity {
         highlightedErrors,
         plagiarismScore,
         plagiarismType,
-        handwritingMatchScore,
         processedAt);
   }
 

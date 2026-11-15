@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import uz.academixai.notification.infrastructure.persistence.NotificationPrefere
 import uz.academixai.notification.infrastructure.persistence.NotificationPreferenceRepository;
 import uz.academixai.notification.infrastructure.persistence.NotificationRepository;
 import uz.academixai.shared.error.ApiException;
+import uz.academixai.shared.feature.PsychologyModule;
 import uz.academixai.shared.realtime.RealtimePublisher;
 
 /**
@@ -40,18 +42,21 @@ public class NotificationService {
   private final TelegramDeliveryQueue telegramQueue;
   private final RealtimePublisher realtimePublisher;
   private final ObjectMapper objectMapper;
+  private final boolean psychologyEnabled;
 
   public NotificationService(
       NotificationRepository notificationRepository,
       NotificationPreferenceRepository preferenceRepository,
       TelegramDeliveryQueue telegramQueue,
       RealtimePublisher realtimePublisher,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      @Value(PsychologyModule.ENABLED_VALUE) boolean psychologyEnabled) {
     this.notificationRepository = notificationRepository;
     this.preferenceRepository = preferenceRepository;
     this.telegramQueue = telegramQueue;
     this.realtimePublisher = realtimePublisher;
     this.objectMapper = objectMapper;
+    this.psychologyEnabled = psychologyEnabled;
   }
 
   @Transactional
@@ -182,6 +187,10 @@ public class NotificationService {
         preferenceRepository.findByUserId(userId).stream()
             .collect(Collectors.toMap(NotificationPreferenceEntity::getType, Function.identity()));
     return java.util.Arrays.stream(NotificationType.values())
+        // Retired with handwriting biometrics: never sent, so there is nothing to configure.
+        .filter(type -> type != NotificationType.HANDWRITING_PROFILE_RESET)
+        // Psychology add-on switched off: nothing can raise these alerts, so nothing to configure.
+        .filter(type -> psychologyEnabled || type != NotificationType.PSYCHOLOGICAL_ALERT)
         .map(
             type -> {
               NotificationPreferenceEntity entity = stored.get(type);

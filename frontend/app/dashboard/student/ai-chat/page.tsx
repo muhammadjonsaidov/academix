@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MessageSquareText, Send } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { fieldClass, SelectField } from "@/components/shared/FormField";
 import { TutorBubble, TypingBubble, UserBubble } from "@/components/student/ChatMessage";
 import { Button } from "@/components/ui/button";

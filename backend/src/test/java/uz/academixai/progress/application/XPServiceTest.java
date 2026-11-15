@@ -40,7 +40,6 @@ class XPServiceTest {
             submissionId,
             schoolId,
             UUID.randomUUID(),
-            null,
             studentId,
             SubmissionType.TEXT,
             "answer",

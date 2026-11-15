@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen, CheckCircle2, ImageIcon, Type } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -136,7 +136,7 @@ function HomeworkCard({ hw }: { hw: StudentHomework }) {
             </p>
             {hw.myTask ? (
               <p className="mt-2 rounded-md bg-muted/50 p-2 text-sm">
-                <span className="font-medium">Sizning topshirig&apos;ingiz: </span>
+                <span className="font-medium">Topshiriq: </span>
                 {hw.myTask.taskContent}
               </p>
             ) : null}

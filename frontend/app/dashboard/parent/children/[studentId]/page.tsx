@@ -23,7 +23,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import {
   chartAxisTick,
   chartBarCursor,
@@ -37,7 +37,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useConsentStore } from "@/stores/useConsentStore";
 import { useParentStore } from "@/stores/useParentStore";
 import type { ApiErrorResponse } from "@/types/auth";
 
@@ -63,7 +62,7 @@ export default function ParentChildDetailPage() {
   const fetchGrades = useParentStore((state) => state.fetchGrades);
   const fetchHomework = useParentStore((state) => state.fetchHomework);
   const downloadQuarterReport = useParentStore((state) => state.downloadQuarterReport);
-  const requestDataDeletion = useConsentStore((state) => state.requestDataDeletion);
+  const requestDataDeletion = useParentStore((state) => state.requestDataDeletion);
 
   const [error, setError] = useState<string | null>(null);
   const [deletionMessage, setDeletionMessage] = useState<string | null>(null);

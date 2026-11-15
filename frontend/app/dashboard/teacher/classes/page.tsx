@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, School, Users } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTeacherStore } from "@/stores/useTeacherStore";
 
 // Real data source: GET /teacher/classes (academix_tz.md §2.3), already wired via
-// useTeacherStore.fetchClasses/classes — reused by the homework/exam/syllabus create forms.
+// useTeacherStore.fetchClasses/classes — reused by the homework/exam create forms.
 // This page just gives that same list a standalone browse entry point (the "Sinflar" nav
 // slot the shell-stage agent flagged as missing), linking each row into the existing
 // classes/[classId]/analytics drill-in rather than inventing new data or a new endpoint.

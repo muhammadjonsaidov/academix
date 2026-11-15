@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ShieldOff } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Badge } from "@/components/ui/badge";
@@ -71,8 +71,8 @@ export default function AdminDataDeletionRequestsPage() {
               Kutilayotgan so&apos;rovlar
             </CardTitle>
             <CardDescription>
-              Tasdiqlash o&apos;quvchining yozuv (handwriting) profilini va psixologik
-              signallarning tafsilotlarini butunlay o&apos;chiradi — bu amalni bekor qilib
+              Tasdiqlash o&apos;quvchining sezgir ma&apos;lumotlarini (psixologik signallar
+              tafsilotlari va eski yozuv profili) butunlay o&apos;chiradi — bu amalni bekor qilib
               bo&apos;lmaydi.
             </CardDescription>
           </CardHeader>

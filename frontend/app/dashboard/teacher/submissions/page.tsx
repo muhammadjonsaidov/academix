@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FileCheck2, RefreshCw } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PaginationControl } from "@/components/shared/PaginationControl";
 import { SubmissionStatusBadge, submissionRailClass } from "@/components/shared/submission-status";

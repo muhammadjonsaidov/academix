@@ -134,7 +134,7 @@ Konservativ reja: **1 AE = 6 maktab/chorak** (24/yil). 24 oyda 110 sof mijoz uch
 "AI xato qiladi" → "yakuniy so'z o'qituvchida, shubhali ishlar qo'lda ko'riladi" ·
 "o'qituvchi qarshilik qiladi" → "yangi dastur emas: surat + tasdiq, 20 daqiqalik o'quv" ·
 "byudjet yo'q" → "kunlik o'quv to'lovidan arzon / ota-ona Premium bilan qoplanadi" ·
-"xavfsizlik" → RLS izolyatsiya, o'chirish huquqi (kripto-shred), rozilik oqimi, on-prem.
+"xavfsizlik" → RLS izolyatsiya, o'chirish huquqi (ota-ona so'rovi bilan), yakuniy baho o'qituvchida, on-prem.
 
 **Davlat yo'li:** hokimiyat/vazirlik piloti → tuman → davlat xaridi (**12+ oy**). Shuning uchun
 1-bosqichda naqd pul xususiy + markazlardan, davlat piloti esa obro'/case sifatida yuritiladi.
@@ -199,7 +199,7 @@ topshiriqgacha vaqt) · DAU/WAU · churn.
 | Pilot→to'lov < 25% | CAC 2x | Fanni toraytirish (imtihon kesimi), narxni tushirmasdan qiymatni oshirish |
 | So'm 25% devalvatsiya | Daromad $da −25% | Shartnomada kurs indeksatsiyasi (oldindan) |
 | Kundalik/davlat bepul shu funksiyani qo'shsa | Farq yo'qoladi | Workflow + ota-ona kanali + o'qituvchi-tasdiq tarixi |
-| **Bolalar biometrikasi/psixologik monitoring bo'yicha huquqiy-PR riski** | Sotuv to'xtashi mumkin | Alohida rozilik + alohida narx, kripto-shred o'chirish, faqat psixolog ko'radi, DPIA/audit, on-prem variant |
+| **Psixologik monitoring bo'yicha huquqiy-PR riski** | Sotuv to'xtashi mumkin | Alohida modul (default o'chiq) + alohida narx va shartnoma rozilik bandi, o'chirish so'rovi, faqat psixolog ko'radi, DPIA/audit, on-prem variant. Qo'lyozma biometriyasi MVP'dan olib tashlangan |
 
 ## 14. Biznes tomondan hali yo'q (VC so'raydi)
 

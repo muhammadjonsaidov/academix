@@ -3,14 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen, ChevronRight, Flame, Users } from "lucide-react";
-import { BiometricConsentBanner } from "@/components/parent/BiometricConsentBanner";
 import { DashboardHero } from "@/components/shared/DashboardHero";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { StatTile } from "@/components/shared/StatTile";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useConsentStore } from "@/stores/useConsentStore";
 import { useParentStore } from "@/stores/useParentStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 
@@ -27,19 +25,12 @@ function initials(name: string): string {
 export default function ParentDashboardPage() {
   const dashboard = useParentStore((state) => state.dashboard);
   const fetchDashboard = useParentStore((state) => state.fetchDashboard);
-  const checkPendingConsent = useConsentStore((state) => state.checkPendingConsent);
   const firstName = useAuthStore((state) => state.user?.firstName);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboard().catch(() => setError("Bosh sahifani yuklab bo'lmadi."));
   }, [fetchDashboard]);
-
-  useEffect(() => {
-    if (dashboard) {
-      checkPendingConsent(dashboard.children);
-    }
-  }, [dashboard, checkPendingConsent]);
 
   const children = dashboard?.children ?? [];
   const activeToday = children.filter((c) => c.todayActivity).length;
@@ -177,8 +168,6 @@ export default function ParentDashboardPage() {
             </p>
           </div>
         ) : null}
-
-        <BiometricConsentBanner />
       </div>
     </DashboardShell>
   );

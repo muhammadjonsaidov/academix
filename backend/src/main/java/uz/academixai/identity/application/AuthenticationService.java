@@ -12,6 +12,7 @@ import uz.academixai.identity.application.port.out.AccessTokenIssuer;
 import uz.academixai.identity.application.port.out.AccountRepository;
 import uz.academixai.identity.application.port.out.AttemptLimiter;
 import uz.academixai.identity.application.port.out.RefreshSessionStore;
+import uz.academixai.identity.application.port.out.RoleAvailability;
 import uz.academixai.identity.application.port.out.SchoolContextLookup;
 import uz.academixai.identity.domain.Account;
 import uz.academixai.shared.error.ApiException;
@@ -30,6 +31,7 @@ public class AuthenticationService {
   private final RefreshSessionStore refreshSessionStore;
   private final SchoolContextLookup schoolContextLookup;
   private final AttemptLimiter attemptLimiter;
+  private final RoleAvailability roleAvailability;
 
   public AuthenticationService(
       AccountRepository accounts,
@@ -37,13 +39,15 @@ public class AuthenticationService {
       AccessTokenIssuer tokenIssuer,
       RefreshSessionStore refreshSessionStore,
       SchoolContextLookup schoolContextLookup,
-      AttemptLimiter attemptLimiter) {
+      AttemptLimiter attemptLimiter,
+      RoleAvailability roleAvailability) {
     this.accounts = accounts;
     this.passwordEncoder = passwordEncoder;
     this.tokenIssuer = tokenIssuer;
     this.refreshSessionStore = refreshSessionStore;
     this.schoolContextLookup = schoolContextLookup;
     this.attemptLimiter = attemptLimiter;
+    this.roleAvailability = roleAvailability;
   }
 
   public record LoginResult(String accessToken, String refreshToken, Account account) {}
@@ -62,6 +66,7 @@ public class AuthenticationService {
     }
 
     attemptLimiter.reset(loginAttemptsKey(normalizedIdentifier));
+    requireRoleAvailable(account);
     account = accounts.save(account.withLastLoginAt(LocalDateTime.now()));
     UUID schoolId = schoolContextLookup.resolve(account).orElse(null);
     String accessToken = tokenIssuer.issueAccessToken(account.id(), account.role(), schoolId);
@@ -81,6 +86,7 @@ public class AuthenticationService {
             .findById(claims.userId())
             .filter(Account::active)
             .orElseThrow(AuthenticationService::expiredToken);
+    requireRoleAvailable(account);
     UUID schoolId = schoolContextLookup.resolve(account).orElse(null);
     // The old JTI was atomically consumed above. A replay now fails; the new JTI is stored first
     // so a response never contains a refresh token that the server cannot validate.
@@ -166,6 +172,17 @@ public class AuthenticationService {
 
   private static String loginBlockKey(String identifier) {
     return "login_block:" + identifier;
+  }
+
+  // Checked after the password, so a wrong password never reveals which role an account has.
+  private void requireRoleAvailable(Account account) {
+    if (!roleAvailability.isAvailable(account.role())) {
+      throw new ApiException(
+          HttpStatus.FORBIDDEN,
+          "ERR_MODULE_DISABLED",
+          "Bu rol uchun modul maktabingizda yoqilmagan.",
+          "Modulni yoqish uchun maktab administratoriga murojaat qiling.");
+    }
   }
 
   private static ApiException invalidCredentials() {

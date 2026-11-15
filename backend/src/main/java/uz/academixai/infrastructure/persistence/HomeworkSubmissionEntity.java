@@ -28,9 +28,6 @@ public class HomeworkSubmissionEntity {
   @Column(name = "assignment_id", nullable = false)
   private UUID assignmentId;
 
-  @Column(name = "student_task_id")
-  private UUID studentTaskId;
-
   @Column(name = "student_id", nullable = false)
   private UUID studentId;
 
@@ -63,7 +60,6 @@ public class HomeworkSubmissionEntity {
       UUID id,
       UUID schoolId,
       UUID assignmentId,
-      UUID studentTaskId,
       UUID studentId,
       SubmissionType type,
       String textContent,
@@ -75,7 +71,6 @@ public class HomeworkSubmissionEntity {
     this.id = id;
     this.schoolId = schoolId;
     this.assignmentId = assignmentId;
-    this.studentTaskId = studentTaskId;
     this.studentId = studentId;
     this.type = type;
     this.textContent = textContent;
@@ -91,7 +86,6 @@ public class HomeworkSubmissionEntity {
         domain.id(),
         domain.schoolId(),
         domain.assignmentId(),
-        domain.studentTaskId(),
         domain.studentId(),
         domain.type(),
         domain.textContent(),
@@ -107,7 +101,6 @@ public class HomeworkSubmissionEntity {
         id,
         schoolId,
         assignmentId,
-        studentTaskId,
         studentId,
         type,
         textContent,

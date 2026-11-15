@@ -6,7 +6,6 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import uz.academixai.family.application.port.in.ParentChildAccess;
 import uz.academixai.family.application.port.out.ChildReadModel;
-import uz.academixai.family.domain.ParentStudentLink;
 import uz.academixai.learning.application.port.in.StudentHomeworkQuery;
 import uz.academixai.learning.application.port.in.StudentHomeworkQuery.HomeworkItem;
 import uz.academixai.progress.application.port.in.StudentDashboard.RecentGrade;
@@ -50,8 +49,7 @@ public class ParentDashboardService {
       String className,
       boolean todayActivity,
       int pendingHomeworkCount,
-      RecentGrade recentGrade,
-      boolean biometricConsentGiven) {}
+      RecentGrade recentGrade) {}
 
   public record Dashboard(List<ChildSummary> children) {}
 
@@ -61,7 +59,7 @@ public class ParentDashboardService {
 
   public List<ChildSummary> children(UUID parentUserId) {
     return parentLinks.childrenOf(parentUserId).stream()
-        .map(link -> buildSummary(link.studentUserId(), link.biometricConsentGiven()))
+        .map(link -> buildSummary(link.studentUserId()))
         .toList();
   }
 
@@ -70,13 +68,7 @@ public class ParentDashboardService {
 
   public ChildOverview overview(UUID parentUserId, UUID studentId) {
     parentLinks.requireLinkedChild(parentUserId, studentId);
-    boolean consentGiven =
-        parentLinks.childrenOf(parentUserId).stream()
-            .filter(link -> link.studentUserId().equals(studentId))
-            .findFirst()
-            .map(ParentStudentLink::biometricConsentGiven)
-            .orElse(false);
-    ChildSummary summary = buildSummary(studentId, consentGiven);
+    ChildSummary summary = buildSummary(studentId);
 
     // A student with no class assignment yet (classId null) legitimately has no homework —
     // listHomework's requireStudentClassId would 403 the parent's whole children list otherwise,
@@ -100,7 +92,7 @@ public class ParentDashboardService {
         summary, pendingHomework, children.recentGrades(studentId, RECENT_GRADES_LIMIT));
   }
 
-  private ChildSummary buildSummary(UUID studentId, boolean biometricConsentGiven) {
+  private ChildSummary buildSummary(UUID studentId) {
     ChildReadModel.ChildFacts facts = children.facts(studentId);
     int pendingHomeworkCount =
         Optional.ofNullable(facts.classId())
@@ -121,7 +113,6 @@ public class ParentDashboardService {
         facts.className(),
         facts.activeToday(),
         pendingHomeworkCount,
-        facts.lastGrade(),
-        biometricConsentGiven);
+        facts.lastGrade());
   }
 }

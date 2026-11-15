@@ -18,5 +18,4 @@ public record ExamAIFeedback(
     List<CriteriaScore> criteriaScores,
     float aiScorePercent,
     String feedback,
-    float handwritingMatchScore,
     LocalDateTime processedAt) {}

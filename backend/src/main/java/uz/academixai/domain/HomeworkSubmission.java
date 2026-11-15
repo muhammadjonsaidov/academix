@@ -5,15 +5,12 @@ import java.util.UUID;
 
 /**
  * academix_tz.md §1.10 — plain domain object, no framework annotations. JPA mapping lives in {@code
- * infrastructure.persistence.HomeworkSubmissionEntity}. {@code studentTaskId} is always null this
- * sprint — every assignment is {@code STANDARD} (unique-task generation is Sprint 3+ scope, see
- * ROADMAP.md).
+ * infrastructure.persistence.HomeworkSubmissionEntity}.
  */
 public record HomeworkSubmission(
     UUID id,
     UUID schoolId,
     UUID assignmentId,
-    UUID studentTaskId,
     UUID studentId,
     SubmissionType type,
     String textContent,

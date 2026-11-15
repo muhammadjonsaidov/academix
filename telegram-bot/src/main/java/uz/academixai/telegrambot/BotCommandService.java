@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -29,10 +30,17 @@ public class BotCommandService {
 
   private final JdbcTemplate jdbc;
   private final TransactionTemplate transactionTemplate;
+  // Paid add-on module (psychological monitoring). Same switch as the backend's
+  // academix.features.psychology.enabled — when off, psychologist commands are not offered.
+  private final boolean psychologyEnabled;
 
-  public BotCommandService(JdbcTemplate jdbc, TransactionTemplate transactionTemplate) {
+  public BotCommandService(
+      JdbcTemplate jdbc,
+      TransactionTemplate transactionTemplate,
+      @Value("${academix.features.psychology.enabled:false}") boolean psychologyEnabled) {
     this.jdbc = jdbc;
     this.transactionTemplate = transactionTemplate;
+    this.psychologyEnabled = psychologyEnabled;
   }
 
   private record BotUser(UUID id, String role, UUID schoolId) {}
@@ -47,10 +55,15 @@ public class BotCommandService {
 
   /** Role-scoped welcome shown right after a successful /start link. */
   public String welcomeText(UUID userId) {
-    return loadUser(userId).map(this::helpText).orElse("Ulanish muvaffaqiyatli!");
+    return loadUser(userId)
+        .map(user -> isModuleDisabled(user) ? MODULE_DISABLED : helpText(user))
+        .orElse("Ulanish muvaffaqiyatli!");
   }
 
   private String dispatch(BotUser user, String command) {
+    if (isModuleDisabled(user)) {
+      return MODULE_DISABLED;
+    }
     return switch (user.role()) {
       case "STUDENT" ->
           switch (command) {
@@ -83,6 +96,13 @@ public class BotCommandService {
       default -> helpText(user);
     };
   }
+
+  private boolean isModuleDisabled(BotUser user) {
+    return "PSYCHOLOGIST".equals(user.role()) && !psychologyEnabled;
+  }
+
+  private static final String MODULE_DISABLED =
+      "Psixolog moduli maktabingizda yoqilmagan. Administratorga murojaat qiling.";
 
   private String helpText(BotUser user) {
     String commands =

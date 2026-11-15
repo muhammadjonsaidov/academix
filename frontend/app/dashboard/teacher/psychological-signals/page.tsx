@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { HeartPulse, MessageCircleWarning } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { FormField, SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";

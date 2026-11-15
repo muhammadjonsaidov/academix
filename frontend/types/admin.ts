@@ -82,7 +82,6 @@ export interface ParentLink {
   parentUserId: string;
   studentUserId: string;
   relation: ParentRelation;
-  biometricConsentGiven: boolean;
 }
 
 // --- Admin parent lifecycle (deviation beyond §2.2, see backend ParentManagementService) ---

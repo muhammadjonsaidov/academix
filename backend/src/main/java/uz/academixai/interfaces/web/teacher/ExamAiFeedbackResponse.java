@@ -10,8 +10,7 @@ public record ExamAiFeedbackResponse(
     List<StepAnalysis> stepAnalyses,
     List<CriteriaScore> criteriaScores,
     float aiScorePercent,
-    String feedback,
-    float handwritingMatchScore) {
+    String feedback) {
 
   public static ExamAiFeedbackResponse from(ExamAIFeedback feedback) {
     if (feedback == null) {
@@ -22,7 +21,6 @@ public record ExamAiFeedbackResponse(
         feedback.stepAnalyses(),
         feedback.criteriaScores(),
         feedback.aiScorePercent(),
-        feedback.feedback(),
-        feedback.handwritingMatchScore());
+        feedback.feedback());
   }
 }

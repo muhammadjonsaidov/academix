@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { FileCheck2, History, KeyRound, TrendingUp } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { StatusLabel, submissionRailClass } from "@/components/shared/submission-status";
 import { Button } from "@/components/ui/button";

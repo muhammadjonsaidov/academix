@@ -78,7 +78,9 @@ import uz.academixai.infrastructure.security.JwtService;
  * (403 / 401) — that's the actual RBAC guarantee.
  */
 @Import(TestcontainersConfiguration.class)
-@SpringBootTest
+// The psychologist add-on module is off by default; the matrix covers its endpoints too, so they
+// must be registered here. PsychologyModuleDisabledIntegrationTest covers the default (off) state.
+@SpringBootTest(properties = "academix.features.psychology.enabled=true")
 @AutoConfigureMockMvc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RoleAccessIntegrationTest {
@@ -432,10 +434,6 @@ class RoleAccessIntegrationTest {
             """
             {"newClassId":"%s"}"""
                 .formatted(UUID.randomUUID())),
-        new Endpoint(
-            HttpMethod.PUT,
-            "/api/v1/admin/students/{studentId}/handwriting/unlock-reset",
-            Role.ADMIN),
         new Endpoint(HttpMethod.GET, "/api/v1/admin/teachers", Role.ADMIN),
         new Endpoint(
             HttpMethod.POST,
@@ -559,7 +557,7 @@ class RoleAccessIntegrationTest {
             Role.TEACHER,
             """
             {"classId":"%s","subjectId":"%s","title":"Test vazifa",\
-            "deadlineAt":"2026-06-01T18:00:00","type":"STANDARD","maxScore":100}"""
+            "deadlineAt":"2026-06-01T18:00:00","maxScore":100}"""
                 .formatted(UUID.randomUUID(), UUID.randomUUID())),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/homework/{assignmentId}", Role.TEACHER),
         new Endpoint(
@@ -569,24 +567,6 @@ class RoleAccessIntegrationTest {
             """
             {"title":"Yangilangan vazifa","deadlineAt":"2026-06-02T18:00:00","maxScore":100}"""),
         new Endpoint(HttpMethod.DELETE, "/api/v1/teacher/homework/{assignmentId}", Role.TEACHER),
-        new Endpoint(
-            HttpMethod.POST, "/api/v1/teacher/homework/{assignmentId}/submit", Role.TEACHER),
-        new Endpoint(
-            HttpMethod.GET, "/api/v1/teacher/homework/{assignmentId}/unique-tasks", Role.TEACHER),
-        new Endpoint(
-            HttpMethod.PUT,
-            "/api/v1/teacher/homework/{assignmentId}/unique-tasks/{taskId}/approve",
-            Role.TEACHER),
-        new Endpoint(
-            HttpMethod.PUT,
-            "/api/v1/teacher/homework/{assignmentId}/unique-tasks/{taskId}",
-            Role.TEACHER,
-            """
-            {"taskContent":"Yangi matn"}"""),
-        new Endpoint(
-            HttpMethod.POST,
-            "/api/v1/teacher/homework/{assignmentId}/unique-tasks/approve-all",
-            Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/submissions", Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/submissions/{submissionId}", Role.TEACHER),
         new Endpoint(
@@ -623,23 +603,6 @@ class RoleAccessIntegrationTest {
             HttpMethod.PUT,
             "/api/v1/teacher/psychological-signals/{signalId}/resolve",
             Role.TEACHER),
-        new Endpoint(HttpMethod.GET, "/api/v1/teacher/syllabuses", Role.TEACHER),
-        new Endpoint(HttpMethod.POST, "/api/v1/teacher/syllabuses", Role.TEACHER, true),
-        new Endpoint(HttpMethod.GET, "/api/v1/teacher/syllabuses/{syllabusId}", Role.TEACHER),
-        new Endpoint(HttpMethod.GET, "/api/v1/teacher/lesson-plans", Role.TEACHER),
-        new Endpoint(
-            HttpMethod.POST,
-            "/api/v1/teacher/lesson-plans/generate",
-            Role.TEACHER,
-            """
-            {"syllabusId":"%s","topic":"Algebra","lessonDate":"2026-06-01","classId":"%s"}"""
-                .formatted(UUID.randomUUID(), UUID.randomUUID())),
-        new Endpoint(
-            HttpMethod.PUT,
-            "/api/v1/teacher/lesson-plans/{planId}",
-            Role.TEACHER,
-            """
-            {"teacherEditedPlan":"Reja matni","isApproved":true}"""),
         new Endpoint(
             HttpMethod.GET,
             "/api/v1/teacher/grading-criteria?subjectId=" + UUID.randomUUID(),
@@ -650,12 +613,6 @@ class RoleAccessIntegrationTest {
             Role.TEACHER,
             """
             {"criteria":[{"name":"To'g'rilik","weightPercent":100}]}"""),
-        new Endpoint(
-            HttpMethod.PUT,
-            "/api/v1/teacher/students/{studentId}/handwriting/reset",
-            Role.TEACHER,
-            """
-            {"reason":"ILLNESS","notes":"Test"}"""),
         new Endpoint(
             HttpMethod.PUT, "/api/v1/teacher/students/{studentId}/reset-password", Role.TEACHER),
 
@@ -699,12 +656,6 @@ class RoleAccessIntegrationTest {
             HttpMethod.POST,
             "/api/v1/parent/children/{studentId}/data-deletion-request",
             Role.PARENT),
-        new Endpoint(
-            HttpMethod.PUT,
-            "/api/v1/parent/children/{studentId}/consent/biometric",
-            Role.PARENT,
-            """
-            {"consentGiven":true}"""),
 
         // --- Psychologist (academix_tz.md §2.6) ---
         new Endpoint(HttpMethod.GET, "/api/v1/psychologist/dashboard", Role.PSYCHOLOGIST),

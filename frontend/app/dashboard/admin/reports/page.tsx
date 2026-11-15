@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Download, FileBarChart, FileText } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";

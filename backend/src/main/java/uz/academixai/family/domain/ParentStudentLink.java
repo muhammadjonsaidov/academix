@@ -1,6 +1,5 @@
 package uz.academixai.family.domain;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -10,10 +9,4 @@ import java.util.UUID;
  * grades/psychological_signals.
  */
 public record ParentStudentLink(
-    UUID id,
-    UUID parentUserId,
-    UUID studentUserId,
-    ParentRelation relation,
-    boolean isActive,
-    boolean biometricConsentGiven,
-    LocalDateTime consentGivenAt) {}
+    UUID id, UUID parentUserId, UUID studentUserId, ParentRelation relation, boolean isActive) {}

@@ -11,7 +11,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { DashboardHero, HeroAction } from "@/components/shared/DashboardHero";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ProgressBar } from "@/components/shared/ProgressBar";
 import { StatTile, StatTileSkeleton, type StatTileDelta } from "@/components/shared/StatTile";

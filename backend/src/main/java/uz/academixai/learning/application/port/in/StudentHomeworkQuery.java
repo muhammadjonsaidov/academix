@@ -17,6 +17,7 @@ public interface StudentHomeworkQuery {
       LocalDateTime deadlineAt,
       boolean isLate,
       String submissionStatus,
+      /** The assignment's task text, shown to the student as "their task". */
       String myTaskContent) {}
 
   record SubmissionDetail(HomeworkSubmission submission, AIFeedback feedback, Grade grade) {}

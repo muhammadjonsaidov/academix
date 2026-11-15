@@ -18,21 +18,17 @@ export interface TeacherSubject {
   name: string;
 }
 
-export type AssignmentType = "STANDARD" | "UNIQUE_GENERATED";
-
 export interface Homework {
   id: string;
   classId: string;
   subjectId: string;
   title: string;
   description: string | null;
-  type: AssignmentType;
   assignedAt: string;
   deadlineAt: string;
   maxScore: number;
   isActive: boolean;
   syllabusReference: string | null;
-  tasksPublished: boolean;
 }
 
 export interface CreateHomeworkRequest {
@@ -41,12 +37,11 @@ export interface CreateHomeworkRequest {
   title: string;
   description: string;
   deadlineAt: string;
-  type: AssignmentType;
   syllabusReference?: string;
   maxScore: number;
 }
 
-// academix_tz.md §2.3 — PUT /teacher/homework/{assignmentId} body. classId/subjectId/type
+// academix_tz.md §2.3 — PUT /teacher/homework/{assignmentId} body. classId/subjectId
 // aren't editable (backend's UpdateHomeworkRequest doesn't accept them).
 export interface UpdateHomeworkRequest {
   title: string;
@@ -79,7 +74,6 @@ export interface TeacherAiFeedback {
   stepAnalyses: StepAnalysis[];
   plagiarismScore: number;
   plagiarismType: PlagiarismType;
-  handwritingMatchScore: number;
   feedback: string;
 }
 
@@ -120,86 +114,10 @@ export interface GradeSubmissionRequest {
   teacherComment: string;
 }
 
-export type FileType = "PDF" | "DOCX" | "IMAGE";
-export type SyllabusProcessingStatus = "PENDING" | "PROCESSING" | "READY" | "FAILED";
-
-export interface Syllabus {
-  id: string;
-  subjectId: string;
-  classId: string;
-  title: string;
-  fileUrl: string;
-  fileType: FileType;
-  isProcessed: boolean;
-  processingStatus: SyllabusProcessingStatus;
-  processingError: string | null;
-  processedAt: string | null;
-  uploadedAt: string;
-}
-
-export interface LessonActivity {
-  description: string;
-  durationMinutes: number;
-}
-
-export interface LessonPlanContent {
-  objectives: string[];
-  activities: LessonActivity[];
-  materials: string[];
-  homeworkSuggestion: string;
-}
-
-export interface LessonPlan {
-  lessonPlanId: string;
-  subjectId: string;
-  classId: string;
-  syllabusId: string;
-  topic: string;
-  aiGeneratedPlan: LessonPlanContent | null;
-  teacherEditedPlan: string | null;
-  isApproved: boolean;
-  lessonDate: string;
-  createdAt: string;
-}
-
-export interface GenerateLessonPlanRequest {
-  syllabusId: string;
-  topic: string;
-  lessonDate: string;
-  classId: string;
-}
-
-export interface UpdateLessonPlanRequest {
-  teacherEditedPlan: string;
-  isApproved: boolean;
-}
-
 export interface CriteriaItem {
   name: string;
   weightPercent: number;
   description: string;
-}
-
-export interface UniqueTask {
-  taskId: string;
-  studentId: string;
-  studentName: string;
-  taskContent: string;
-  isApproved: boolean;
-  flaggedForReview: boolean;
-  fallbackToStandard: boolean;
-}
-
-export type ResetReason = "ILLNESS" | "INJURY" | "TRANSFER_STUDENT" | "OTHER";
-
-export interface HandwritingResetRequest {
-  reason: ResetReason;
-  notes?: string;
-}
-
-export interface HandwritingResetResponse {
-  newProfileVersion: string;
-  resetCountThisQuarter: number;
 }
 
 // Exams: academix_tz.md §2.3 "Nazorat ishi" — GET (list) is a gap-fill deviation, see
@@ -237,7 +155,6 @@ export interface ExamAiFeedback {
   criteriaScores: CriteriaScore[];
   aiScorePercent: number;
   feedback: string;
-  handwritingMatchScore: number;
 }
 
 export interface ExamSubmission {

@@ -2,17 +2,15 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { BookOpen, Sparkles } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { BookOpen } from "lucide-react";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTeacherStore } from "@/stores/useTeacherStore";
 import type { ApiErrorResponse } from "@/types/auth";
-import type { AssignmentType, Homework } from "@/types/teacher";
+import type { Homework } from "@/types/teacher";
 
 // LocalDateTime from the backend ("2026-08-01T10:00:00") -> value a <input type="datetime-local">
 // accepts ("2026-08-01T10:00").
@@ -21,7 +19,6 @@ function toDatetimeLocalValue(isoLike: string) {
 }
 
 export default function TeacherHomeworkPage() {
-  const router = useRouter();
   const classes = useTeacherStore((state) => state.classes);
   const subjects = useTeacherStore((state) => state.subjects);
   const homework = useTeacherStore((state) => state.homework);
@@ -39,7 +36,6 @@ export default function TeacherHomeworkPage() {
   const [description, setDescription] = useState("");
   const [deadlineAt, setDeadlineAt] = useState("");
   const [maxScore, setMaxScore] = useState("100");
-  const [type, setType] = useState<AssignmentType>("STANDARD");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -66,7 +62,6 @@ export default function TeacherHomeworkPage() {
     setDescription("");
     setDeadlineAt("");
     setMaxScore("100");
-    setType("STANDARD");
   }
 
   function startEdit(hw: Homework) {
@@ -78,7 +73,6 @@ export default function TeacherHomeworkPage() {
     setDescription(hw.description ?? "");
     setDeadlineAt(toDatetimeLocalValue(hw.deadlineAt));
     setMaxScore(String(hw.maxScore));
-    setType(hw.type);
   }
 
   async function handleDelete(hw: Homework) {
@@ -115,21 +109,17 @@ export default function TeacherHomeworkPage() {
         });
         resetForm();
       } else {
-        const created = await createHomework({
+        await createHomework({
           classId,
           subjectId,
           title,
           description,
           deadlineAt,
-          type,
           maxScore: Number(maxScore),
         });
         setTitle("");
         setDescription("");
         setDeadlineAt("");
-        if (type === "UNIQUE_GENERATED") {
-          router.push(`/dashboard/teacher/homework/${created.id}/review`);
-        }
       }
     } catch (err) {
       const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
@@ -226,33 +216,6 @@ export default function TeacherHomeworkPage() {
                 className={`${fieldClass} w-full`}
               />
             </FormField>
-            <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
-              <span className="text-sm font-medium">Turi</span>
-              <div className="flex h-9 items-center gap-4">
-                <label className="flex items-center gap-1.5 text-sm">
-                  <input
-                    type="radio"
-                    name="type"
-                    className="accent-[var(--ink)]"
-                    checked={type === "STANDARD"}
-                    disabled={!!editingId}
-                    onChange={() => setType("STANDARD")}
-                  />
-                  Standart
-                </label>
-                <label className="flex items-center gap-1.5 text-sm">
-                  <input
-                    type="radio"
-                    name="type"
-                    className="accent-[var(--ink)]"
-                    checked={type === "UNIQUE_GENERATED"}
-                    disabled={!!editingId}
-                    onChange={() => setType("UNIQUE_GENERATED")}
-                  />
-                  Har biriga unique
-                </label>
-              </div>
-            </div>
             <div className="flex flex-wrap items-end gap-3 sm:col-span-2 lg:col-span-4">
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting
@@ -292,7 +255,6 @@ export default function TeacherHomeworkPage() {
                   <th className="py-2">Sinf</th>
                   <th className="py-2">Fan</th>
                   <th className="py-2">Muddat</th>
-                  <th className="py-2">Turi</th>
                   <th className="px-6 py-2"></th>
                 </tr>
               </thead>
@@ -303,30 +265,7 @@ export default function TeacherHomeworkPage() {
                     <td className="py-3">{classFullName(hw.classId)}</td>
                     <td className="py-3">{subjectName(hw.subjectId)}</td>
                     <td className="py-3 font-data">{new Date(hw.deadlineAt).toLocaleString()}</td>
-                    <td className="py-3">
-                      {hw.type === "UNIQUE_GENERATED" ? (
-                        <div className="flex items-center gap-1.5">
-                          <Badge variant="outline">Unique</Badge>
-                          {!hw.tasksPublished ? (
-                            <Badge variant="status-processing" className="gap-1">
-                              <Sparkles className="size-3" strokeWidth={1.75} />
-                              Generatsiya
-                            </Badge>
-                          ) : null}
-                        </div>
-                      ) : (
-                        <Badge variant="outline">Standart</Badge>
-                      )}
-                    </td>
                     <td className="space-x-3 px-6 py-3 text-right">
-                      {hw.type === "UNIQUE_GENERATED" && !hw.tasksPublished ? (
-                        <Link
-                          href={`/dashboard/teacher/homework/${hw.id}/review`}
-                          className="text-sm underline"
-                        >
-                          Ko&apos;rib chiqish
-                        </Link>
-                      ) : null}
                       <Link
                         href={`/dashboard/teacher/submissions?assignmentId=${hw.id}`}
                         className="text-sm underline"

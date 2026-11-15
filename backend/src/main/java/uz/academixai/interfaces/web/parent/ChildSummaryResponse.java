@@ -10,8 +10,7 @@ public record ChildSummaryResponse(
     String className,
     boolean todayActivity,
     int pendingHomeworkCount,
-    RecentGradeResponse recentGrade,
-    boolean biometricConsentGiven) {
+    RecentGradeResponse recentGrade) {
 
   public record RecentGradeResponse(UUID submissionId, int score, int fivePointGrade) {
     public static RecentGradeResponse from(RecentGrade grade) {
@@ -29,7 +28,6 @@ public record ChildSummaryResponse(
         summary.className(),
         summary.todayActivity(),
         summary.pendingHomeworkCount(),
-        RecentGradeResponse.from(summary.recentGrade()),
-        summary.biometricConsentGiven());
+        RecentGradeResponse.from(summary.recentGrade()));
   }
 }

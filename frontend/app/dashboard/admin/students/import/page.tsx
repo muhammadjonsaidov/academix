@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, FileSpreadsheet, ListChecks, Table2, Upload } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { FileField } from "@/components/shared/FileField";
 import { SelectField } from "@/components/shared/FormField";
 import { Badge } from "@/components/ui/badge";

@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.learning.application.port.in.HomeworkManagement;
-import uz.academixai.learning.application.port.in.UniqueTaskReview;
 
 /**
  * academix_tz.md §2.3 "Uy vazifasi yaratish" — exact contract, don't drift path/shape from spec.
@@ -28,12 +27,9 @@ import uz.academixai.learning.application.port.in.UniqueTaskReview;
 public class TeacherHomeworkController {
 
   private final HomeworkManagement homeworkService;
-  private final UniqueTaskReview uniqueTaskReviewService;
 
-  public TeacherHomeworkController(
-      HomeworkManagement homeworkService, UniqueTaskReview uniqueTaskReviewService) {
+  public TeacherHomeworkController(HomeworkManagement homeworkService) {
     this.homeworkService = homeworkService;
-    this.uniqueTaskReviewService = uniqueTaskReviewService;
   }
 
   @PostMapping
@@ -48,7 +44,6 @@ public class TeacherHomeworkController {
             request.subjectId(),
             request.title(),
             request.description(),
-            request.type(),
             request.deadlineAt(),
             request.syllabusReference(),
             request.maxScore());
@@ -95,13 +90,6 @@ public class TeacherHomeworkController {
   public ResponseEntity<Void> delete(
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID assignmentId) {
     homeworkService.delete(principal.schoolId(), principal.userId(), assignmentId);
-    return ResponseEntity.noContent().build();
-  }
-
-  @PostMapping("/{assignmentId}/submit")
-  public ResponseEntity<Void> submit(
-      @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID assignmentId) {
-    uniqueTaskReviewService.submit(principal.schoolId(), principal.userId(), assignmentId);
     return ResponseEntity.noContent().build();
   }
 }

@@ -6,7 +6,7 @@ import uz.academixai.domain.CriteriaScore;
 import uz.academixai.domain.PlagiarismType;
 import uz.academixai.domain.StepAnalysis;
 
-/** academix_tz.md §2.3 — teacher sees everything, including plagiarism/handwriting. */
+/** academix_tz.md §2.3 — teacher sees everything, including the plagiarism analysis. */
 public record TeacherAiFeedbackResponse(
     String extractedText,
     float aiScorePercent,
@@ -14,7 +14,6 @@ public record TeacherAiFeedbackResponse(
     List<StepAnalysis> stepAnalyses,
     float plagiarismScore,
     PlagiarismType plagiarismType,
-    float handwritingMatchScore,
     String feedback) {
 
   public static TeacherAiFeedbackResponse from(AIFeedback feedback) {
@@ -28,7 +27,6 @@ public record TeacherAiFeedbackResponse(
         feedback.stepAnalyses(),
         feedback.plagiarismScore(),
         feedback.plagiarismType(),
-        feedback.handwritingMatchScore(),
         feedback.feedback());
   }
 }

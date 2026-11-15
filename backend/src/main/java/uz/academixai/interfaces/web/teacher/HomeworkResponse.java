@@ -2,7 +2,6 @@ package uz.academixai.interfaces.web.teacher;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.AssignmentType;
 import uz.academixai.domain.HomeworkAssignment;
 
 public record HomeworkResponse(
@@ -11,13 +10,11 @@ public record HomeworkResponse(
     UUID subjectId,
     String title,
     String description,
-    AssignmentType type,
     LocalDateTime assignedAt,
     LocalDateTime deadlineAt,
     int maxScore,
     boolean isActive,
-    String syllabusReference,
-    boolean tasksPublished) {
+    String syllabusReference) {
 
   public static HomeworkResponse from(HomeworkAssignment domain) {
     return new HomeworkResponse(
@@ -26,12 +23,10 @@ public record HomeworkResponse(
         domain.subjectId(),
         domain.title(),
         domain.description(),
-        domain.type(),
         domain.assignedAt(),
         domain.deadlineAt(),
         domain.maxScore(),
         domain.isActive(),
-        domain.syllabusReference(),
-        domain.tasksPublished());
+        domain.syllabusReference());
   }
 }

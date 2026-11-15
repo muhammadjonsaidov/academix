@@ -1,9 +1,7 @@
 package uz.academixai.intelligence.application.port.out;
 
-import uz.academixai.intelligence.domain.OcrDocument;
-
-/** OCR provider boundary. */
+/** OCR provider boundary: turns a submission image into its full extracted text. */
 public interface OcrGateway {
 
-  OcrDocument extract(byte[] image);
+  String extract(byte[] image);
 }

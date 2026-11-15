@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.domain.SignalSeverity;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
+import uz.academixai.shared.feature.ConditionalOnPsychologyModule;
 import uz.academixai.wellbeing.application.TeacherPsychologyService;
 
 /** academix_tz.md §2.3 "Psixologik signallar" — exact paths, response shape is a deviation. */
+@ConditionalOnPsychologyModule
 @RestController
 @RequestMapping("/api/v1/teacher/psychological-signals")
 @PreAuthorize("hasRole('TEACHER')")

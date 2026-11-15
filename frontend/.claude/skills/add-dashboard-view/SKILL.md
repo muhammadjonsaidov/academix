@@ -1,25 +1,18 @@
 ---
 name: add-dashboard-view
-description: Scaffold a page/view inside one of AcademiX's 5 role dashboards (admin/teacher/student/parent/psychologist), following the App Router + Zustand + Axios conventions in academix_frontend_tdd.md. Use when adding a new screen, view, or route inside an existing role dashboard. Trigger for "add a page", "new dashboard view", "build the X screen", "add a route for teacher/student/parent/admin/psychologist".
+description: Add or change a page/view in one of AcademiX's role dashboards (admin/teacher/student/parent, psychologist when the add-on is on), following the App Router + Zustand + Axios conventions. Trigger for "add a page", "new dashboard view", "build the X screen", "add a route for teacher/student/parent/admin".
 ---
 
 # Add an AcademiX dashboard view
 
-One generic skill for all 5 roles, not 5 separate ones — the pattern is identical, only the role prefix and data-visibility rules change.
+1. **Route**: `app/dashboard/{admin|teacher|student|parent|psychologist}/…/page.tsx` — `dashboard` is a literal folder (not a route group), so `proxy.ts` can match `/dashboard/<role>`. Mirror the backend path where it helps (`GET /teacher/students/{id}/progress` → `app/dashboard/teacher/students/[studentId]/progress`). Read `node_modules/next/dist/docs/` for any Next.js 16 API you're unsure of.
+2. **Shell + nav**: wrap the page in `DashboardShell` from `@/components/shell/DashboardShell`; add a nav item in `components/shared/nav-config.ts` if it's a top-level destination. One `h1` per page.
+3. **State**: extend the role's existing store in `stores/` (state + `fetchX`/`updateX` actions in one interface) before creating a new one. Pages call stores, never `apiClient` directly. Calls go through `lib/api/client.ts` (bearer + 401 refresh-retry).
+4. **Types**: hand-written in `types/`, matching the backend response exactly.
+5. **States**: loading (Skeleton), error, empty (`EmptyState` with the next action), populated. Redirects/`setState` only inside `useEffect`.
+6. **Visibility**: students never see plagiarism scores; parents only their own child; psychologists no lesson content. Bulk "approve all" skips `flaggedForReview` items.
+7. **Optional modules**: psychology pages/nav go behind `FEATURES.psychology` from `lib/features.ts` (nav items) and are listed in `PSYCHOLOGY_ROUTE_PREFIXES` (route guard).
+8. **Styling**: semantic tokens from `globals.css`; chart/inline colors via `components/shared/chart-style.ts` (`--color-*` vars). Base UI primitives in `components/ui/` (not Radix).
+9. No i18n plumbing (single language in v1).
 
-## Steps
-
-1. **Locate the route.** Real structure: `app/dashboard/{admin|teacher|student|parent|psychologist}/...` — a **literal folder, not a `(dashboard)` route group**. Sprint 0 scaffolded it as a route group and Sprint 1 renamed it: route groups get stripped from the URL, which would make `proxy.ts`'s `pathname.startsWith("/dashboard/admin")` checks never match (see CLAUDE.md "Reality checks"). `app/(auth)/` *is* correctly a route group. Confirm the exact sub-path by checking `academix_tz.md` §2 for the corresponding API endpoint's path — the frontend route mirrors the role prefix (e.g. a view backed by `GET /api/v1/teacher/students/{studentId}/progress` lives at `app/dashboard/teacher/students/[studentId]/progress/page.tsx`).
-2. **Reuse or create the Zustand store.** Check `stores/` first — there are already 15, and most new views belong in one of them rather than a 16th: `useAuthStore`, `useAdminStore`, `useAdminAnalyticsStore`, `useTeacherStore`, `useTeacherAnalyticsStore`, `useStudentStore`, `useParentStore`, `usePsychologyStore`, `useExamStore`, `useAiChatStore`, `useNotificationStore`, `useReportStore`, `useTelegramStore`, `useImportWizardStore`, `useConsentStore`. If the view's data fits an existing store's domain, extend it — don't create a redundant parallel store. Each store bundles state + async action methods (`fetchX`/`updateX`/`approveX`/`submitX`) in one interface; follow that shape.
-3. **Wire the API call** through the shared Axios `apiClient` (`baseURL` = `NEXT_PUBLIC_API_URL`, `withCredentials: true`) — never a bare `fetch()` or a second Axios instance. The existing interceptors (bearer injection, 401 refresh-and-retry) only cover calls made through this instance.
-4. **Respect cross-role visibility rules** — don't build a UI that could accidentally surface data the backend wouldn't (or shouldn't) return for that role:
-   - Student views: no plagiarism/handwriting-match scores.
-   - Parent views: only their own child, no class averages or other students.
-   - Psychologist views: no lesson/homework content, behavioral signals only.
-5. **`flaggedForReview` / `fallbackToStandard`** — if the view includes a bulk "approve all" action, it must skip/disable for any item carrying `flaggedForReview=true`; those need individual review UI, not a silent bypass.
-6. **AI-processing status** (`AI_PROCESSING` → `AI_DONE`) is refetched via explicit store actions, not pushed — no WebSocket/SSE per the doc. Don't add polling/websocket logic beyond an explicit user-triggered or on-mount refetch unless the user asks for it specifically (that would be new scope beyond the spec).
-7. **Route-guard**: `proxy.ts` (Next.js 16 renamed `middleware.ts` → `proxy.ts`, function `middleware()` → `proxy()` — see CLAUDE.md "Reality checks") only handles role-mismatch redirects at `/dashboard/:path*` — it's UX-only. Don't treat it as real authorization; the backend's `@PreAuthorize` is what actually gates the data this view will render.
-
-## i18n
-
-No language/locale handling — v1 is single-language. If you're about to add a `locale` param or i18n library import, stop; that's out of scope (the `i18n-scope-guard` hook will also ask for confirmation).
+Done = `npm run lint && npx tsc --noEmit && npm run test && npm run build` all clean.

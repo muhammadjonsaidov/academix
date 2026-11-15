@@ -10,7 +10,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { validatePassword } from "@/lib/password-policy";
@@ -41,7 +41,6 @@ export default function AdminStudentsPage() {
   const setStudentsPageSize = useAdminStore((state) => state.setStudentsPageSize);
   const fetchClasses = useAdminStore((state) => state.fetchClasses);
   const createStudent = useAdminStore((state) => state.createStudent);
-  const unlockHandwritingReset = useAdminStore((state) => state.unlockHandwritingReset);
   const transferStudentClass = useAdminStore((state) => state.transferStudentClass);
   const linkParentToStudent = useAdminStore((state) => state.linkParentToStudent);
   const checkParentPhone = useAdminStore((state) => state.checkParentPhone);
@@ -56,12 +55,6 @@ export default function AdminStudentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [unlockingId, setUnlockingId] = useState<string | null>(null);
-  const [unlockMessage, setUnlockMessage] = useState<{
-    studentId: string;
-    text: string;
-    isError: boolean;
-  } | null>(null);
 
   const [openPanel, setOpenPanel] = useState<{
     studentId: string;
@@ -135,24 +128,6 @@ export default function AdminStudentsPage() {
 
   function classFullName(id: string | null) {
     return classes.find((c) => c.id === id)?.fullName ?? "—";
-  }
-
-  async function handleUnlockReset(studentId: string) {
-    setUnlockingId(studentId);
-    setUnlockMessage(null);
-    try {
-      await unlockHandwritingReset(studentId);
-      setUnlockMessage({ studentId, text: "Reset limiti tiklandi.", isError: false });
-    } catch (err) {
-      const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
-      setUnlockMessage({
-        studentId,
-        text: apiError?.message ?? "Reset limitini tiklab bo'lmadi.",
-        isError: true,
-      });
-    } finally {
-      setUnlockingId(null);
-    }
   }
 
   function openTransferPanel(student: { id: string; classId: string | null }) {
@@ -370,7 +345,6 @@ export default function AdminStudentsPage() {
                     <th className="py-2 font-medium">Telefon</th>
                     <th className="py-2 font-medium">Sinf</th>
                     <th className="py-2 font-medium">Holati</th>
-                    <th className="py-2 font-medium">Yozuv profili</th>
                     <th className="py-2 font-medium">Amallar</th>
                   </tr>
                 </thead>
@@ -394,28 +368,6 @@ export default function AdminStudentsPage() {
                             <Badge variant={student.isActive ? "success" : "secondary"}>
                               {student.isActive ? "Faol" : "Faol emas"}
                             </Badge>
-                          </td>
-                          <td className="py-2.5">
-                            <div className="flex flex-col items-start gap-1">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                disabled={unlockingId === student.id}
-                                onClick={() => handleUnlockReset(student.id)}
-                              >
-                                {unlockingId === student.id
-                                  ? "Tiklanmoqda..."
-                                  : "Reset limitini tiklash"}
-                              </Button>
-                              {unlockMessage?.studentId === student.id ? (
-                                <span
-                                  className={`text-xs ${unlockMessage.isError ? "text-destructive" : "text-success"}`}
-                                >
-                                  {unlockMessage.text}
-                                </span>
-                              ) : null}
-                            </div>
                           </td>
                           <td className="py-2.5">
                             <div className="flex flex-wrap gap-2">
@@ -442,7 +394,7 @@ export default function AdminStudentsPage() {
                         </tr>
                         {isTransferOpen ? (
                           <tr className="border-b border-border bg-muted/30">
-                            <td colSpan={6} className="py-3">
+                            <td colSpan={5} className="py-3">
                               <div className="flex flex-wrap items-end gap-3">
                                 <FormField
                                   label="Yangi sinf"
@@ -494,7 +446,7 @@ export default function AdminStudentsPage() {
                         ) : null}
                         {isLinkOpen ? (
                           <tr className="border-b border-border bg-muted/30">
-                            <td colSpan={6} className="py-3">
+                            <td colSpan={5} className="py-3">
                               <div className="flex flex-wrap items-end gap-3">
                                 <FormField
                                   label="Ota-ona telefon raqami"

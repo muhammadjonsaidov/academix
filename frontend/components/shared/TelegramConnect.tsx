@@ -5,8 +5,7 @@ import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTelegramStore } from "@/stores/useTelegramStore";
 
-// Deviation — academix_tz.md §2.7 gives the endpoints but no UI reference (unlike
-// BiometricConsentBanner's §6.6 spec component). Shared across every role. Rendered as
+// Deviation — academix_tz.md §2.7 gives the endpoints but no UI reference. Shared across every role. Rendered as
 // a compact icon-button + popover matching NotificationBell, so the header stays a
 // tidy icon row instead of carrying a full inline call-to-action card.
 export function TelegramConnect() {

@@ -176,7 +176,6 @@ public class XPService {
         submission.id(),
         submission.schoolId(),
         submission.assignmentId(),
-        submission.studentTaskId(),
         submission.studentId(),
         submission.type(),
         submission.textContent(),
