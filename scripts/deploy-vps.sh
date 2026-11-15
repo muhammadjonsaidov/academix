@@ -114,7 +114,13 @@ deploy_revision() {
   [[ -f "$TUNNEL_COMPOSE_FILE" ]] || { log "Missing tunnel Compose file: $TUNNEL_COMPOSE_FILE"; return 1; }
   validate_production_environment
   prepare_runtime_configuration
-  compose up --detach --build --remove-orphans
+  # One image at a time: the server has 3.3 GB of memory, and parallel builds can OOM it.
+  local service
+  for service in backend telegram-bot frontend; do
+    log "Building $service"
+    compose build "$service"
+  done
+  compose up --detach --remove-orphans
   # nginx resolves Docker service names only when its worker starts. When a
   # rebuilt backend gets a new container IP, an unchanged nginx-dev container
   # would otherwise keep proxying to the old address and return 502 until its
@@ -144,6 +150,7 @@ main() {
 
   if deploy_revision "$DEPLOY_REVISION"; then
     printf '%s\n' "$DEPLOY_REVISION" > "$APP_DIR/.deployed-revision"
+    docker image prune -f > /dev/null
     log "Deployment completed successfully"
     return
   fi
