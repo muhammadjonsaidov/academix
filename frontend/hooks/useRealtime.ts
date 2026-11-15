@@ -74,9 +74,20 @@ export function useRealtimeEvents() {
     // EventSource's own automatic reconnect attempts, which would retry the stale
     // URL. Guard with a flag so a burst of error events triggers one refresh at most;
     // a successful refresh tears this effect down (new token) and reconnects cleanly.
+    //
+    // Leaving the page (F5, a full navigation) also tears the stream down and fires `error`. A
+    // refresh sent then is accepted and rotates the refresh cookie, but the browser abandons the
+    // response, so the new cookie is never stored and the NEXT page load presents a consumed token
+    // and gets logged out. Never refresh while the page is unloading.
     let refreshAttempted = false;
+    let unloading = false;
+    const markUnloading = () => {
+      unloading = true;
+    };
+    window.addEventListener("beforeunload", markUnloading);
+    window.addEventListener("pagehide", markUnloading);
     es.onerror = () => {
-      if (refreshAttempted) return;
+      if (refreshAttempted || unloading) return;
       refreshAttempted = true;
       useAuthStore
         .getState()
@@ -91,6 +102,10 @@ export function useRealtimeEvents() {
         });
     };
 
-    return () => es.close();
+    return () => {
+      window.removeEventListener("beforeunload", markUnloading);
+      window.removeEventListener("pagehide", markUnloading);
+      es.close();
+    };
   }, [accessToken, baseUrl]);
 }

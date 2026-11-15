@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
-import type { RefreshResponse } from "@/types/auth";
+import { refreshAccessToken } from "@/lib/api/refresh";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 // Single shared instance — per academix_frontend_tdd.md §5.5 / CLAUDE.md. Never create a
@@ -10,8 +10,19 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
-apiClient.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
+apiClient.interceptors.request.use(async (config) => {
+  let token = useAuthStore.getState().accessToken;
+  if (!token) {
+    // Right after a hard reload the in-memory token is gone and the session bootstrap is still
+    // running. Wait for that same (shared) refresh instead of sending a request that is certain
+    // to 401 and be retried. Not signed in at all → send it as is and let the 401 path handle it.
+    try {
+      token = await refreshAccessToken();
+      useAuthStore.getState().setAccessToken(token);
+    } catch {
+      token = null;
+    }
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -30,15 +41,11 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        // The long-lived refresh credential is only an HttpOnly cookie. JavaScript never receives,
-        // stores or forwards it; withCredentials lets the browser attach it to this endpoint.
-        const { data } = await axios.post<RefreshResponse>(
-          `${apiClient.defaults.baseURL}/auth/refresh`,
-          {},
-          { withCredentials: true },
-        );
-        useAuthStore.getState().setAccessToken(data.accessToken);
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+        // The refresh credential is only an HttpOnly cookie; JavaScript never sees it. Concurrent
+        // 401s share one refresh (see refreshAccessToken) — the backend rotates the cookie.
+        const accessToken = await refreshAccessToken();
+        useAuthStore.getState().setAccessToken(accessToken);
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
         useAuthStore.getState().logout();

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import axios from "axios";
+import { refreshAccessToken } from "@/lib/api/refresh";
 import type { LoginResponse, Profile, UserSummary } from "@/types/auth";
 
 interface AuthState {
@@ -115,18 +116,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // this store; withCredentials carries the cookie.
   bootstrapSession: async () => {
     try {
-      const { data } = await axios.post<{ accessToken: string }>(
-        `${API_BASE_URL}/auth/refresh`,
-        {},
-        { withCredentials: true },
-      );
+      // Shared with the apiClient 401 retry, so a reload never fires two rotating refreshes.
+      const accessToken = await refreshAccessToken();
       const profileResponse = await axios.get<Profile>(`${API_BASE_URL}/auth/profile`, {
-        headers: { Authorization: `Bearer ${data.accessToken}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
         withCredentials: true,
       });
       const profile = profileResponse.data;
       set({
-        accessToken: data.accessToken,
+        accessToken,
         user: {
           id: profile.id,
           firstName: profile.firstName,
