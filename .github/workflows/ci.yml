@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # "Run workflow" on main re-runs the checks and redeploys without a new commit.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -78,7 +80,7 @@ jobs:
   # no open ports, so it pulls the work instead of GitHub pushing it. Switch it on with the repo
   # variable DEPLOY_ENABLED=true; while the runner is stopped, main pushes don't queue a deploy.
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
     needs: [backend, telegram-bot, frontend]
     runs-on: [self-hosted, academix-production]
     environment: production
