@@ -151,6 +151,9 @@ main() {
   if deploy_revision "$DEPLOY_REVISION"; then
     printf '%s\n' "$DEPLOY_REVISION" > "$APP_DIR/.deployed-revision"
     docker image prune -f > /dev/null
+    # Keep build cache used in the last week (incl. the Gradle/npm cache mounts that make rebuilds
+    # fast); drop the rest so the disk can't silently fill up across many deploys.
+    docker builder prune -f --filter until=168h > /dev/null
     log "Deployment completed successfully"
     return
   fi

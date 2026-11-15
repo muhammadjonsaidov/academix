@@ -1,9 +1,12 @@
 name: ci
 
 on:
+  # Docs-only changes have nothing to build, test or deploy.
   push:
     branches: [main]
+    paths-ignore: ["**.md", "docs/**"]
   pull_request:
+    paths-ignore: ["**.md", "docs/**"]
   # "Run workflow" on main re-runs the checks and redeploys without a new commit.
   workflow_dispatch:
 

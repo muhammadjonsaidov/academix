@@ -33,9 +33,9 @@ import uz.academixai.wellbeing.adapter.in.scheduling.BehaviorAnalysisScheduler;
  * endpoints with the flag switched on.
  */
 @Import(TestcontainersConfiguration.class)
-// Pinned rather than relying on the default, so an exported ACADEMIX_FEATURE_PSYCHOLOGY=true in a
-// developer shell or CI can't flip what this test proves.
-@SpringBootTest(properties = "academix.features.psychology.enabled=false")
+// The "off" state is pinned in src/test/resources/application.properties (immune to env vars), so
+// this class shares the default Spring context instead of booting its own.
+@SpringBootTest
 @AutoConfigureMockMvc
 class PsychologyModuleDisabledIntegrationTest {
 

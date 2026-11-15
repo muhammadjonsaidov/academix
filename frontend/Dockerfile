@@ -4,7 +4,9 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# npm's download cache persists across builds (BuildKit cache mount): a lockfile change only fetches
+# the changed packages.
+RUN --mount=type=cache,target=/root/.npm npm ci --prefer-offline --no-audit --no-fund
 
 FROM node:22-alpine AS build
 WORKDIR /app
@@ -25,7 +27,8 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN \
     NEXT_PUBLIC_FEATURE_PSYCHOLOGY=$NEXT_PUBLIC_FEATURE_PSYCHOLOGY \
     BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
-RUN npm run build
+# Next.js' incremental build cache, kept between builds.
+RUN --mount=type=cache,target=/app/.next/cache npm run build
 
 FROM node:22-alpine AS run
 WORKDIR /app
