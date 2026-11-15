@@ -251,7 +251,8 @@ services:
     profiles: ["antivirus"]
 
   postgres-backup:
-    image: prodrigestivill/postgres-backup-local:latest
+    # Pinned to the Postgres 18 build: pg_dump must be at least the server's major version.
+    image: prodrigestivill/postgres-backup-local:18-debian-d257e5d
     depends_on:
       - postgres
     environment:
@@ -264,7 +265,9 @@ services:
       BACKUP_KEEP_WEEKS: 0
       BACKUP_KEEP_MONTHS: 0
     volumes:
-      - ./backups:/backups
+      # A named volume, not a bind mount: the backup process runs as uid 999 and a host folder
+      # created by Docker would be root-owned, so every dump would fail with "permission denied".
+      - postgres-backups:/backups
     profiles: ["prod"]
 
   # --- Production TLS front (needs real certs; infra/nginx/nginx.conf is Let's
@@ -295,6 +298,7 @@ services:
 volumes:
   postgres-data:
   seaweedfs-data:
+  postgres-backups:
   clamav-db: # only used by the profile-gated clamav service above
   certbot-www:
   certbot-certs:

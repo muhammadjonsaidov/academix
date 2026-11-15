@@ -29,3 +29,8 @@ services:
 
   frontend:
     ports: !reset []
+
+  # Nightly pg_dump with 7 days of retention. Off in the base file (profile "prod") so local stacks
+  # stay light; production always runs it.
+  postgres-backup:
+    profiles: !reset []
