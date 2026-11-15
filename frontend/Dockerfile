@@ -30,9 +30,11 @@ RUN npm run build
 FROM node:22-alpine AS run
 WORKDIR /app
 RUN addgroup -S academix && adduser -S academix -G academix
-COPY --from=build /app/.next/standalone ./
-COPY --from=build /app/.next/static ./.next/static
-COPY --from=build /app/public ./public
+# Owned by the runtime user so the image never depends on the builder's file modes — a public/
+# asset that is 0400 on the build machine otherwise becomes root-only and every request 500s.
+COPY --from=build --chown=academix:academix /app/.next/standalone ./
+COPY --from=build --chown=academix:academix /app/.next/static ./.next/static
+COPY --from=build --chown=academix:academix /app/public ./public
 USER academix
 EXPOSE 3000
 ENV PORT=3000 HOSTNAME=0.0.0.0

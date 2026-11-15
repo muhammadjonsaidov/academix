@@ -137,9 +137,9 @@ services:
       GMAIL_USERNAME: ${GMAIL_USERNAME:-}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-academix_notify_bot}
-      # prod profile skips the dev badge seeder — the `seed` service below owns
-      # all demo data (fixed badge ids that demo-seed.sql references).
-      SPRING_PROFILES_ACTIVE: prod
+      # local by default so `docker compose up` works on the dev defaults; the production overlay
+      # switches to prod, which refuses to start with development secrets.
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
     ports:
       - "8080:8080"
     depends_on:

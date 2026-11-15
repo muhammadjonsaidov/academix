@@ -20,6 +20,9 @@ services:
 
   backend:
     ports: !reset []
+    environment:
+      # ProductionConfigurationValidator only runs under prod: no default secrets in production.
+      SPRING_PROFILES_ACTIVE: prod
 
   telegram-bot:
     ports: !reset []
