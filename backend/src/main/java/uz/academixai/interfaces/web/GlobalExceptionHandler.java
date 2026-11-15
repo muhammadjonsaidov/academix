@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uz.academixai.shared.error.ApiErrorResponse;
 import uz.academixai.shared.error.ApiException;
 
@@ -50,7 +51,7 @@ public class GlobalExceptionHandler {
   // handler below as a raw 500 ERR_INTERNAL (confirmed by a real 11.5MB photo upload
   // against the default 10MB request cap). A too-large file is a client mistake, not a
   // server failure — same ERR_INVALID_FILE code already used for other upload validation
-  // (SyllabusService and Learning submission workflows).
+  // (Learning submission workflows).
   @ExceptionHandler(MaxUploadSizeExceededException.class)
   public ResponseEntity<ApiErrorResponse> handleMaxUploadSizeExceeded(
       MaxUploadSizeExceededException e) {
@@ -77,6 +78,19 @@ public class GlobalExceptionHandler {
                 "ERR_METHOD_NOT_ALLOWED",
                 "Bu manzil uchun so'rov turi noto'g'ri.",
                 "API hujjatlaridagi to'g'ri HTTP metodini ishlating."));
+  }
+
+  // An unknown path (or an optional module that is switched off, e.g. the psychologist module)
+  // has no handler. Without this it fell through to Exception.class as a logged 500.
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ApiErrorResponse> handleNoResource(NoResourceFoundException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(
+            new ApiErrorResponse(
+                404,
+                "ERR_NOT_FOUND",
+                "Bunday manzil topilmadi.",
+                "Manzilni tekshiring yoki bu modul yoqilganini administratordan so'rang."));
   }
 
   // Bean validation on a request DTO (@Valid on the controller parameter) throws this before any

@@ -18,7 +18,7 @@ import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-/** Homework submission photos (and later syllabus PDFs) live here, not in Postgres. */
+/** Homework and exam photos and generated reports live here, not in Postgres. */
 @Service
 public class FileStorageService {
 

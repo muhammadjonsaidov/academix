@@ -2,13 +2,10 @@ package uz.academixai.infrastructure.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import uz.academixai.domain.AssignmentType;
 import uz.academixai.domain.HomeworkAssignment;
 
 /**
@@ -38,10 +35,6 @@ public class HomeworkAssignmentEntity {
 
   private String description;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  private AssignmentType type;
-
   @Column(name = "assigned_at", nullable = false)
   private LocalDateTime assignedAt;
 
@@ -57,12 +50,6 @@ public class HomeworkAssignmentEntity {
   @Column(name = "syllabus_reference")
   private String syllabusReference;
 
-  @Column(name = "ai_generation_prompt")
-  private String aiGenerationPrompt;
-
-  @Column(name = "tasks_published", nullable = false)
-  private boolean tasksPublished;
-
   protected HomeworkAssignmentEntity() {}
 
   public HomeworkAssignmentEntity(
@@ -73,14 +60,11 @@ public class HomeworkAssignmentEntity {
       UUID teacherId,
       String title,
       String description,
-      AssignmentType type,
       LocalDateTime assignedAt,
       LocalDateTime deadlineAt,
       int maxScore,
       boolean isActive,
-      String syllabusReference,
-      String aiGenerationPrompt,
-      boolean tasksPublished) {
+      String syllabusReference) {
     this.id = id;
     this.schoolId = schoolId;
     this.classId = classId;
@@ -88,14 +72,11 @@ public class HomeworkAssignmentEntity {
     this.teacherId = teacherId;
     this.title = title;
     this.description = description;
-    this.type = type;
     this.assignedAt = assignedAt;
     this.deadlineAt = deadlineAt;
     this.maxScore = maxScore;
     this.isActive = isActive;
     this.syllabusReference = syllabusReference;
-    this.aiGenerationPrompt = aiGenerationPrompt;
-    this.tasksPublished = tasksPublished;
   }
 
   public static HomeworkAssignmentEntity fromDomain(HomeworkAssignment domain) {
@@ -107,14 +88,11 @@ public class HomeworkAssignmentEntity {
         domain.teacherId(),
         domain.title(),
         domain.description(),
-        domain.type(),
         domain.assignedAt(),
         domain.deadlineAt(),
         domain.maxScore(),
         domain.isActive(),
-        domain.syllabusReference(),
-        domain.aiGenerationPrompt(),
-        domain.tasksPublished());
+        domain.syllabusReference());
   }
 
   public HomeworkAssignment toDomain() {
@@ -126,14 +104,11 @@ public class HomeworkAssignmentEntity {
         teacherId,
         title,
         description,
-        type,
         assignedAt,
         deadlineAt,
         maxScore,
         isActive,
-        syllabusReference,
-        aiGenerationPrompt,
-        tasksPublished);
+        syllabusReference);
   }
 
   public UUID getId() {
@@ -162,9 +137,5 @@ public class HomeworkAssignmentEntity {
 
   public boolean isActive() {
     return isActive;
-  }
-
-  public boolean isTasksPublished() {
-    return tasksPublished;
   }
 }

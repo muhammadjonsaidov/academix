@@ -116,6 +116,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:-local-dev-only-placeholder-not-for-production-use}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      # Paid add-on: psychological monitoring + Psychologist role. Same switch as the
+      # frontend's NEXT_PUBLIC_FEATURE_PSYCHOLOGY build arg below — keep them together.
+      ACADEMIX_FEATURE_PSYCHOLOGY: ${ACADEMIX_FEATURE_PSYCHOLOGY:-false}
       SEAWEEDFS_S3_ENDPOINT: http://seaweedfs:8333
       SEAWEEDFS_ACCESS_KEY: ${SEAWEEDFS_ACCESS_KEY:-local-dev-access-key}
       SEAWEEDFS_SECRET_KEY: ${SEAWEEDFS_SECRET_KEY:-local-dev-secret-key}
@@ -125,21 +128,11 @@ services:
       AI_BASE_URL: ${AI_BASE_URL:-https://api.deepseek.com/}
       AI_MODEL_TEXT: ${AI_MODEL_TEXT:-deepseek-flash}
       AI_MODEL_VISION: ${AI_MODEL_VISION:-${QWEN_MODEL_VISION:-qwen3.7-plus}}
-      # Embeddings use their own provider credentials: changing Qwen retrieval must never switch
-      # the chat/lesson-plan provider away from DeepSeek.
-      AI_EMBEDDING_API_KEY: ${AI_EMBEDDING_API_KEY:-${QWEN_EMBEDDING_API_KEY:-}}
-      AI_EMBEDDING_BASE_URL: ${AI_EMBEDDING_BASE_URL:-${QWEN_EMBEDDING_BASE_URL:-https://dashscope-intl.aliyuncs.com/compatible-mode/v1}}
-      AI_MODEL_EMBEDDING: ${AI_MODEL_EMBEDDING:-${QWEN_MODEL_EMBEDDING:-qwen3.7-text-embedding}}
-      AI_EMBEDDING_DIMENSIONS: ${AI_EMBEDDING_DIMENSIONS:-${QWEN_EMBEDDING_DIMENSIONS:-1024}}
       # Temporary compatibility with existing deployments. New environments should use AI_* only.
       QWEN_API_KEY: ${QWEN_API_KEY:-}
       QWEN_BASE_URL: ${QWEN_BASE_URL:-}
       QWEN_MODEL_TEXT: ${QWEN_MODEL_TEXT:-}
       QWEN_MODEL_VISION: ${QWEN_MODEL_VISION:-}
-      QWEN_EMBEDDING_API_KEY: ${QWEN_EMBEDDING_API_KEY:-}
-      QWEN_EMBEDDING_BASE_URL: ${QWEN_EMBEDDING_BASE_URL:-}
-      QWEN_MODEL_EMBEDDING: ${QWEN_MODEL_EMBEDDING:-}
-      QWEN_EMBEDDING_DIMENSIONS: ${QWEN_EMBEDDING_DIMENSIONS:-}
       GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY:-}
       GMAIL_USERNAME: ${GMAIL_USERNAME:-}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
@@ -182,6 +175,7 @@ services:
       # Empty token = bot logs "polling skipped" and the app works without Telegram
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-academix_notify_bot}
+      ACADEMIX_FEATURE_PSYCHOLOGY: ${ACADEMIX_FEATURE_PSYCHOLOGY:-false}
     ports:
       - "8081:8081"
     depends_on:
@@ -202,6 +196,7 @@ services:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
         NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME:-academix_notify_bot}
         NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+        NEXT_PUBLIC_FEATURE_PSYCHOLOGY: ${ACADEMIX_FEATURE_PSYCHOLOGY:-false}
         # Rewrite target, baked at build time (see frontend/Dockerfile + next.config.ts).
         BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://backend:8080}
     environment:

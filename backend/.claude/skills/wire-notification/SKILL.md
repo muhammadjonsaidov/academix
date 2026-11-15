@@ -1,30 +1,22 @@
 ---
 name: wire-notification
-description: Implement or change notification dispatch — the psychological-signal severity→notify matrix, or Telegram delivery. Use whenever touching createSignalAndNotify, Notification entities, or the Telegram bot integration. Trigger for "notification", "psych signal", "severity matrix", "notify parent/teacher/psychologist", "telegram dispatch".
+description: Implement or change notifications in AcademiX — in-app inbox, preferences, Telegram delivery (separate telegram-bot service), and the psychology add-on's severity→notify matrix. Trigger for "notification", "notify parent/teacher", "telegram", "psych signal", "severity matrix".
 ---
 
-# Wire AcademiX notification dispatch
+# AcademiX notifications
 
-## The severity → notify matrix is a strict lookup table, not a heuristic
+## Delivery
+- `notification/application/NotificationService` creates in-app notifications, checks the user's preferences first, and queues Telegram delivery through the outbox. `HANDWRITING_PROFILE_RESET` is retired (kept only so old rows load).
+- Telegram linking: `POST /api/v1/notifications/telegram/link-token` → single-use Redis token (5 min TTL, 5/hour/user) → the user sends `/start <token>` to the bot.
+- The **`telegram-bot/`** service is the bot: long-polling (`getUpdates`, no webhook), role-aware commands (`BotCommandService`), and the consumer of the delivery queue. It shares Postgres/Redis/RabbitMQ and the same `TELEGRAM_BOT_TOKEN`. Mark a notification delivered only after Telegram confirms the send.
 
-| Severity | Class Teacher | Psychologist | Parent |
+## Psychology add-on (only when `ACADEMIX_FEATURE_PSYCHOLOGY=true`)
+Severity → recipients is a strict lookup:
+
+| Severity | Class teacher | Psychologist | Parent |
 |---|---|---|---|
-| LOW | — | — | — (log/watchlist only, no notify) |
-| MEDIUM | ✓ | ✓ | — |
-| HIGH | ✓ | ✓ | — |
+| LOW | — | — | — (log only) |
+| MEDIUM / HIGH | ✓ | ✓ | — |
 | CRITICAL | ✓ | ✓ | ✓ |
 
-- Parents are **deliberately never notified below CRITICAL** — the point is an unqualified reading of a raw behavioral signal shouldn't alarm a parent before a psychologist has triaged it. Don't "improve" this by notifying parents earlier even if it seems more transparent — that's the opposite of the documented intent.
-- `isManipulation=true` does **not** change notify routing — it only adds a flag visible in the psychologist's view. Don't gate or accelerate notification based on this flag.
-- This table governs `PsychologicalSignal` dispatch specifically (`createSignalAndNotify`). Other notification types (`HOMEWORK_GRADED`, `STREAK_MILESTONE`, `BADGE_EARNED`, etc.) aren't severity-gated the same way — don't apply this matrix to unrelated notification types.
-
-## Telegram delivery
-
-- One-time deep-link token flow: `POST /api/v1/notifications/telegram/link-token` generates a Redis-backed token, 5-min TTL, single-use, rate-limited 5/hour/user.
-- Webhook (`POST /api/v1/notifications/telegram/webhook`) must validate the `X-Telegram-Bot-Api-Secret-Token` header before processing — mismatch is a 401, since only real Telegram servers can call this endpoint.
-- `Notification.sentToTelegram` should only flip true after actual delivery confirmation, not just because a `TelegramConnection` exists and is active — a send failure shouldn't silently mark itself successful.
-- `HANDWRITING_PROFILE_RESET` notifications are explicitly meant to reach the parent as a transparency measure (per backend TDD §6.3) — don't accidentally suppress this one under the psych-signal matrix logic above, it's a different notification type with different rules.
-
-## After writing
-
-Run the root `business-rules-auditor` agent (or `spec-compliance-reviewer`) — the severity matrix is exactly the kind of "looks right at a glance, wrong on one row" logic that benefits from an independent check.
+Parents are never notified below CRITICAL; `isManipulation=true` only adds a flag. `PSYCHOLOGICAL_ALERT` preferences are locked (can't be turned off). With the module off, the bot answers psychologist commands with a "module disabled" message.

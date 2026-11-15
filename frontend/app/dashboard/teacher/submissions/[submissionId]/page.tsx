@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
 import { RefreshCw, UserCheck } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
-import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
+import { DashboardShell } from "@/components/shell/DashboardShell";
+import { fieldClass, FormField } from "@/components/shared/FormField";
 import { SubmissionStatusBadge, submissionRailClass } from "@/components/shared/submission-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,14 +15,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { subscribeToAiStatus } from "@/hooks/useRealtime";
 import { useTeacherStore } from "@/stores/useTeacherStore";
 import type { ApiErrorResponse } from "@/types/auth";
-import type { ResetReason } from "@/types/teacher";
-
-const RESET_REASONS: { value: ResetReason; label: string }[] = [
-  { value: "ILLNESS", label: "Kasallik" },
-  { value: "INJURY", label: "Jarohat" },
-  { value: "TRANSFER_STUDENT", label: "Boshqa maktabdan kelgan" },
-  { value: "OTHER", label: "Boshqa" },
-];
 
 export default function TeacherSubmissionDetailPage() {
   const params = useParams<{ submissionId: string }>();
@@ -30,19 +22,12 @@ export default function TeacherSubmissionDetailPage() {
   const submission = useTeacherStore((state) => state.selectedSubmission);
   const fetchSubmission = useTeacherStore((state) => state.fetchSubmission);
   const gradeSubmission = useTeacherStore((state) => state.gradeSubmission);
-  const resetHandwritingProfile = useTeacherStore((state) => state.resetHandwritingProfile);
 
   const [fivePointGrade, setFivePointGrade] = useState("5");
   const [teacherComment, setTeacherComment] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const [resetReason, setResetReason] = useState<ResetReason>("ILLNESS");
-  const [resetNotes, setResetNotes] = useState("");
-  const [resetError, setResetError] = useState<string | null>(null);
-  const [resetResult, setResetResult] = useState<string | null>(null);
-  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     fetchSubmission(submissionId).catch(() => setError("Topshiriqni yuklab bo'lmadi."));
@@ -92,29 +77,6 @@ export default function TeacherSubmissionDetailPage() {
       setError(apiError?.message ?? "Baholab bo'lmadi.");
     } finally {
       setIsSubmitting(false);
-    }
-  }
-
-  async function handleReset(event: FormEvent) {
-    event.preventDefault();
-    if (!submission) return;
-    setResetError(null);
-    setResetResult(null);
-    setIsResetting(true);
-    try {
-      const result = await resetHandwritingProfile(submission.studentId, {
-        reason: resetReason,
-        notes: resetNotes || undefined,
-      });
-      setResetResult(
-        `Profil qayta tiklandi: ${result.newProfileVersion} (bu chorakda ${result.resetCountThisQuarter}-marta)`,
-      );
-      setResetNotes("");
-    } catch (err) {
-      const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
-      setResetError(apiError?.message ?? "Yozuv profilini qayta tiklab bo'lmadi.");
-    } finally {
-      setIsResetting(false);
     }
   }
 
@@ -258,57 +220,12 @@ export default function TeacherSubmissionDetailPage() {
                 Plagiat: <span className="font-data">{submission.aiFeedback.plagiarismScore}</span> (
                 {submission.aiFeedback.plagiarismType})
               </span>
-              <span>
-                Yozuv mosligi:{" "}
-                <span className="font-data">{submission.aiFeedback.handwritingMatchScore}%</span>
-              </span>
             </div>
           </CardContent>
         </Card>
       ) : !isProcessing && !isSkipped ? (
         <p className="mb-6 text-sm text-muted-foreground">AI tahlili hali mavjud emas.</p>
       ) : null}
-
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Yozuv profilini qayta tiklash</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Faqat shu sinf rahbari o&apos;qituvchisi qayta tiklashi mumkin (chorakda 3 martagacha).
-          </p>
-          <form onSubmit={handleReset} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <FormField label="Sabab" htmlFor="resetReason">
-              <SelectField
-                id="resetReason"
-                value={resetReason}
-                onChange={(e) => setResetReason(e.target.value as ResetReason)}
-              >
-                {RESET_REASONS.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </SelectField>
-            </FormField>
-            <FormField label="Izoh (ixtiyoriy)" htmlFor="resetNotes">
-              <input
-                id="resetNotes"
-                value={resetNotes}
-                onChange={(e) => setResetNotes(e.target.value)}
-                className={`${fieldClass} w-full`}
-              />
-            </FormField>
-            <div className="flex items-end sm:col-span-2 lg:col-span-1">
-              <Button type="submit" disabled={isResetting} variant="secondary">
-                {isResetting ? "Yuborilmoqda..." : "Qayta tiklash"}
-              </Button>
-            </div>
-          </form>
-          {resetResult ? <p className="text-sm text-success">{resetResult}</p> : null}
-          {resetError ? <p className="text-sm text-destructive">{resetError}</p> : null}
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>

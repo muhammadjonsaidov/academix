@@ -23,7 +23,9 @@ public record StudentHomeworkResponse(
         item.title(),
         item.deadlineAt(),
         item.isLate(),
-        item.myTaskContent() == null ? null : new MyTaskResponse(item.myTaskContent()),
+        item.myTaskContent() == null || item.myTaskContent().isBlank()
+            ? null
+            : new MyTaskResponse(item.myTaskContent()),
         item.submissionStatus());
   }
 }

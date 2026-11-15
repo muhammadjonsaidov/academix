@@ -15,11 +15,8 @@ public record HomeworkAssignment(
     UUID teacherId,
     String title,
     String description,
-    AssignmentType type,
     LocalDateTime assignedAt,
     LocalDateTime deadlineAt,
     int maxScore,
     boolean isActive,
-    String syllabusReference,
-    String aiGenerationPrompt,
-    boolean tasksPublished) {}
+    String syllabusReference) {}

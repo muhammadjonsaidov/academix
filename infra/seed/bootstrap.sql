@@ -106,12 +106,11 @@ ON CONFLICT (id) DO NOTHING;
 -- ---------------------------------------------------------------------------
 -- 5. Parent → students (Aziz & Jasur) — SchoolContextResolver PARENT via links
 -- ---------------------------------------------------------------------------
-INSERT INTO parent_student_links (id, parent_user_id, student_user_id, relation, is_active,
-                                  biometric_consent_given, consent_given_at) VALUES
+INSERT INTO parent_student_links (id, parent_user_id, student_user_id, relation, is_active) VALUES
   ('b4000000-0000-4000-8000-000000000001', 'a3ae17d5-c6ed-4014-809b-1e5fc8e292f3',
-   'f2245ba6-6ee5-4161-bcc5-c22ac742459f', 'FATHER', true, false, NULL),
+   'f2245ba6-6ee5-4161-bcc5-c22ac742459f', 'FATHER', true),
   ('b4000000-0000-4000-8000-000000000002', 'a3ae17d5-c6ed-4014-809b-1e5fc8e292f3',
-   '0969224c-1348-4d49-91c3-034dcea56490', 'FATHER', true, false, NULL)
+   '0969224c-1348-4d49-91c3-034dcea56490', 'FATHER', true)
 ON CONFLICT (parent_user_id, student_user_id) DO NOTHING;
 
 -- ---------------------------------------------------------------------------

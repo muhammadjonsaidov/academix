@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ListChecks, Plus, Trash2 } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

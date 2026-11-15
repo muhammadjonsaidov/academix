@@ -10,6 +10,7 @@ import uz.academixai.identity.application.port.out.AccountRepository;
 import uz.academixai.identity.application.port.out.AttemptLimiter;
 import uz.academixai.identity.application.port.out.PasswordResetNotifier;
 import uz.academixai.identity.application.port.out.ResetTokenStore;
+import uz.academixai.identity.application.port.out.RoleAvailability;
 import uz.academixai.identity.domain.Account;
 import uz.academixai.shared.error.ApiException;
 
@@ -44,6 +45,7 @@ public class PasswordResetService {
   private final ResetTokenStore tokens;
   private final PasswordResetNotifier notifier;
   private final PasswordEncoder passwordEncoder;
+  private final RoleAvailability roleAvailability;
 
   @Value("${academix.frontend-url:http://localhost:3000}")
   private String frontendUrl;
@@ -53,12 +55,14 @@ public class PasswordResetService {
       AttemptLimiter attempts,
       ResetTokenStore tokens,
       PasswordResetNotifier notifier,
-      PasswordEncoder passwordEncoder) {
+      PasswordEncoder passwordEncoder,
+      RoleAvailability roleAvailability) {
     this.accounts = accounts;
     this.attempts = attempts;
     this.tokens = tokens;
     this.notifier = notifier;
     this.passwordEncoder = passwordEncoder;
+    this.roleAvailability = roleAvailability;
   }
 
   public void forgotPassword(String email) {
@@ -67,6 +71,9 @@ public class PasswordResetService {
     accounts
         .findByEmail(normalizedEmail)
         .filter(Account::active)
+        // A role whose module is switched off can't sign in, so a reset link would only lead to
+        // ERR_MODULE_DISABLED. The response stays identical either way (no account enumeration).
+        .filter(account -> roleAvailability.isAvailable(account.role()))
         .ifPresent(
             account -> {
               String token = tokens.issue(account.id());

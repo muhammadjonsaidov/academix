@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AlertTriangle, FileBarChart } from "lucide-react";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SEVERITY_BADGE_VARIANT, SEVERITY_LABEL, TYPE_LABEL } from "@/components/psychologist/severity";
 import { Badge } from "@/components/ui/badge";

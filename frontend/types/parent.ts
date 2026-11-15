@@ -15,7 +15,6 @@ export interface ChildSummary {
   todayActivity: boolean;
   pendingHomeworkCount: number;
   recentGrade: RecentGrade | null;
-  biometricConsentGiven: boolean;
 }
 
 export interface ParentDashboard {
@@ -82,10 +81,6 @@ export interface ParentGradeItem {
 export interface ParentGrades {
   recent: ParentGradeItem[];
   bySubject: Record<string, number>;
-}
-
-export interface SetBiometricConsentRequest {
-  consentGiven: boolean;
 }
 
 export interface DataDeletionRequestResponse {

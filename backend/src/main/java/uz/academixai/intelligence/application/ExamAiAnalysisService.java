@@ -9,25 +9,21 @@ import org.springframework.stereotype.Service;
 import uz.academixai.domain.CriteriaScore;
 import uz.academixai.domain.ExamAIFeedback;
 import uz.academixai.domain.ExamSubmission;
-import uz.academixai.domain.HandwritingCheckResult;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.intelligence.application.port.out.AnalysisStatusNotifier;
 import uz.academixai.intelligence.application.port.out.ExamAnalysisStore;
 import uz.academixai.intelligence.application.port.out.GradingAi;
-import uz.academixai.intelligence.application.port.out.HandwritingAnalyzer;
 import uz.academixai.intelligence.application.port.out.OcrGateway;
 import uz.academixai.intelligence.application.port.out.SubmissionImageStore;
 import uz.academixai.intelligence.domain.AiCallCategory;
 import uz.academixai.intelligence.domain.GradingAnalysis;
 import uz.academixai.intelligence.domain.GradingCriterion;
-import uz.academixai.intelligence.domain.OcrDocument;
 
 /** Intelligence-owned asynchronous OCR and grading process for scanned exam papers. */
 @Service
 public class ExamAiAnalysisService {
 
   private static final Logger log = LoggerFactory.getLogger(ExamAiAnalysisService.class);
-  private static final float MISMATCH_THRESHOLD = 60f;
   private static final int MIN_MEANINGFUL_TEXT_LENGTH = 20;
   private static final List<GradingCriterion> DEFAULT_CRITERIA =
       List.of(
@@ -38,7 +34,6 @@ public class ExamAiAnalysisService {
   private final ExamAnalysisStore submissions;
   private final SubmissionImageStore images;
   private final OcrGateway ocr;
-  private final HandwritingAnalyzer handwriting;
   private final GradingAi grading;
   private final AiBudgetService budget;
   private final AnalysisStatusNotifier notifications;
@@ -47,14 +42,12 @@ public class ExamAiAnalysisService {
       ExamAnalysisStore submissions,
       SubmissionImageStore images,
       OcrGateway ocr,
-      HandwritingAnalyzer handwriting,
       GradingAi grading,
       AiBudgetService budget,
       AnalysisStatusNotifier notifications) {
     this.submissions = submissions;
     this.images = images;
     this.ocr = ocr;
-    this.handwriting = handwriting;
     this.grading = grading;
     this.budget = budget;
     this.notifications = notifications;
@@ -72,29 +65,23 @@ public class ExamAiAnalysisService {
                     new IllegalStateException(
                         "Queue message for unknown examSubmissionId " + submissionId));
 
-    OcrDocument document;
-    HandwritingCheckResult handwritingResult;
+    String extractedText;
     try {
-      document = ocr.extract(images.download(submission.imageUrl()));
-      handwritingResult =
-          document.characters().isEmpty()
-              ? null
-              : handwriting.checkAndUpdate(submission.studentId(), document);
+      extractedText = ocr.extract(images.download(submission.imageUrl()));
     } catch (OcrUnavailableException exception) {
-      saveOcrOnlyFeedback(submission, "", null);
+      saveOcrOnlyFeedback(submission, "");
       updateStatus(submission, SubmissionStatus.AI_SKIPPED, true);
       return;
     }
 
-    String extractedText = document.extractedText();
-    boolean flagged = isFlagged(extractedText, handwritingResult);
+    boolean flagged = isFlagged(extractedText);
     if (extractedText == null || extractedText.trim().isEmpty()) {
-      saveEmptyFeedback(submission, handwritingResult);
+      saveEmptyFeedback(submission);
       updateStatus(submission, SubmissionStatus.AI_DONE, true);
       return;
     }
     if (!budget.isWithinAiBudget(submission.schoolId(), AiCallCategory.EXAM)) {
-      saveOcrOnlyFeedback(submission, extractedText, handwritingResult);
+      saveOcrOnlyFeedback(submission, extractedText);
       updateStatus(submission, SubmissionStatus.AI_SKIPPED, true);
       return;
     }
@@ -116,7 +103,7 @@ public class ExamAiAnalysisService {
           "AI provider grading unavailable for exam submission {}, falling to AI_SKIPPED",
           submission.id(),
           exception);
-      saveOcrOnlyFeedback(submission, extractedText, handwritingResult);
+      saveOcrOnlyFeedback(submission, extractedText);
       updateStatus(submission, SubmissionStatus.AI_SKIPPED, true);
       return;
     }
@@ -124,11 +111,11 @@ public class ExamAiAnalysisService {
     budget.recordAiUsage(submission.schoolId(), AiCallCategory.EXAM);
     submissions.recordAiUsage(submission.schoolId(), context);
     float score = weightedSum(result.criteriaScores());
-    saveGradedFeedback(submission, extractedText, result, score, handwritingResult);
+    saveGradedFeedback(submission, extractedText, result, score);
     updateStatus(submission, SubmissionStatus.AI_DONE, flagged);
   }
 
-  private void saveEmptyFeedback(ExamSubmission submission, HandwritingCheckResult handwriting) {
+  private void saveEmptyFeedback(ExamSubmission submission) {
     submissions.saveFeedback(
         new ExamAIFeedback(
             UUID.randomUUID(),
@@ -139,12 +126,10 @@ public class ExamAiAnalysisService {
             List.of(),
             0f,
             "Topshiriq bo'sh yoki juda qisqa — baholab bo'lmadi.",
-            handwritingScore(handwriting),
             LocalDateTime.now()));
   }
 
-  private void saveOcrOnlyFeedback(
-      ExamSubmission submission, String extractedText, HandwritingCheckResult handwriting) {
+  private void saveOcrOnlyFeedback(ExamSubmission submission, String extractedText) {
     submissions.saveFeedback(
         new ExamAIFeedback(
             UUID.randomUUID(),
@@ -155,16 +140,11 @@ public class ExamAiAnalysisService {
             List.of(),
             0f,
             "AI tahlil vaqtincha ishlamadi — o'qituvchi qo'lda baholaydi.",
-            handwritingScore(handwriting),
             LocalDateTime.now()));
   }
 
   private void saveGradedFeedback(
-      ExamSubmission submission,
-      String extractedText,
-      GradingAnalysis result,
-      float score,
-      HandwritingCheckResult handwriting) {
+      ExamSubmission submission, String extractedText, GradingAnalysis result, float score) {
     submissions.saveFeedback(
         new ExamAIFeedback(
             UUID.randomUUID(),
@@ -175,7 +155,6 @@ public class ExamAiAnalysisService {
             result.criteriaScores(),
             score,
             result.feedback(),
-            handwritingScore(handwriting),
             LocalDateTime.now()));
   }
 
@@ -199,10 +178,8 @@ public class ExamAiAnalysisService {
                     context.teacherId(), submission.studentId(), submission.id(), status));
   }
 
-  private static boolean isFlagged(String text, HandwritingCheckResult handwriting) {
-    return text == null
-        || text.length() < MIN_MEANINGFUL_TEXT_LENGTH
-        || (handwriting != null && handwriting.matchScore() < MISMATCH_THRESHOLD);
+  private static boolean isFlagged(String text) {
+    return text == null || text.length() < MIN_MEANINGFUL_TEXT_LENGTH;
   }
 
   private static String subjectAndGrade(ExamAnalysisStore.ExamContext context) {
@@ -217,9 +194,5 @@ public class ExamAiAnalysisService {
       sum += score.score() * score.weightPercent();
     }
     return (float) (sum / 100.0);
-  }
-
-  private static float handwritingScore(HandwritingCheckResult handwriting) {
-    return handwriting == null ? 0f : handwriting.matchScore();
   }
 }

@@ -833,28 +833,6 @@ button.bg-ai-gradient::after {
 }
 
 /*
- * Scroll-reveal system
- * -----------------------------------------------------------------------
- * Elements start a hair below their resting spot and settle up-and-in (same
- * rise curve as animate-rise) the first time they enter the viewport — the
- * "page comes alive as you scroll" feel. Applied via components/shared/Reveal.
- * Reduced motion: forced fully visible below (the global * rule above only
- * shortens the transition; it can't un-hide content).
- */
-.reveal {
-  opacity: 0;
-  transform: translateY(18px);
-  transition:
-    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: opacity, transform;
-}
-.reveal.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/*
  * Infinite feature marquee — a slow, seam-less loop of product keywords that
  * reads as "a live product, in motion". Two identical tracks translated -50%
  * make the loop pixel-perfect (items carry their own right margin instead of
@@ -979,11 +957,6 @@ button.bg-ai-gradient::after {
 /* Reduced-motion guards for the additions above — these must beat the global
    * { animation-duration: 0.01ms !important } rule, hence !important here. */
 @media (prefers-reduced-motion: reduce) {
-  .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
   .marquee-track {
     animation: none !important;
   }

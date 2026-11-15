@@ -8,13 +8,9 @@
  * implemented by an adapter ({@code uz.academixai.infrastructure.ai.OpenAiCompatibleClient}), so a
  * context can call the vendor without importing the legacy infrastructure tree.
  *
- * <p>Known and deliberate: {@link AiProvider} is a god interface — six unrelated capabilities
- * (grading, lesson plans, unique-task generation, solvability, tutor chat, psychology analysis) on
- * one type, because that is the shape of the vendor's HTTP surface. Every consumer already narrows
- * it to the one or two methods it needs through its own port ({@code intelligence...GradingAi},
- * {@code learning...UniqueTaskAi}, {@code wellbeing...BehaviorAnalyzer}), so the split is a rename
- * of those adapters away from this interface rather than a redesign. Left whole for now because
- * splitting it is what would let the legacy {@code infrastructure/ai} tree move into Intelligence,
- * and that is its own slice.
+ * <p>{@link AiProvider} carries three capabilities (grading, tutor chat, psychology analysis)
+ * because that is the shape of the vendor's HTTP surface. Every consumer narrows it to the method
+ * it needs through its own port ({@code intelligence...GradingAi}, {@code
+ * wellbeing...BehaviorAnalyzer}).
  */
 package uz.academixai.shared.ai;

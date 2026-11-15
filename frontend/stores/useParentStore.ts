@@ -3,6 +3,7 @@ import { apiClient } from "@/lib/api/client";
 import type {
   ChildOverview,
   ChildSummary,
+  DataDeletionRequestResponse,
   ParentDashboard,
   ParentGrades,
   ParentProgress,
@@ -27,12 +28,12 @@ interface ParentState {
   fetchSubmissions: (studentId: string) => Promise<void>;
   fetchGrades: (studentId: string) => Promise<void>;
   downloadQuarterReport: (studentId: string) => Promise<void>;
+  requestDataDeletion: (studentId: string) => Promise<DataDeletionRequestResponse>;
 }
 
 // One store for the parent dashboard area — dashboard/children/overview/progress/homework/
-// submissions/grades are one cohesive UI section, matching useAdminStore/useTeacherStore's
-// shape. Biometric consent lives in its own useConsentStore (frontend_tdd.md §6.6's named
-// store), kept separate since it's cross-cutting (a banner shown outside this section too).
+// submissions/grades/data-deletion are one cohesive UI section, matching
+// useAdminStore/useTeacherStore's shape.
 export const useParentStore = create<ParentState>((set) => ({
   dashboard: null,
   children: [],
@@ -99,5 +100,12 @@ export const useParentStore = create<ParentState>((set) => ({
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+  },
+
+  requestDataDeletion: async (studentId) => {
+    const { data } = await apiClient.post<DataDeletionRequestResponse>(
+      `/parent/children/${studentId}/data-deletion-request`,
+    );
+    return data;
   },
 }));

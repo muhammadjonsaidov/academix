@@ -2,12 +2,20 @@
 
 ## Qaror
 
-Mavjud barcha feature saqlanadi. Platforma mikroservislarga bo'linmaydi. U **modular monolith**
+**Scope (2026-11-14 yangilanishi):** MVP faqat biznes modeldagi qiymatni sotadigan featurelarga
+qisqartirildi — AI baholash (OCR + baholash + plagiat), ommaviy imtihon, o'qituvchi yakuniy bahosi,
+ota-ona paneli + Telegram, ommaviy import, AI budjet, chorak PDF, gamifikatsiya, AI Tutor.
+**Olib tashlandi:** har bir o'quvchiga unique topshiriq, qo'lyozma biometriyasi (va biometrik
+rozilik oqimi), darslik (syllabus) RAG + dars rejalari. Jadvallar bazada qoldi, kod o'chirildi.
+**Psixolog moduli** — pullik qo'shimcha modul, `ACADEMIX_FEATURE_PSYCHOLOGY` bilan yoqiladi,
+default o'chiq.
+
+Platforma mikroservislarga bo'linmaydi. U **modular monolith**
 bo'lib qoladi: bitta Spring Boot deployable, bitta PostgreSQL transactional boundary va alohida
 Telegram delivery worker. Bu hozirgi product uchun eng past operatsion murakkablikni, lekin aniq
 modul chegaralarini beradi.
 
-Maqsad — feature'ni qisqartirish emas, balki har bir feature'ni production-safe, testlanadigan va
+Maqsad — qolgan har bir feature'ni production-safe, testlanadigan va
 keyinchalik mustaqil servicega ajratish mumkin bo'lgan holatga olib chiqish.
 
 ## Target arxitektura
@@ -63,11 +71,11 @@ Qatlam qoidalari:
 |---|---|---|
 | Identity | Account, credential, session, password recovery | authenticate, authorize, account lifecycle |
 | School | School, class, subject, teacher/class membership, student profile | school membership va academic structure |
-| Learning | Assignment, submission, exam, grade, criteria, syllabus, lesson plan, unique task | homework/exam lifecycle va final grading |
-| Intelligence | OCR, AI feedback, plagiarism, handwriting profile/check, tutor chat | AI/OCR orchestration; AI hech qachon final grade owner emas |
+| Learning | Assignment, submission, exam, grade, criteria | homework/exam lifecycle va final grading |
+| Intelligence | OCR, AI feedback, plagiarism, tutor chat | AI/OCR orchestration; AI hech qachon final grade owner emas |
 | Progress | XP ledger, badge, streak | graded workdan achievement hisoblash |
-| Wellbeing | psychological signal, watchlist, intervention | signal detection va human-review workflow |
-| Family | parent-child link, consent, deletion request | parental access, consent va data rights |
+| Wellbeing (add-on) | psychological signal, watchlist, intervention | signal detection va human-review workflow |
+| Family | parent-child link, deletion request | parental access va data rights |
 | Notification | notification, preference, delivery record, Telegram connection | eventdan delivery yaratish |
 | Reporting | report definition, generated report | immutable reporting/read model |
 
@@ -87,7 +95,7 @@ kernelga o'tmaydi.
 | Idempotent consumer / inbox | AI grading, XP, Telegram, report generation | Consumer `event_id`ni inboxda saqlaydi; qayta delivery duplicate grade/xp/message yaratmaydi |
 | Saga / process manager | Homework/exam AI workflow, deletion workflow | Orchestration state machine bo'ladi: accepted → OCR → AI → teacher review → graded → XP/notification. Distributed transaction ishlatilmaydi |
 | State machine | Submission, exam submission, deletion request, signal | Valid transitionlar enum/service if'lari emas, domain policyda markazlashadi; illegal state 409 beradi |
-| Strategy | AI provider, grading policy, plagiarism/handwriting scoring, notification channel | `AiProvider`, `OcrProvider`, `NotificationChannel`, `GradingPolicy` portlari; provider switch config orqali |
+| Strategy | AI provider, grading policy, plagiarism scoring, notification channel | `AiProvider`, `OcrProvider`, `NotificationChannel`, `GradingPolicy` portlari; provider switch config orqali |
 | Adapter / anti-corruption layer | OpenAI-compatible API, Google Vision, Telegram, Jasper, S3 | Vendor DTO yoki exception domain/application ichiga o'tmaydi |
 | Specification / query object | Student list, submission filters, analytics | Filterlash SQL/JPA query adapterda; service `findAll().stream()` qilmaydi |
 | Repository | Aggregate persistence | Repository aggregate root uchun; dashboard projectionlari alohida read repository bo'ladi |
@@ -213,14 +221,12 @@ unit testlangan; submit-to-grade E2E flow outbox bilan testlangan; dashboard que
 
 **Intelligence**
 
-- AI/OCR/vision/handwriting/chat uchun `AiProvider`, `OcrProvider`, `ObjectStorage` portlari.
+- AI/OCR/vision/chat uchun `AiProvider`, `OcrProvider`, `ObjectStorage` portlari.
   OpenAI-compatible, Google Vision, SeaweedFS adapter bo'ladi.
 - `SubmissionAccepted` eventidan Intelligence process manager boshlanadi. U faqat AI feedback va
   analysis status yaratadi; Learning final grade ownership'ni saqlaydi.
 - Prompt template/version registry, provider model selection, token/cost ledger va per-school
   budget policy.
-- Handwriting: vector profile, reset, anomaly lifecycle va manual review queue. Biometric consent
-  policy talab qilinadi.
 
 **Progress**
 
@@ -234,8 +240,7 @@ grade'ni o'zgartirmaydi; XP exactly-once business effectga ega.
 
 - Wellbeing signal lifecycle: detected → triaged → assigned → resolved/dismissed. Signal policy
   score/evidence'ni human-review'dan ajratadi. Psychologist/teacher access policy markazlashadi.
-- Family context: parent link va consent tarixini immutable audit bilan yuritadi. Consent revoke
-  biometric/AI workflows'ni to'xtatadi.
+- Family context: parent link tarixini immutable audit bilan yuritadi.
 - Deletion saga: requested → approved → export/hold check → database deletion → S3 deletion →
   backup retention expiry → completed. Har qadam auditli va retryable.
 - Notification barcha contextdan direct service call emas, typed event iste'molchisi bo'ladi.

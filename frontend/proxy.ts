@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { decodeJwt, jwtVerify } from "jose";
+import { FEATURES, isPsychologyRoute } from "@/lib/features";
 
 // Next.js 16 renamed middleware.ts -> proxy.ts (function middleware() -> proxy()); edge
 // runtime dropped, proxy always runs on nodejs. See CLAUDE.md "Reality checks" — this
@@ -74,6 +75,17 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL("/login", request.url));
       }
       userRole = decodeJwt(authCookie).role as string;
+    }
+  }
+
+  // The psychologist add-on module is off unless NEXT_PUBLIC_FEATURE_PSYCHOLOGY=true — the backend
+  // then registers none of its endpoints and refuses PSYCHOLOGIST sign-in (ERR_MODULE_DISABLED).
+  if (!FEATURES.psychology) {
+    if (userRole === "PSYCHOLOGIST") {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    if (isPsychologyRoute(pathname)) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
 

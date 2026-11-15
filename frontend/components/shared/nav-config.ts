@@ -13,11 +13,9 @@ import {
   HeartPulse,
   History,
   LayoutDashboard,
-  Library,
   Link2,
   ListChecks,
   MessageSquareText,
-  NotebookPen,
   School,
   Settings,
   ShieldOff,
@@ -27,6 +25,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { FEATURES } from "@/lib/features";
 import type { Role } from "@/types/auth";
 
 export interface NavItem {
@@ -51,7 +50,7 @@ export interface NavGroup {
  * `/dashboard/teacher/classes` (a top-level classes *list* page) was flagged by the shell-
  * stage agent as missing and resolved by the teacher-dashboard agent: `GET /teacher/classes`
  * (academix_tz.md §2.3) was already wired via `useTeacherStore.fetchClasses`/`classes` for
- * the homework/exam/syllabus create forms, so a standalone browse page reusing that same
+ * the homework/exam create forms, so a standalone browse page reusing that same
  * data was a real, spec-backed page rather than an invented one — it links into the existing
  * `[classId]/analytics` drill-in.
  */
@@ -64,7 +63,9 @@ export const NAV_CONFIG: Record<Role, NavGroup[]> = {
         { href: "/dashboard/admin/teachers", label: "O'qituvchilar", icon: Users },
         { href: "/dashboard/admin/students", label: "O'quvchilar", icon: GraduationCap },
         { href: "/dashboard/admin/parents", label: "Ota-onalar", icon: HeartHandshake },
-        { href: "/dashboard/admin/psychologists", label: "Psixologlar", icon: Brain },
+        ...(FEATURES.psychology
+          ? [{ href: "/dashboard/admin/psychologists", label: "Psixologlar", icon: Brain }]
+          : []),
         { href: "/dashboard/admin/assignments", label: "Biriktirishlar", icon: Link2 },
         { href: "/dashboard/admin/analytics", label: "Tahlil", icon: BarChart3 },
         { href: "/dashboard/admin/reports", label: "Hisobotlar", icon: FileBarChart },
@@ -91,8 +92,6 @@ export const NAV_CONFIG: Record<Role, NavGroup[]> = {
           label: "Baholash mezonlari",
           icon: ListChecks,
         },
-        { href: "/dashboard/teacher/syllabuses", label: "Darsliklar", icon: Library },
-        { href: "/dashboard/teacher/lesson-plans", label: "Dars rejalari", icon: NotebookPen },
       ],
     },
     {
@@ -100,11 +99,15 @@ export const NAV_CONFIG: Record<Role, NavGroup[]> = {
       items: [
         { href: "/dashboard/teacher/classes", label: "Sinflarim", icon: School },
         { href: "/dashboard/teacher/submissions", label: "Topshirilgan ishlar", icon: FileCheck2 },
-        {
-          href: "/dashboard/teacher/psychological-signals",
-          label: "Psixologik signallar",
-          icon: HeartPulse,
-        },
+        ...(FEATURES.psychology
+          ? [
+              {
+                href: "/dashboard/teacher/psychological-signals",
+                label: "Psixologik signallar",
+                icon: HeartPulse,
+              },
+            ]
+          : []),
       ],
     },
     {

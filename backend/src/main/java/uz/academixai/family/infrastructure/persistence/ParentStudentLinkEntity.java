@@ -6,7 +6,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 import java.util.UUID;
 import uz.academixai.family.domain.ParentRelation;
 import uz.academixai.family.domain.ParentStudentLink;
@@ -31,29 +30,15 @@ public class ParentStudentLinkEntity {
   @Column(name = "is_active")
   private boolean isActive;
 
-  @Column(name = "biometric_consent_given", nullable = false)
-  private boolean biometricConsentGiven;
-
-  @Column(name = "consent_given_at")
-  private LocalDateTime consentGivenAt;
-
   protected ParentStudentLinkEntity() {}
 
   public ParentStudentLinkEntity(
-      UUID id,
-      UUID parentUserId,
-      UUID studentUserId,
-      ParentRelation relation,
-      boolean isActive,
-      boolean biometricConsentGiven,
-      LocalDateTime consentGivenAt) {
+      UUID id, UUID parentUserId, UUID studentUserId, ParentRelation relation, boolean isActive) {
     this.id = id;
     this.parentUserId = parentUserId;
     this.studentUserId = studentUserId;
     this.relation = relation;
     this.isActive = isActive;
-    this.biometricConsentGiven = biometricConsentGiven;
-    this.consentGivenAt = consentGivenAt;
   }
 
   public static ParentStudentLinkEntity fromDomain(ParentStudentLink domain) {
@@ -62,14 +47,11 @@ public class ParentStudentLinkEntity {
         domain.parentUserId(),
         domain.studentUserId(),
         domain.relation(),
-        domain.isActive(),
-        domain.biometricConsentGiven(),
-        domain.consentGivenAt());
+        domain.isActive());
   }
 
   public ParentStudentLink toDomain() {
-    return new ParentStudentLink(
-        id, parentUserId, studentUserId, relation, isActive, biometricConsentGiven, consentGivenAt);
+    return new ParentStudentLink(id, parentUserId, studentUserId, relation, isActive);
   }
 
   public UUID getId() {

@@ -13,7 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { DashboardHero, HeroAction } from "@/components/shared/DashboardHero";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ProgressBar } from "@/components/shared/ProgressBar";
 import { StatTile, StatTileSkeleton } from "@/components/shared/StatTile";
@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { SchoolSetupChecklist } from "@/features/admin/dashboard/components/SchoolSetupChecklist";
 import { useAdminAnalyticsStore } from "@/stores/useAdminAnalyticsStore";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { FEATURES } from "@/lib/features";
 
 export default function AdminDashboardPage() {
   const dashboard = useAdminAnalyticsStore((state) => state.dashboard);
@@ -42,9 +43,7 @@ export default function AdminDashboardPage() {
   const heroDescription = dashboard
     ? `${dashboard.totalStudents} o'quvchi · ${dashboard.totalTeachers} o'qituvchi · bugun ${dashboard.activeToday} faol`
     : "Maktab bo'yicha umumiy holat.";
-  const isNewSchool =
-    dashboard !== null &&
-    dashboard.totalClasses === 0;
+  const isNewSchool = dashboard !== null && dashboard.totalClasses === 0;
 
   return (
     <DashboardShell role="ADMIN">
@@ -104,20 +103,22 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Severity tiles keep their SEMANTIC accents — never the role hue. */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <StatTile
-                label="Yuqori psixologik signallar"
-                value={dashboard.psychologicalAlerts.high}
-                icon={AlertTriangle}
-                accentClassName="bg-severity-high-bg text-severity-high"
-              />
-              <StatTile
-                label="O'rta psixologik signallar"
-                value={dashboard.psychologicalAlerts.medium}
-                icon={AlertTriangle}
-                accentClassName="bg-severity-medium-bg text-severity-medium"
-              />
-            </div>
+            {FEATURES.psychology ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <StatTile
+                  label="Yuqori psixologik signallar"
+                  value={dashboard.psychologicalAlerts.high}
+                  icon={AlertTriangle}
+                  accentClassName="bg-severity-high-bg text-severity-high"
+                />
+                <StatTile
+                  label="O'rta psixologik signallar"
+                  value={dashboard.psychologicalAlerts.medium}
+                  icon={AlertTriangle}
+                  accentClassName="bg-severity-medium-bg text-severity-medium"
+                />
+              </div>
+            ) : null}
 
             <div className="grid gap-4 lg:grid-cols-2">
               <Card>

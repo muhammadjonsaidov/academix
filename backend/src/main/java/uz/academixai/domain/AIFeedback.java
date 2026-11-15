@@ -23,5 +23,4 @@ public record AIFeedback(
     String highlightedErrors,
     float plagiarismScore,
     PlagiarismType plagiarismType,
-    float handwritingMatchScore,
     LocalDateTime processedAt) {}

@@ -64,7 +64,6 @@ interface AdminState {
   fetchAllStudents: () => Promise<void>;
   createStudent: (request: CreateStudentRequest) => Promise<void>;
   transferStudentClass: (studentId: string, newClassId: string) => Promise<void>;
-  unlockHandwritingReset: (studentId: string) => Promise<void>;
   linkParentToStudent: (request: LinkParentRequest) => Promise<ParentLink>;
 
   fetchParents: () => Promise<void>;
@@ -208,10 +207,6 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   transferStudentClass: async (studentId, newClassId) => {
     await apiClient.put(`/admin/students/${studentId}/transfer-class`, { newClassId });
     await get().fetchStudents();
-  },
-
-  unlockHandwritingReset: async (studentId) => {
-    await apiClient.put(`/admin/students/${studentId}/handwriting/unlock-reset`);
   },
 
   // Refreshes the parents list afterwards — a link can create/backfill a parent server-side,

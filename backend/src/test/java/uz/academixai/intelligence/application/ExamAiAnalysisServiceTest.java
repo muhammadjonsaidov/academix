@@ -16,11 +16,9 @@ import uz.academixai.intelligence.application.port.out.AiUsageCounter;
 import uz.academixai.intelligence.application.port.out.AnalysisStatusNotifier;
 import uz.academixai.intelligence.application.port.out.ExamAnalysisStore;
 import uz.academixai.intelligence.application.port.out.GradingAi;
-import uz.academixai.intelligence.application.port.out.HandwritingAnalyzer;
 import uz.academixai.intelligence.application.port.out.OcrGateway;
 import uz.academixai.intelligence.application.port.out.SubmissionImageStore;
 import uz.academixai.intelligence.domain.AiCallCategory;
-import uz.academixai.intelligence.domain.OcrDocument;
 
 class ExamAiAnalysisServiceTest {
 
@@ -68,8 +66,7 @@ class ExamAiAnalysisServiceTest {
           public void increment(UUID schoolId, AiCallCategory category) {}
         };
     SubmissionImageStore images = key -> new byte[0];
-    OcrGateway ocr = image -> new OcrDocument("", List.of());
-    HandwritingAnalyzer handwriting = (studentId, document) -> null;
+    OcrGateway ocr = image -> "";
     GradingAi grading = (subject, criteria, text) -> null;
     AnalysisStatusNotifier notifier =
         new AnalysisStatusNotifier() {
@@ -82,7 +79,7 @@ class ExamAiAnalysisServiceTest {
               UUID teacherId, UUID studentId, UUID submissionId, SubmissionStatus status) {}
         };
     return new ExamAiAnalysisService(
-        store, images, ocr, handwriting, grading, new AiBudgetService(limits, counter), notifier);
+        store, images, ocr, grading, new AiBudgetService(limits, counter), notifier);
   }
 
   private static final class Store implements ExamAnalysisStore {

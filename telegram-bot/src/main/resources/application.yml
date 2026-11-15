@@ -40,3 +40,6 @@ academix:
     # identity (backend issues deep-links pointing at this bot, this service IS the bot).
     bot-token: ${TELEGRAM_BOT_TOKEN:}
     bot-username: ${TELEGRAM_BOT_USERNAME:academix_notify_bot}
+  features:
+    psychology:
+      enabled: ${ACADEMIX_FEATURE_PSYCHOLOGY:false}

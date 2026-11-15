@@ -4,13 +4,8 @@ import type { PageResponse } from "@/types/api";
 import type {
   CreateHomeworkRequest,
   CriteriaItem,
-  GenerateLessonPlanRequest,
   GradeSubmissionRequest,
-  HandwritingResetRequest,
-  HandwritingResetResponse,
   Homework,
-  LessonPlan,
-  Syllabus,
   SignalSeverity,
   TeacherClass,
   TeacherPsychologicalSignal,
@@ -19,9 +14,7 @@ import type {
   TeacherSubmissionDetail,
   TeacherSubmissionListItem,
   SubmissionStatus,
-  UniqueTask,
   UpdateHomeworkRequest,
-  UpdateLessonPlanRequest,
 } from "@/types/teacher";
 
 interface SubmissionFilters {
@@ -43,10 +36,7 @@ interface TeacherState {
   /** Last filters passed to fetchSubmissions — reused by the page/size setters. */
   submissionsFilters: SubmissionFilters;
   selectedSubmission: TeacherSubmissionDetail | null;
-  syllabuses: Syllabus[];
-  lessonPlans: LessonPlan[];
   gradingCriteria: CriteriaItem[];
-  uniqueTasks: UniqueTask[];
 
   fetchClasses: () => Promise<void>;
   fetchSubjects: () => Promise<void>;
@@ -63,37 +53,14 @@ interface TeacherState {
   fetchSubmission: (submissionId: string) => Promise<void>;
   gradeSubmission: (submissionId: string, request: GradeSubmissionRequest) => Promise<void>;
 
-  fetchSyllabuses: (filters?: { subjectId?: string; classId?: string }) => Promise<void>;
-  uploadSyllabus: (
-    file: File,
-    subjectId: string,
-    classId: string,
-    title: string,
-  ) => Promise<void>;
-
-  fetchLessonPlans: (filters?: { subjectId?: string; classId?: string }) => Promise<void>;
-  generateLessonPlan: (request: GenerateLessonPlanRequest) => Promise<void>;
-  updateLessonPlan: (planId: string, request: UpdateLessonPlanRequest) => Promise<void>;
-
   fetchGradingCriteria: (subjectId: string) => Promise<void>;
   updateGradingCriteria: (subjectId: string, criteria: CriteriaItem[]) => Promise<void>;
-
-  fetchUniqueTasks: (assignmentId: string) => Promise<void>;
-  approveUniqueTask: (assignmentId: string, taskId: string) => Promise<void>;
-  editUniqueTask: (assignmentId: string, taskId: string, taskContent: string) => Promise<void>;
-  approveAllUniqueTasks: (assignmentId: string) => Promise<void>;
-  submitHomework: (assignmentId: string) => Promise<void>;
-
-  resetHandwritingProfile: (
-    studentId: string,
-    request: HandwritingResetRequest,
-  ) => Promise<HandwritingResetResponse>;
 
   resetStudentPassword: (studentId: string) => Promise<string>;
 }
 
-// One store for the teacher homework area (classes/subjects/assignments/submissions/syllabuses/
-// lesson-plans/grading-criteria/unique-tasks) — mirrors useAdminStore's shape: they're one
+// One store for the teacher homework area (classes/subjects/assignments/submissions/
+// grading-criteria) — mirrors useAdminStore's shape: they're one
 // cohesive UI section, not independently evolving domains.
 export const useTeacherStore = create<TeacherState>((set, get) => ({
   classes: [],
@@ -105,10 +72,7 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
   submissionsTotalItems: 0,
   submissionsFilters: {},
   selectedSubmission: null,
-  syllabuses: [],
-  lessonPlans: [],
   gradingCriteria: [],
-  uniqueTasks: [],
   classStudents: [],
   psychologicalSignals: [],
 
@@ -220,40 +184,6 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
     await get().fetchSubmission(submissionId);
   },
 
-  fetchSyllabuses: async (filters) => {
-    const { data } = await apiClient.get<Syllabus[]>("/teacher/syllabuses", { params: filters });
-    set({ syllabuses: data });
-  },
-
-  uploadSyllabus: async (file, subjectId, classId, title) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("subjectId", subjectId);
-    formData.append("classId", classId);
-    formData.append("title", title);
-    await apiClient.post("/teacher/syllabuses", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    await get().fetchSyllabuses();
-  },
-
-  fetchLessonPlans: async (filters) => {
-    const { data } = await apiClient.get<LessonPlan[]>("/teacher/lesson-plans", {
-      params: filters,
-    });
-    set({ lessonPlans: data });
-  },
-
-  generateLessonPlan: async (request) => {
-    await apiClient.post("/teacher/lesson-plans/generate", request);
-    await get().fetchLessonPlans();
-  },
-
-  updateLessonPlan: async (planId, request) => {
-    await apiClient.put(`/teacher/lesson-plans/${planId}`, request);
-    await get().fetchLessonPlans();
-  },
-
   fetchGradingCriteria: async (subjectId) => {
     const { data } = await apiClient.get<CriteriaItem[]>("/teacher/grading-criteria", {
       params: { subjectId },
@@ -267,43 +197,6 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
       { criteria },
     );
     set({ gradingCriteria: data });
-  },
-
-  fetchUniqueTasks: async (assignmentId) => {
-    const { data } = await apiClient.get<UniqueTask[]>(
-      `/teacher/homework/${assignmentId}/unique-tasks`,
-    );
-    set({ uniqueTasks: data });
-  },
-
-  approveUniqueTask: async (assignmentId, taskId) => {
-    await apiClient.put(`/teacher/homework/${assignmentId}/unique-tasks/${taskId}/approve`);
-    await get().fetchUniqueTasks(assignmentId);
-  },
-
-  editUniqueTask: async (assignmentId, taskId, taskContent) => {
-    await apiClient.put(`/teacher/homework/${assignmentId}/unique-tasks/${taskId}`, {
-      taskContent,
-    });
-    await get().fetchUniqueTasks(assignmentId);
-  },
-
-  approveAllUniqueTasks: async (assignmentId) => {
-    await apiClient.post(`/teacher/homework/${assignmentId}/unique-tasks/approve-all`);
-    await get().fetchUniqueTasks(assignmentId);
-  },
-
-  submitHomework: async (assignmentId) => {
-    await apiClient.post(`/teacher/homework/${assignmentId}/submit`);
-    await get().fetchHomework();
-  },
-
-  resetHandwritingProfile: async (studentId, request) => {
-    const { data } = await apiClient.put<HandwritingResetResponse>(
-      `/teacher/students/${studentId}/handwriting/reset`,
-      request,
-    );
-    return data;
   },
 
   resetStudentPassword: async (studentId) => {

@@ -29,14 +29,20 @@ entities and Spring Data repositories are never shared.
 
 ## Context map
 
+> **Scope change, 2026-11-14:** per-student unique tasks, handwriting biometrics (with parent
+> biometric consent) and the syllabus/lesson-plan pipeline were removed from the product; their
+> tables remain but no code reads them. Wellbeing is an optional paid module behind
+> `academix.features.psychology.enabled` (default off). The migration history below still names
+> some of the removed classes — it records how the code got here, not what exists now.
+
 | Context | Owns | Collaborates with |
 | --- | --- | --- |
 | Identity | accounts, credentials, sessions and access tokens | School for the school claim |
 | School | schools, classes, subjects and memberships | Identity, Learning |
-| Learning | homework, submissions, exams, criteria, grades and lesson plans | School, Progress, Intelligence |
+| Learning | homework, submissions, exams, criteria and grades | School, Progress, Intelligence |
 | Progress | XP, badges, streaks and student progress | Learning |
-| Intelligence | AI chat, OCR, AI grading, plagiarism and handwriting analysis | Learning, Wellbeing |
-| Wellbeing | psychological signals, watchlists and reports | Learning, Intelligence, Notification |
+| Intelligence | AI chat, OCR, AI grading and plagiarism | Learning, Wellbeing |
+| Wellbeing (optional module) | psychological signals, watchlists and reports | Learning, Intelligence, Notification |
 | Notification | in-app preferences, Telegram links and delivery | all contexts through events |
 | Reporting | read models and generated reports | School, Learning, Progress, Wellbeing |
 
@@ -49,11 +55,11 @@ individually just to make the tree look cleaner.
 | Target context | Domain types to move | Primary application area |
 | --- | --- | --- |
 | `school` | `School`, `SchoolClass`, `Subject`, `SubjectType`, `ClassSubjectTeacher`, `StudentProfile` | school administration, class/subject assignment and school context resolution |
-| `learning` | `HomeworkAssignment`, `HomeworkSubmission`, `Exam`, `ExamSubmission`, `Grade`, `ExamGrade`, `SubmissionStatus`, `SubmissionType`, `AssignmentType`, `CriteriaItem`, `CriteriaScore`, `SubjectGradingCriteria`, `TeacherSyllabus`, `LessonPlan`, `LessonPlanContent`, `LessonActivity`, `StudentUniqueTask` | homework, exams, grading, syllabus, lesson plans and unique tasks |
-| `intelligence` | `AIFeedback`, `ExamAIFeedback`, `AiChatMessage`, `HandwritingProfile`, `HandwritingCheckResult`, `HandwritingResetLog`, `PlagiarismType`, `StepAnalysis`, `ChatBlockReason` | OpenAI-compatible provider, chat, OCR, plagiarism and handwriting analysis |
+| `learning` | `HomeworkAssignment`, `HomeworkSubmission`, `Exam`, `ExamSubmission`, `Grade`, `ExamGrade`, `SubmissionStatus`, `SubmissionType`, `CriteriaItem`, `CriteriaScore`, `SubjectGradingCriteria` | homework, exams and grading |
+| `intelligence` | `AIFeedback`, `ExamAIFeedback`, `AiChatMessage`, `PlagiarismType`, `StepAnalysis`, `ChatBlockReason` | OpenAI-compatible provider, chat, OCR and plagiarism |
 | `wellbeing` | `PsychologicalSignal`, `SignalType`, `SignalSeverity`, `WatchlistEntry` | psychology signals, watchlists and intervention workflow |
-| `family` | `ParentStudentLink`, `ParentRelation`, `DataDeletionRequest`, `DeletionRequestStatus` | parent-child links, consent and data-deletion requests |
-| `identity` | `User`, `Role`, `PasswordResetLog`, `ResetReason` | credentials, account lifecycle and password recovery |
+| `family` | `ParentStudentLink`, `ParentRelation`, `DataDeletionRequest`, `DeletionRequestStatus` | parent-child links and data-deletion requests |
+| `identity` | `User`, `Role`, `PasswordResetLog` | credentials, account lifecycle and password recovery |
 | `shared` | `FileType` | stable technical value type only; it must not gain business rules |
 
 The migrated contexts currently use the exact target tree. `school` is migrated in compilable
@@ -157,12 +163,11 @@ The remaining global `application`, `domain`, `infrastructure` and `interfaces` 
 code and are not the target layout. They are migrated context by context; a big-bang package move is
 not permitted.
 
-`learning` owns the teacher homework-, exam-management, exam-submission and unique-task review
-slices. Their controllers depend on `HomeworkManagement`, `ExamManagement`,
-`ExamSubmissionWorkflow` and `UniqueTaskReview` input ports; the use cases depend on stores and
+`learning` owns the teacher homework-, exam-management and exam-submission slices. Their
+controllers depend on `HomeworkManagement`, `ExamManagement` and `ExamSubmissionWorkflow` input
+ports; the use cases depend on stores and
 read-model ports plus School's published `TeacherAccess` API. Exam AI-budget lookup and the
-underlying AI provider remain explicit compatibility adapters. Unique-task generation and review
-are owned by Learning.
+underlying AI provider remain explicit compatibility adapters.
 
 Student homework submission acceptance is also owned by Learning: the HTTP adapter maps a multipart
 file to an immutable command payload, then the use case validates type/size, authorizes School
@@ -186,10 +191,10 @@ models, so the web adapter never reaches JPA entities or persistence repositorie
 
 `intelligence` now owns the monthly AI budget policy. Its `AiBudgetService` depends on a School
 limit lookup and a Redis usage-counter port, while Learning and legacy callers consume that public
-application API. Homework OCR, grading, plagiarism and handwriting orchestration are now owned by
+application API. Homework OCR, grading and plagiarism orchestration are now owned by
 `HomeworkAiAnalysisService`: its provider, object-storage, Learning-persistence, Progress and SSE
 dependencies are all ports. Its queue contract and graceful `AI_SKIPPED` behavior are preserved.
-`ExamAiAnalysisService` uses the same provider-neutral OCR/grading/handwriting boundaries while
+`ExamAiAnalysisService` uses the same provider-neutral OCR/grading boundaries while
 keeping exam-only review flags and its separate budget. Tutor chat is a complete Intelligence
 vertical slice:
 `TutorChatService` owns subject parsing, assignment relevance, budget, answer-leak guardrails and
@@ -208,7 +213,7 @@ only on the published `PsychologistWorkspace` API; school-scoped JPA queries and
 data are adapters. This preserves every existing psychologist REST endpoint while completing the
 Wellbeing public workspace migration.
 
-`family` now owns parental access, consent and data rights:
+`family` now owns parental access and data rights:
 
 ```
 family/
@@ -233,8 +238,8 @@ or a named compatibility adapter, so nothing in `family.application` reaches int
 - Wellbeing also read Progress' `XpHistoryRepository` directly; Progress now publishes
   `StudentXpHistory`, which that adapter consumes.
 - `LegacyParentAccountStore` is Identity's `users` table until Identity owns it, and
-  `LegacyMinorDataEraser` performs backend_tdd.md §7.6's cross-context erasure (handwriting
-  vectors, psychological evidence) until Intelligence and Wellbeing publish erasure APIs.
+  `LegacyMinorDataEraser` performs backend_tdd.md §7.6's cross-context erasure (psychological
+  evidence, plus the feature vectors left in the retired `handwriting_profiles` table) until Intelligence and Wellbeing publish erasure APIs.
 - The parent-facing quarter report asks Reporting's published `ReportService.findRecent` instead of
   querying Reporting's report table itself.
 
@@ -301,41 +306,10 @@ runs before any tenant is known, and keeping the role switch at the pre-auth bou
 a future request-scoped caller of `SchoolMembership` from lifting RLS for the rest of its
 transaction (documented on the port).
 
-`learning` now owns the syllabus knowledge pipeline as well as assignments, submissions, exams
-and grading:
-
-```
-learning/
-  domain/                 TeacherSyllabus, SyllabusProcessingStatus, FileType
-  application/            SyllabusService, SyllabusIngestionService,
-                          SyllabusIngestionStateService, SyllabusKnowledgeService, SyllabusChunker
-    port/out/             SyllabusStore, SyllabusKnowledgeStore, SyllabusTextExtraction,
-                          SyllabusObjectStorage, TextEmbeddings, SyllabusIngestionPublisher
-  infrastructure/
-    persistence/          JpaSyllabusStore, JdbcSyllabusKnowledgeStore (pgvector SQL)
-    syllabus/             SyllabusTextExtractor (PDFBox/DOCX, OCR through Intelligence)
-    storage/              LegacySyllabusObjectStorage
-    ai/                   LegacyTextEmbeddings
-    messaging/            OutboxSyllabusIngestionPublisher
-```
-
-Two things this slice fixed beyond the package move:
-
-- **The ingestion worker is tenant-scoped.** `SyllabusIngestionMessage` now carries the school and
-  the listener runs the work through `TenantScope.runAsTenant` — this was the second of the two
-  blockers listed under tenancy, and the reason `teacher_syllabuses`/`syllabus_chunks` could not be
-  policy-protected. Only the `school_id` backfill remains for those two tables.
-- **`SyllabusService` no longer reads the users table.** The upload takes `schoolId` from the
-  caller's principal instead of looking it up by teacher, so the use case has no Identity
-  dependency at all.
-
-`syllabus_chunks` SQL stays native in `JdbcSyllabusKnowledgeStore` on purpose: the `<=>` cosine
-operator and the `vector` cast are pgvector syntax, not JPA. `SyllabusKnowledgeService` implements
-Learning's own `SyllabusKnowledgeLookup` port, so the anti-corruption adapter between two classes of
-the same context is gone.
-
-Still legacy in Learning: `LessonPlanService`, `GradingCriteriaService` (with the
-`LessonPlan`/`LessonPlanContent`/`SubjectGradingCriteria` domain types) — Slice B.
+The syllabus knowledge pipeline (upload, PDF extraction, pgvector retrieval) and lesson-plan
+generation used to live in `learning`; both were removed in the 2026-11 scope cut, together with
+the `homework.generation` unique-task flow. `GradingCriteriaService` is the remaining legacy piece
+in Learning.
 
 ## Ordered implementation plan
 

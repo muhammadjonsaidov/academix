@@ -2,9 +2,11 @@ package uz.academixai.wellbeing.adapter.in.scheduling;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import uz.academixai.shared.feature.ConditionalOnPsychologyModule;
 import uz.academixai.wellbeing.application.port.in.BehaviorAnalysis;
 
 /** Inbound scheduler adapter for the nightly behavior-analysis job. */
+@ConditionalOnPsychologyModule
 @Component
 public class BehaviorAnalysisScheduler {
 

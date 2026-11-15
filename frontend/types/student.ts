@@ -130,8 +130,7 @@ export interface StudentProgress {
 }
 
 // Exams: gap-fill deviation, judgment call — no student-facing exam-results endpoint exists in
-// academix_tz.md (see backend's StudentExamController / CLAUDE.md). handwritingMatchScore is
-// deliberately never exposed, same rule as StudentAiFeedback above.
+// academix_tz.md (see backend's StudentExamController / CLAUDE.md).
 
 export interface StudentExamGrade {
   score: number;

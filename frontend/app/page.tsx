@@ -132,12 +132,11 @@ const MARQUEE_ITEMS = [
   "Qo'lyozma OCR",
   "Ko'chirishni aniqlash",
   "AI baholash",
-  "Shaxsiy vazifalar",
+  "Ommaviy imtihon tekshiruvi",
   "XP va yutuqlar",
   "Telegram xabarnomalar",
   "PDF hisobotlar",
   "Psixologik monitoring",
-  "Handwriting biometriya",
   "AI ustoz",
 ] as const;
 
@@ -145,8 +144,8 @@ const TRUST = [
   {
     icon: ShieldCheck,
     chip: "bg-success-bg text-success",
-    title: "Yozuv uslubi himoyasi",
-    text: "Har bir o'quvchining yozuv uslubi himoyalangan holda saqlanadi va faqat ko'chirilgan ishlarni aniqlash uchun ishlatiladi.",
+    title: "Yakuniy baho o'qituvchida",
+    text: "AI faqat tahlil va taklif beradi — har bir ishning yakuniy bahosini o'qituvchi tasdiqlaydi.",
   },
   {
     icon: HeartPulse,
@@ -428,7 +427,7 @@ export default function HomePage() {
               Ishonch — dizaynning o&apos;zi kabi <span className="text-ai-gradient">chuqur</span>
             </h2>
             <p className="mb-8 max-w-xl text-sm text-muted-foreground">
-              Nozik ma&apos;lumotlar (o&apos;quvchi yozuv uslubi, psixologik kuzatuvlar) bilan ishlaydigan
+              Bolalar ma&apos;lumotlari bilan ishlaydigan
               platforma sifatida himoya va axloq birinchi o&apos;rinda.
             </p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

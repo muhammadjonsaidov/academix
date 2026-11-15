@@ -8,14 +8,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.AIFeedback;
 import uz.academixai.domain.CriteriaScore;
-import uz.academixai.domain.HandwritingCheckResult;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.PlagiarismType;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.domain.SubmissionType;
 import uz.academixai.intelligence.application.port.out.AnalysisStatusNotifier;
 import uz.academixai.intelligence.application.port.out.GradingAi;
-import uz.academixai.intelligence.application.port.out.HandwritingAnalyzer;
 import uz.academixai.intelligence.application.port.out.HomeworkAnalysisStore;
 import uz.academixai.intelligence.application.port.out.OcrGateway;
 import uz.academixai.intelligence.application.port.out.ProgressAchievementAwarder;
@@ -23,7 +21,6 @@ import uz.academixai.intelligence.application.port.out.SubmissionImageStore;
 import uz.academixai.intelligence.domain.AiCallCategory;
 import uz.academixai.intelligence.domain.GradingAnalysis;
 import uz.academixai.intelligence.domain.GradingCriterion;
-import uz.academixai.intelligence.domain.OcrDocument;
 
 /**
  * Intelligence-owned asynchronous homework OCR, grading and plagiarism analysis process.
@@ -45,7 +42,6 @@ public class HomeworkAiAnalysisService {
   private final HomeworkAnalysisStore submissions;
   private final SubmissionImageStore images;
   private final OcrGateway ocr;
-  private final HandwritingAnalyzer handwriting;
   private final GradingAi grading;
   private final AiBudgetService budget;
   private final ProgressAchievementAwarder achievements;
@@ -55,7 +51,6 @@ public class HomeworkAiAnalysisService {
       HomeworkAnalysisStore submissions,
       SubmissionImageStore images,
       OcrGateway ocr,
-      HandwritingAnalyzer handwriting,
       GradingAi grading,
       AiBudgetService budget,
       ProgressAchievementAwarder achievements,
@@ -63,7 +58,6 @@ public class HomeworkAiAnalysisService {
     this.submissions = submissions;
     this.images = images;
     this.ocr = ocr;
-    this.handwriting = handwriting;
     this.grading = grading;
     this.budget = budget;
     this.achievements = achievements;
@@ -82,29 +76,24 @@ public class HomeworkAiAnalysisService {
                     new IllegalStateException(
                         "Queue message for unknown submissionId " + submissionId));
 
-    OcrDocument document;
+    String extractedText;
     try {
-      document = extractText(submission);
+      extractedText = extractText(submission);
     } catch (OcrUnavailableException exception) {
-      saveOcrOnlyFeedback(submission, "", null);
+      saveOcrOnlyFeedback(submission, "");
       updateStatus(submission, SubmissionStatus.AI_SKIPPED);
       return;
     }
 
-    HandwritingCheckResult handwritingResult =
-        document.characters().isEmpty()
-            ? null
-            : handwriting.checkAndUpdate(submission.studentId(), document);
-    String extractedText = document.extractedText();
     if (extractedText == null || extractedText.trim().length() < MIN_MEANINGFUL_TEXT_LENGTH) {
-      saveEmptyFeedback(submission, handwritingResult);
+      saveEmptyFeedback(submission);
       updateStatus(submission, SubmissionStatus.AI_DONE);
       achievements.applyAiScore(submission.id(), submission.studentId(), 0f, submission.isLate());
       return;
     }
 
     if (!budget.isWithinAiBudget(submission.schoolId(), AiCallCategory.HOMEWORK)) {
-      saveOcrOnlyFeedback(submission, extractedText, handwritingResult);
+      saveOcrOnlyFeedback(submission, extractedText);
       updateStatus(submission, SubmissionStatus.AI_SKIPPED);
       return;
     }
@@ -128,7 +117,7 @@ public class HomeworkAiAnalysisService {
           "AI provider grading unavailable for submission {}, falling to AI_SKIPPED",
           submission.id(),
           exception);
-      saveOcrOnlyFeedback(submission, extractedText, handwritingResult);
+      saveOcrOnlyFeedback(submission, extractedText);
       updateStatus(submission, SubmissionStatus.AI_SKIPPED);
       return;
     }
@@ -136,29 +125,27 @@ public class HomeworkAiAnalysisService {
     budget.recordAiUsage(submission.schoolId(), AiCallCategory.HOMEWORK);
     submissions.recordAiUsage(submission.schoolId(), context);
     float aiScore = weightedSum(result.criteriaScores());
-    saveGradedFeedback(submission, extractedText, result, aiScore, handwritingResult);
+    saveGradedFeedback(submission, extractedText, result, aiScore);
     updateStatus(submission, SubmissionStatus.AI_DONE);
     achievements.applyAiScore(
         submission.id(), submission.studentId(), aiScore, submission.isLate());
   }
 
-  private OcrDocument extractText(HomeworkSubmission submission) {
+  private String extractText(HomeworkSubmission submission) {
     boolean hasImage = submission.imageUrl() != null && !submission.imageUrl().isBlank();
     if (submission.type() == SubmissionType.TEXT || !hasImage) {
-      return new OcrDocument(submission.textContent(), List.of());
+      return submission.textContent();
     }
-    OcrDocument document = ocr.extract(images.download(submission.imageUrl()));
+    String ocrText = ocr.extract(images.download(submission.imageUrl()));
     if (submission.type() == SubmissionType.MIXED
         && submission.textContent() != null
         && !submission.textContent().isBlank()) {
-      return new OcrDocument(
-          submission.textContent() + "\n" + document.extractedText(), document.characters());
+      return submission.textContent() + "\n" + ocrText;
     }
-    return document;
+    return ocrText;
   }
 
-  private void saveEmptyFeedback(
-      HomeworkSubmission submission, HandwritingCheckResult handwriting) {
+  private void saveEmptyFeedback(HomeworkSubmission submission) {
     submissions.saveFeedback(
         new AIFeedback(
             UUID.randomUUID(),
@@ -171,13 +158,11 @@ public class HomeworkAiAnalysisService {
             "Topshiriq bo'sh yoki juda qisqa — baholab bo'lmadi.",
             null,
             0f,
-            resolvePlagiarismType(PlagiarismType.CLEAN, handwriting),
-            handwritingScore(handwriting),
+            PlagiarismType.CLEAN,
             LocalDateTime.now()));
   }
 
-  private void saveOcrOnlyFeedback(
-      HomeworkSubmission submission, String extractedText, HandwritingCheckResult handwriting) {
+  private void saveOcrOnlyFeedback(HomeworkSubmission submission, String extractedText) {
     submissions.saveFeedback(
         new AIFeedback(
             UUID.randomUUID(),
@@ -190,17 +175,12 @@ public class HomeworkAiAnalysisService {
             "AI tahlil vaqtincha ishlamadi — o'qituvchi qo'lda baholaydi.",
             null,
             0f,
-            resolvePlagiarismType(PlagiarismType.CLEAN, handwriting),
-            handwritingScore(handwriting),
+            PlagiarismType.CLEAN,
             LocalDateTime.now()));
   }
 
   private void saveGradedFeedback(
-      HomeworkSubmission submission,
-      String extractedText,
-      GradingAnalysis result,
-      float score,
-      HandwritingCheckResult handwriting) {
+      HomeworkSubmission submission, String extractedText, GradingAnalysis result, float score) {
     submissions.saveFeedback(
         new AIFeedback(
             UUID.randomUUID(),
@@ -213,8 +193,7 @@ public class HomeworkAiAnalysisService {
             result.feedback(),
             null,
             (float) result.plagiarismScore(),
-            resolvePlagiarismType(parsePlagiarismType(result.plagiarismType()), handwriting),
-            handwritingScore(handwriting),
+            parsePlagiarismType(result.plagiarismType()),
             LocalDateTime.now()));
   }
 
@@ -224,7 +203,6 @@ public class HomeworkAiAnalysisService {
             submission.id(),
             submission.schoolId(),
             submission.assignmentId(),
-            submission.studentTaskId(),
             submission.studentId(),
             submission.type(),
             submission.textContent(),
@@ -255,20 +233,11 @@ public class HomeworkAiAnalysisService {
     return (float) (sum / 100.0);
   }
 
-  private static float handwritingScore(HandwritingCheckResult handwriting) {
-    return handwriting == null ? 0f : handwriting.matchScore();
-  }
-
-  private static PlagiarismType resolvePlagiarismType(
-      PlagiarismType qwenType, HandwritingCheckResult handwriting) {
-    return handwriting != null && handwriting.type() == PlagiarismType.HANDWRITING_MISMATCH
-        ? PlagiarismType.HANDWRITING_MISMATCH
-        : qwenType;
-  }
-
   private static PlagiarismType parsePlagiarismType(String raw) {
     try {
-      return PlagiarismType.valueOf(raw);
+      PlagiarismType type = PlagiarismType.valueOf(raw);
+      // Retired with handwriting biometrics; a drifting model reply must not resurrect it.
+      return type == PlagiarismType.HANDWRITING_MISMATCH ? PlagiarismType.SUSPICIOUS : type;
     } catch (IllegalArgumentException | NullPointerException exception) {
       return PlagiarismType.CLEAN;
     }

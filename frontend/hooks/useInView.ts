@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * Observes an element and flips `inView` to true the first time it enters the
- * viewport (then disconnects — one-shot by design). Powers the scroll-reveal
- * system (Reveal, ProgressBar fill, count-up). Reduced motion: reveals
+ * viewport (then disconnects — one-shot by design). Powers the
+ * ProgressBar fill and count-up animations. Reduced motion: reveals
  * immediately instead of waiting for the observer, so the page is calm for
  * users who ask for it.
  */

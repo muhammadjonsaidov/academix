@@ -15,13 +15,11 @@ import uz.academixai.intelligence.application.port.out.AiMonthlyLimitLookup;
 import uz.academixai.intelligence.application.port.out.AiUsageCounter;
 import uz.academixai.intelligence.application.port.out.AnalysisStatusNotifier;
 import uz.academixai.intelligence.application.port.out.GradingAi;
-import uz.academixai.intelligence.application.port.out.HandwritingAnalyzer;
 import uz.academixai.intelligence.application.port.out.HomeworkAnalysisStore;
 import uz.academixai.intelligence.application.port.out.OcrGateway;
 import uz.academixai.intelligence.application.port.out.ProgressAchievementAwarder;
 import uz.academixai.intelligence.application.port.out.SubmissionImageStore;
 import uz.academixai.intelligence.domain.AiCallCategory;
-import uz.academixai.intelligence.domain.OcrDocument;
 
 class HomeworkAiAnalysisServiceTest {
 
@@ -36,7 +34,6 @@ class HomeworkAiAnalysisServiceTest {
                 submissionId,
                 schoolId,
                 UUID.randomUUID(),
-                null,
                 studentId,
                 SubmissionType.TEXT,
                 "x",
@@ -86,18 +83,10 @@ class HomeworkAiAnalysisServiceTest {
           public void increment(UUID schoolId, AiCallCategory category) {}
         };
     SubmissionImageStore images = key -> new byte[0];
-    OcrGateway ocr = image -> new OcrDocument("", List.of());
-    HandwritingAnalyzer handwriting = (studentId, document) -> null;
+    OcrGateway ocr = image -> "";
     GradingAi grading = (subject, criteria, text) -> null;
     return new HomeworkAiAnalysisService(
-        store,
-        images,
-        ocr,
-        handwriting,
-        grading,
-        new AiBudgetService(limits, counter),
-        awards,
-        notifications);
+        store, images, ocr, grading, new AiBudgetService(limits, counter), awards, notifications);
   }
 
   private static AnalysisStatusNotifier noopNotifier() {

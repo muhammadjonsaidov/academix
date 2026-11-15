@@ -136,23 +136,23 @@ WHERE sc.school_id = 'cc021f70-256f-45c0-be19-ab7beddab1b3';
 -- 6. Homework assignments (6 per class over the last 6 weeks; 2 still open)
 --    subjects: 4b3d36ff.. = Matematika (Gulnora), ed03c4fe.. = Fizika (Malika Sh.)
 -- ---------------------------------------------------------------------------
-INSERT INTO homework_assignments (id, school_id, class_id, subject_id, teacher_id, title, description, type, assigned_at, deadline_at, max_score, is_active, tasks_published) VALUES
+INSERT INTO homework_assignments (id, school_id, class_id, subject_id, teacher_id, title, description, assigned_at, deadline_at, max_score, is_active) VALUES
   -- 7-A Matematika
-  ('b1000000-0000-4000-8000-000000000001', 'cc021f70-256f-45c0-be19-ab7beddab1b3', '1bc5be58-cdfd-4a41-a150-b8f3a1cc0e39', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Kvadrat tenglamalar', 'Diskriminant yordamida kvadrat tenglamalarni yechish: 12-15 misollar, 48-bet.', 'STANDARD', now() - interval '40 days', now() - interval '33 days', 100, true, true),
-  ('b1000000-0000-4000-8000-000000000002', 'cc021f70-256f-45c0-be19-ab7beddab1b3', '1bc5be58-cdfd-4a41-a150-b8f3a1cc0e39', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Chiziqli funksiya grafigi', 'y = kx + b funksiya grafigini yasash va xossalarini aniqlash. 5 ta topshiriq.', 'STANDARD', now() - interval '33 days', now() - interval '26 days', 100, true, true),
-  ('b1000000-0000-4000-8000-000000000003', 'cc021f70-256f-45c0-be19-ab7beddab1b3', '1bc5be58-cdfd-4a41-a150-b8f3a1cc0e39', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Foizlar va nisbatlar', 'Amaliy masalalar: chegirma, ustama va aralashma masalalari (6 ta masala).', 'STANDARD', now() - interval '19 days', now() - interval '12 days', 100, true, true),
-  ('b1000000-0000-4000-8000-000000000004', 'cc021f70-256f-45c0-be19-ab7beddab1b3', '1bc5be58-cdfd-4a41-a150-b8f3a1cc0e39', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Koʻphadlarni koʻpaytirish', 'Qisqa koʻpaytirish formulalari boʻyicha 10 ta mashq, 61-bet.', 'STANDARD', now() - interval '5 days', now() + interval '2 days', 100, true, true),
+  ('b1000000-0000-4000-8000-000000000001', 'cc021f70-256f-45c0-be19-ab7beddab1b3', '1bc5be58-cdfd-4a41-a150-b8f3a1cc0e39', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Kvadrat tenglamalar', 'Diskriminant yordamida kvadrat tenglamalarni yechish: 12-15 misollar, 48-bet.', now() - interval '40 days', now() - interval '33 days', 100, true),
+  ('b1000000-0000-4000-8000-000000000002', 'cc021f70-256f-45c0-be19-ab7beddab1b3', '1bc5be58-cdfd-4a41-a150-b8f3a1cc0e39', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Chiziqli funksiya grafigi', 'y = kx + b funksiya grafigini yasash va xossalarini aniqlash. 5 ta topshiriq.', now() - interval '33 days', now() - interval '26 days', 100, true),
+  ('b1000000-0000-4000-8000-000000000003', 'cc021f70-256f-45c0-be19-ab7beddab1b3', '1bc5be58-cdfd-4a41-a150-b8f3a1cc0e39', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Foizlar va nisbatlar', 'Amaliy masalalar: chegirma, ustama va aralashma masalalari (6 ta masala).', now() - interval '19 days', now() - interval '12 days', 100, true),
+  ('b1000000-0000-4000-8000-000000000004', 'cc021f70-256f-45c0-be19-ab7beddab1b3', '1bc5be58-cdfd-4a41-a150-b8f3a1cc0e39', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Koʻphadlarni koʻpaytirish', 'Qisqa koʻpaytirish formulalari boʻyicha 10 ta mashq, 61-bet.', now() - interval '5 days', now() + interval '2 days', 100, true),
   -- 7-A Fizika
-  ('b1000000-0000-4000-8000-000000000005', 'cc021f70-256f-45c0-be19-ab7beddab1b3', '1bc5be58-cdfd-4a41-a150-b8f3a1cc0e39', 'ed03c4fe-ef5f-4dd3-9455-0e1a4db00bdd', '609d8ca9-dfa8-4482-8b37-e2e5a1308ac3', 'Nyuton qonunlari masalalari', 'Nyutonning II qonuni boʻyicha masalalar: F = ma. 4 ta masala, 35-bet.', 'STANDARD', now() - interval '26 days', now() - interval '19 days', 100, true, true),
-  ('b1000000-0000-4000-8000-000000000006', 'cc021f70-256f-45c0-be19-ab7beddab1b3', '1bc5be58-cdfd-4a41-a150-b8f3a1cc0e39', 'ed03c4fe-ef5f-4dd3-9455-0e1a4db00bdd', '609d8ca9-dfa8-4482-8b37-e2e5a1308ac3', 'Zichlik va bosim', 'Zichlik va bosimga oid amaliy masalalar (5 ta), jadval bilan ishlash.', 'STANDARD', now() - interval '12 days', now() - interval '5 days', 100, true, true),
+  ('b1000000-0000-4000-8000-000000000005', 'cc021f70-256f-45c0-be19-ab7beddab1b3', '1bc5be58-cdfd-4a41-a150-b8f3a1cc0e39', 'ed03c4fe-ef5f-4dd3-9455-0e1a4db00bdd', '609d8ca9-dfa8-4482-8b37-e2e5a1308ac3', 'Nyuton qonunlari masalalari', 'Nyutonning II qonuni boʻyicha masalalar: F = ma. 4 ta masala, 35-bet.', now() - interval '26 days', now() - interval '19 days', 100, true),
+  ('b1000000-0000-4000-8000-000000000006', 'cc021f70-256f-45c0-be19-ab7beddab1b3', '1bc5be58-cdfd-4a41-a150-b8f3a1cc0e39', 'ed03c4fe-ef5f-4dd3-9455-0e1a4db00bdd', '609d8ca9-dfa8-4482-8b37-e2e5a1308ac3', 'Zichlik va bosim', 'Zichlik va bosimga oid amaliy masalalar (5 ta), jadval bilan ishlash.', now() - interval '12 days', now() - interval '5 days', 100, true),
   -- 8-B Matematika
-  ('b1000000-0000-4000-8000-000000000007', 'cc021f70-256f-45c0-be19-ab7beddab1b3', 'a3000000-0000-4000-8000-000000000001', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Kvadrat ildizlar', 'Kvadrat ildiz xossalari va soddalashtirish: 20 ta mashq, 27-bet.', 'STANDARD', now() - interval '38 days', now() - interval '31 days', 100, true, true),
-  ('b1000000-0000-4000-8000-000000000008', 'cc021f70-256f-45c0-be19-ab7beddab1b3', 'a3000000-0000-4000-8000-000000000001', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Algebraik kasrlar', 'Algebraik kasrlarni qisqartirish va umumiy maxrajga keltirish (8 ta mashq).', 'STANDARD', now() - interval '24 days', now() - interval '17 days', 100, true, true),
-  ('b1000000-0000-4000-8000-000000000009', 'cc021f70-256f-45c0-be19-ab7beddab1b3', 'a3000000-0000-4000-8000-000000000001', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Tenglamalar sistemasi', 'Ikki nomaʼlumli chiziqli tenglamalar sistemasini yechish (6 ta sistema).', 'STANDARD', now() - interval '10 days', now() - interval '3 days', 100, true, true),
+  ('b1000000-0000-4000-8000-000000000007', 'cc021f70-256f-45c0-be19-ab7beddab1b3', 'a3000000-0000-4000-8000-000000000001', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Kvadrat ildizlar', 'Kvadrat ildiz xossalari va soddalashtirish: 20 ta mashq, 27-bet.', now() - interval '38 days', now() - interval '31 days', 100, true),
+  ('b1000000-0000-4000-8000-000000000008', 'cc021f70-256f-45c0-be19-ab7beddab1b3', 'a3000000-0000-4000-8000-000000000001', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Algebraik kasrlar', 'Algebraik kasrlarni qisqartirish va umumiy maxrajga keltirish (8 ta mashq).', now() - interval '24 days', now() - interval '17 days', 100, true),
+  ('b1000000-0000-4000-8000-000000000009', 'cc021f70-256f-45c0-be19-ab7beddab1b3', 'a3000000-0000-4000-8000-000000000001', '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea', '7c0adf23-9276-431a-bd18-5b4873eab945', 'Tenglamalar sistemasi', 'Ikki nomaʼlumli chiziqli tenglamalar sistemasini yechish (6 ta sistema).', now() - interval '10 days', now() - interval '3 days', 100, true),
   -- 8-B Fizika
-  ('b1000000-0000-4000-8000-000000000010', 'cc021f70-256f-45c0-be19-ab7beddab1b3', 'a3000000-0000-4000-8000-000000000001', 'ed03c4fe-ef5f-4dd3-9455-0e1a4db00bdd', '609d8ca9-dfa8-4482-8b37-e2e5a1308ac3', 'Elektr zanjirlari', 'Om qonuni asosida zanjir hisobi: I = U/R. 5 ta masala, 52-bet.', 'STANDARD', now() - interval '31 days', now() - interval '24 days', 100, true, true),
-  ('b1000000-0000-4000-8000-000000000011', 'cc021f70-256f-45c0-be19-ab7beddab1b3', 'a3000000-0000-4000-8000-000000000001', 'ed03c4fe-ef5f-4dd3-9455-0e1a4db00bdd', '609d8ca9-dfa8-4482-8b37-e2e5a1308ac3', 'Issiqlik miqdori', 'Q = cmΔt formulasi boʻyicha issiqlik hisoblari (4 ta masala).', 'STANDARD', now() - interval '17 days', now() - interval '10 days', 100, true, true),
-  ('b1000000-0000-4000-8000-000000000012', 'cc021f70-256f-45c0-be19-ab7beddab1b3', 'a3000000-0000-4000-8000-000000000001', 'ed03c4fe-ef5f-4dd3-9455-0e1a4db00bdd', '609d8ca9-dfa8-4482-8b37-e2e5a1308ac3', 'Yorugʻlik hodisalari', 'Yorugʻlikning qaytishi va sinishi: chizmalar bilan 5 ta topshiriq.', 'STANDARD', now() - interval '4 days', now() + interval '3 days', 100, true, true)
+  ('b1000000-0000-4000-8000-000000000010', 'cc021f70-256f-45c0-be19-ab7beddab1b3', 'a3000000-0000-4000-8000-000000000001', 'ed03c4fe-ef5f-4dd3-9455-0e1a4db00bdd', '609d8ca9-dfa8-4482-8b37-e2e5a1308ac3', 'Elektr zanjirlari', 'Om qonuni asosida zanjir hisobi: I = U/R. 5 ta masala, 52-bet.', now() - interval '31 days', now() - interval '24 days', 100, true),
+  ('b1000000-0000-4000-8000-000000000011', 'cc021f70-256f-45c0-be19-ab7beddab1b3', 'a3000000-0000-4000-8000-000000000001', 'ed03c4fe-ef5f-4dd3-9455-0e1a4db00bdd', '609d8ca9-dfa8-4482-8b37-e2e5a1308ac3', 'Issiqlik miqdori', 'Q = cmΔt formulasi boʻyicha issiqlik hisoblari (4 ta masala).', now() - interval '17 days', now() - interval '10 days', 100, true),
+  ('b1000000-0000-4000-8000-000000000012', 'cc021f70-256f-45c0-be19-ab7beddab1b3', 'a3000000-0000-4000-8000-000000000001', 'ed03c4fe-ef5f-4dd3-9455-0e1a4db00bdd', '609d8ca9-dfa8-4482-8b37-e2e5a1308ac3', 'Yorugʻlik hodisalari', 'Yorugʻlikning qaytishi va sinishi: chizmalar bilan 5 ta topshiriq.', now() - interval '4 days', now() + interval '3 days', 100, true)
 ON CONFLICT (id) DO NOTHING;
 
 -- ---------------------------------------------------------------------------
@@ -262,7 +262,7 @@ ON CONFLICT (submission_id) DO NOTHING;
 --     JSON shapes match domain records exactly:
 --       criteria_scores: [{name, weightPercent, score}]
 --       step_analyses:   [{stepNumber, stepContent, isCorrect, errorDescription, suggestion}]
-INSERT INTO ai_feedbacks (id, submission_id, extracted_text, ocr_confidence, step_analyses, criteria_scores, ai_score_percent, feedback, plagiarism_score, plagiarism_type, handwriting_match_score, processed_at)
+INSERT INTO ai_feedbacks (id, submission_id, extracted_text, ocr_confidence, step_analyses, criteria_scores, ai_score_percent, feedback, plagiarism_score, plagiarism_type, processed_at)
 SELECT md5(s.sid::text || 'aif')::uuid, s.sid,
        CASE WHEN s.subj = 'M'
             THEN 'x² − 5x + 6 = 0; D = 25 − 24 = 1; x₁ = 3; x₂ = 2; Javob: {2; 3}'
@@ -291,7 +291,6 @@ SELECT md5(s.sid::text || 'aif')::uuid, s.sid,
             ELSE 'Yechimda jiddiy xatolar mavjud. Mavzuni takrorlash tavsiya etiladi.' END,
        ((s.score * 7) % 13)::real,
        'CLEAN',
-       (80 + (s.score % 18))::real,
        ha.assigned_at + (s.off_days || ' days')::interval + interval '5 minutes'
 FROM _seed_subs s JOIN homework_assignments ha ON ha.id = s.aid
 WHERE s.status IN ('AI_DONE', 'GRADED')
@@ -299,8 +298,8 @@ ON CONFLICT (submission_id) DO NOTHING;
 
 -- 7d. The plagiarism demo: Timur's "Issiqlik miqdori" work detected as AI-generated
 UPDATE ai_feedbacks
-SET plagiarism_score = 78, plagiarism_type = 'AI_GENERATED', handwriting_match_score = 44,
-    feedback = 'DIQQAT: matn uslubi sunʼiy intellekt tomonidan yozilganlikka juda oʻxshash (78%). Yozuv uslubi oʻquvchining avvalgi ishlaridan keskin farq qiladi. Oʻqituvchi tekshiruvi talab etiladi.'
+SET plagiarism_score = 78, plagiarism_type = 'AI_GENERATED',
+    feedback = 'DIQQAT: matn uslubi sunʼiy intellekt tomonidan yozilganlikka juda oʻxshash (78%). Oʻqituvchi tekshiruvi talab etiladi.'
 WHERE submission_id = 'b2000000-0000-4000-8000-000000000046';
 
 -- ---------------------------------------------------------------------------
@@ -343,7 +342,7 @@ SELECT md5(es.esid::text || 'eg')::uuid, es.esid, e.teacher_id, es.score,
 FROM _seed_exam_subs es JOIN exams e ON e.id = es.eid
 ON CONFLICT (exam_submission_id) DO NOTHING;
 
-INSERT INTO exam_ai_feedbacks (id, school_id, exam_submission_id, extracted_text, step_analyses, criteria_scores, ai_score_percent, feedback, handwriting_match_score, processed_at)
+INSERT INTO exam_ai_feedbacks (id, school_id, exam_submission_id, extracted_text, step_analyses, criteria_scores, ai_score_percent, feedback, processed_at)
 SELECT md5(es.esid::text || 'eaif')::uuid, e.school_id, es.esid,
        CASE WHEN e.subject_id = '4b3d36ff-cd25-4f2f-903f-5a9cb9fd44ea'
             THEN '1) x² − 7x + 12 = 0; D = 49 − 48 = 1; x = 3; 4. 2) 25% · 480 = 120. 3) sistema: x = 2, y = −1.'
@@ -368,7 +367,6 @@ SELECT md5(es.esid::text || 'eaif')::uuid, e.school_id, es.esid,
        CASE WHEN es.score >= 86 THEN 'Nazorat ishi juda yaxshi bajarilgan, barcha topshiriqlar toʻgʻri.'
             WHEN es.score >= 71 THEN 'Umumiy natija yaxshi, ayrim topshiriqlarda kichik xatolar bor.'
             ELSE 'Bir nechta topshiriqda xatoliklar aniqlandi, mavzularni takrorlash zarur.' END,
-       (82 + (es.score % 15))::real,
        e.exam_date::timestamp + interval '5 hours'
 FROM _seed_exam_subs es JOIN exams e ON e.id = es.eid
 ON CONFLICT (exam_submission_id) DO NOTHING;

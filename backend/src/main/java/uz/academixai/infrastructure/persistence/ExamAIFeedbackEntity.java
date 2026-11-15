@@ -45,9 +45,6 @@ public class ExamAIFeedbackEntity {
 
   private String feedback;
 
-  @Column(name = "handwriting_match_score")
-  private float handwritingMatchScore;
-
   @Column(name = "processed_at")
   private LocalDateTime processedAt;
 
@@ -62,7 +59,6 @@ public class ExamAIFeedbackEntity {
       List<CriteriaScore> criteriaScores,
       float aiScorePercent,
       String feedback,
-      float handwritingMatchScore,
       LocalDateTime processedAt) {
     this.id = id;
     this.schoolId = schoolId;
@@ -72,7 +68,6 @@ public class ExamAIFeedbackEntity {
     this.criteriaScores = criteriaScores;
     this.aiScorePercent = aiScorePercent;
     this.feedback = feedback;
-    this.handwritingMatchScore = handwritingMatchScore;
     this.processedAt = processedAt;
   }
 
@@ -86,7 +81,6 @@ public class ExamAIFeedbackEntity {
         domain.criteriaScores(),
         domain.aiScorePercent(),
         domain.feedback(),
-        domain.handwritingMatchScore(),
         domain.processedAt());
   }
 
@@ -100,7 +94,6 @@ public class ExamAIFeedbackEntity {
         criteriaScores,
         aiScorePercent,
         feedback,
-        handwritingMatchScore,
         processedAt);
   }
 

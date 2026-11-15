@@ -8,7 +8,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 import uz.academixai.domain.CriteriaScore;
-import uz.academixai.domain.LessonPlanContent;
 import uz.academixai.shared.ai.AiGradingResult;
 import uz.academixai.shared.ai.AiProviderUnavailableException;
 import uz.academixai.shared.ai.GradingCriterion;
@@ -96,42 +95,6 @@ class OpenAiCompatibleClientTest {
         .contains("Yechish usuli")
         .contains("40")
         .contains("5x + 3 = 18");
-  }
-
-  private static final String LESSON_PLAN_JSON =
-      """
-      {
-        "objectives": ["Chiziqli tenglamalarni yechishni o'rganish"],
-        "activities": [
-          { "description": "Kirish va nazariy tushuntirish", "durationMinutes": 10 },
-          { "description": "Doskada misollar yechish", "durationMinutes": 20 }
-        ],
-        "materials": ["Darslik", "Doska"],
-        "homeworkSuggestion": "10-15 misollar"
-      }""";
-
-  @Test
-  void parsesLessonPlanContentFromOpenAiShapedResponse() throws Exception {
-    var response =
-        jackson3Mapper.readTree(
-            wrapAsChatCompletion(LESSON_PLAN_JSON.replace("\"", "\\\"").replace("\n", "\\n")));
-
-    LessonPlanContent result =
-        OpenAiCompatibleClient.parseLessonPlanContent(response, objectMapper);
-
-    assertThat(result.objectives()).containsExactly("Chiziqli tenglamalarni yechishni o'rganish");
-    assertThat(result.activities()).hasSize(2);
-    assertThat(result.activities().get(1).durationMinutes()).isEqualTo(20);
-    assertThat(result.materials()).containsExactly("Darslik", "Doska");
-    assertThat(result.homeworkSuggestion()).isEqualTo("10-15 misollar");
-  }
-
-  @Test
-  void throwsAiProviderUnavailableExceptionOnUnparsableLessonPlanContent() throws Exception {
-    var response = jackson3Mapper.readTree(wrapAsChatCompletion("not json at all"));
-
-    assertThatThrownBy(() -> OpenAiCompatibleClient.parseLessonPlanContent(response, objectMapper))
-        .isInstanceOf(AiProviderUnavailableException.class);
   }
 
   private static String wrapAsChatCompletion(String escapedContent) {

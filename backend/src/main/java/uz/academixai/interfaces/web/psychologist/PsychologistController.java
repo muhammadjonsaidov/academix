@@ -18,9 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.domain.SignalSeverity;
 import uz.academixai.infrastructure.security.AcademixPrincipal;
 import uz.academixai.interfaces.web.PageResponse;
+import uz.academixai.shared.feature.ConditionalOnPsychologyModule;
 import uz.academixai.wellbeing.application.port.in.PsychologistWorkspace;
 
 /** academix_tz.md §2.6 "Psychologist API" — exact paths, some response/request shapes deviate. */
+@ConditionalOnPsychologyModule
 @RestController
 @RequestMapping("/api/v1/psychologist")
 @PreAuthorize("hasRole('PSYCHOLOGIST')")

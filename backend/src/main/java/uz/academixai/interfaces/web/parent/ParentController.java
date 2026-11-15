@@ -1,6 +1,5 @@
 package uz.academixai.interfaces.web.parent;
 
-import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ContentDisposition;
@@ -12,8 +11,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uz.academixai.family.application.DataDeletionService;
@@ -93,15 +90,6 @@ public class ParentController {
       @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID studentId) {
     var request = dataDeletionService.requestDeletion(principal.userId(), studentId);
     return ResponseEntity.ok(DataDeletionRequestResponse.from(request));
-  }
-
-  @PutMapping("/children/{studentId}/consent/biometric")
-  public ResponseEntity<Void> setBiometricConsent(
-      @AuthenticationPrincipal AcademixPrincipal principal,
-      @PathVariable UUID studentId,
-      @Valid @RequestBody SetBiometricConsentRequest request) {
-    parentLinkService.setBiometricConsent(principal.userId(), studentId, request.consentGiven());
-    return ResponseEntity.noContent().build();
   }
 
   @GetMapping("/children/{studentId}/progress")

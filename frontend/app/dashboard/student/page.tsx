@@ -12,7 +12,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { DashboardHero, HeroAction } from "@/components/shared/DashboardHero";
-import { DashboardShell } from "@/components/shared/DashboardShell";
+import { DashboardShell } from "@/components/shell/DashboardShell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StampBadge } from "@/components/ui/stamp-badge";

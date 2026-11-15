@@ -4,6 +4,7 @@ package uz.academixai.domain;
 public enum PlagiarismType {
   CLEAN,
   AI_GENERATED,
+  /** Retired with handwriting biometrics — never produced any more, kept so old rows still load. */
   HANDWRITING_MISMATCH,
   SUSPICIOUS
 }
