@@ -1,8 +1,12 @@
 package uz.academixai.interfaces.web.teacher;
 
 import jakarta.validation.Valid;
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,6 +52,28 @@ public class TeacherSubmissionController {
             .map(TeacherSubmissionListItemResponse::from)
             .toList();
     return PageResponse.slice(all, page, size);
+  }
+
+  /** What is waiting for the teacher, grouped by assignment — the teacher home's to-do list. */
+  @GetMapping("/review-queue")
+  public List<TeacherSubmissionQuery.ReviewQueueItem> reviewQueue(
+      @AuthenticationPrincipal AcademixPrincipal principal) {
+    return submissionService.reviewQueue(principal.schoolId(), principal.userId());
+  }
+
+  /** The student's photo, streamed through the API so storage stays private. 404 for text work. */
+  @GetMapping("/{submissionId}/image")
+  public ResponseEntity<byte[]> image(
+      @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID submissionId) {
+    return submissionService
+        .image(principal.schoolId(), principal.userId(), submissionId)
+        .map(
+            image ->
+                ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(image.contentType()))
+                    .cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePrivate())
+                    .body(image.content()))
+        .orElseGet(() -> ResponseEntity.notFound().build());
   }
 
   @GetMapping("/{submissionId}")

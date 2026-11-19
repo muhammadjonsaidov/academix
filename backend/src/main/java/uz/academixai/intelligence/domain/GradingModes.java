@@ -13,14 +13,7 @@ public final class GradingModes {
   private GradingModes() {}
 
   public static GradingMode forSubject(SubjectType type) {
-    if (type == null) {
-      return GradingMode.WRITTEN_RESPONSE;
-    }
-    return switch (type) {
-      case MATH, PHYSICS, CHEMISTRY -> GradingMode.PROBLEM_SOLVING;
-      case LANGUAGE_UZ, LANGUAGE_RU, LANGUAGE_EN -> GradingMode.LANGUAGE;
-      case BIOLOGY, HISTORY, GEOGRAPHY, OTHER -> GradingMode.WRITTEN_RESPONSE;
-    };
+    return GradingMode.forSubject(type);
   }
 
   public static List<GradingCriterion> defaultCriteria(GradingMode mode) {

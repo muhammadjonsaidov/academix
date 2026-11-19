@@ -18,4 +18,9 @@ public class SeaweedHomeworkImageStorage implements HomeworkImageStorage {
   public void store(String key, byte[] content, String contentType) {
     storage.upload(key, content, contentType);
   }
+
+  @Override
+  public byte[] load(String key) {
+    return storage.download(key);
+  }
 }

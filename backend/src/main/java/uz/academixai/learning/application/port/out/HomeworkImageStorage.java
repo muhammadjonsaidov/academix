@@ -4,4 +4,6 @@ package uz.academixai.learning.application.port.out;
 public interface HomeworkImageStorage {
 
   void store(String key, byte[] content, String contentType);
+
+  byte[] load(String key);
 }

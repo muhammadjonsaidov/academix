@@ -8,7 +8,7 @@ COPY build.gradle.kts settings.gradle.kts ./
 COPY src src
 # The Gradle cache (wrapper + dependencies) lives in a BuildKit cache mount, so it survives across
 # builds: a changed build.gradle.kts only downloads what is new instead of everything again.
-RUN --mount=type=cache,target=/root/.gradle ./gradlew --no-daemon --quiet bootJar
+RUN --mount=type=cache,id=gradle-backend,target=/root/.gradle ./gradlew --no-daemon --quiet bootJar
 
 # JDK (not JRE) in the runtime stage, deliberately: JasperReportGenerator's @PostConstruct
 # compiles quarter-report JRXML → .java → javac at startup, and a JRE has no javac — confirmed

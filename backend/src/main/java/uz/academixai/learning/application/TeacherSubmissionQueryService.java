@@ -3,6 +3,7 @@ package uz.academixai.learning.application;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
@@ -12,8 +13,10 @@ import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.learning.application.port.in.TeacherSubmissionQuery;
 import uz.academixai.learning.application.port.out.HomeworkAssignmentStore;
+import uz.academixai.learning.application.port.out.HomeworkImageStorage;
 import uz.academixai.learning.application.port.out.HomeworkSubmissionReadRepository;
 import uz.academixai.learning.application.port.out.StudentNameLookup;
+import uz.academixai.learning.application.port.out.SubjectNameLookup;
 import uz.academixai.learning.application.port.out.SubmissionAssessmentLookup;
 import uz.academixai.learning.domain.ReviewQueueOrder;
 import uz.academixai.shared.error.ApiException;
@@ -26,16 +29,37 @@ public class TeacherSubmissionQueryService implements TeacherSubmissionQuery {
   private final HomeworkSubmissionReadRepository submissions;
   private final StudentNameLookup names;
   private final SubmissionAssessmentLookup assessments;
+  private final HomeworkImageStorage images;
+  private final SubjectNameLookup subjects;
 
   public TeacherSubmissionQueryService(
       HomeworkAssignmentStore assignments,
       HomeworkSubmissionReadRepository submissions,
       StudentNameLookup names,
-      SubmissionAssessmentLookup assessments) {
+      SubmissionAssessmentLookup assessments,
+      HomeworkImageStorage images,
+      SubjectNameLookup subjects) {
     this.assignments = assignments;
     this.submissions = submissions;
     this.names = names;
     this.assessments = assessments;
+    this.images = images;
+    this.subjects = subjects;
+  }
+
+  @Override
+  public Optional<SubmissionImage> image(UUID schoolId, UUID teacherId, UUID submissionId) {
+    HomeworkSubmission submission =
+        submissions
+            .findByIdAndSchoolId(submissionId, schoolId)
+            .orElseThrow(TeacherSubmissionQueryService::notFound);
+    requireOwnedAssignment(schoolId, teacherId, submission.assignmentId());
+    String key = submission.imageUrl();
+    if (key == null || key.isBlank()) {
+      return Optional.empty();
+    }
+    String contentType = key.endsWith(".png") ? "image/png" : "image/jpeg";
+    return Optional.of(new SubmissionImage(images.load(key), contentType));
   }
 
   @Override
@@ -73,7 +97,46 @@ public class TeacherSubmissionQueryService implements TeacherSubmissionQuery {
             .orElseThrow(TeacherSubmissionQueryService::notFound);
     HomeworkAssignment assignment =
         requireOwnedAssignment(schoolId, teacherId, submission.assignmentId());
-    return withFeedback(submission, assignment.title());
+    SubmissionWithFeedback item = withFeedback(submission, assignment.title());
+    return new SubmissionWithFeedback(
+        item.submission(),
+        item.studentName(),
+        item.assignmentTitle(),
+        item.feedback(),
+        item.grade(),
+        subjects.gradingMode(assignment.subjectId()));
+  }
+
+  @Override
+  public List<ReviewQueueItem> reviewQueue(UUID schoolId, UUID teacherId) {
+    Map<UUID, List<SubmissionWithFeedback>> byAssignment =
+        list(schoolId, teacherId, null, null, SubmissionStatus.AI_DONE).stream()
+            .collect(
+                Collectors.groupingBy(
+                    item -> item.submission().assignmentId(),
+                    java.util.LinkedHashMap::new,
+                    Collectors.toList()));
+    return byAssignment.values().stream()
+        .map(
+            items ->
+                new ReviewQueueItem(
+                    items.getFirst().submission().assignmentId(),
+                    items.getFirst().assignmentTitle(),
+                    items.size(),
+                    (int)
+                        items.stream()
+                            .filter(item -> ReviewQueueOrder.needsCloseLook(item.feedback()))
+                            .count(),
+                    items.stream()
+                        .map(item -> item.submission().submittedAt())
+                        .min(Comparator.naturalOrder())
+                        .orElse(null)))
+        .sorted(
+            Comparator.comparing((ReviewQueueItem item) -> item.flagged() == 0)
+                .thenComparing(
+                    ReviewQueueItem::oldestSubmittedAt,
+                    Comparator.nullsLast(Comparator.naturalOrder())))
+        .toList();
   }
 
   /**
@@ -97,7 +160,8 @@ public class TeacherSubmissionQueryService implements TeacherSubmissionQuery {
         names.fullName(submission.studentId()),
         title,
         assessments.feedback(submission.id()).orElse(null),
-        assessments.grade(submission.id()).orElse(null));
+        assessments.grade(submission.id()).orElse(null),
+        null);
   }
 
   private HomeworkAssignment requireOwnedAssignment(

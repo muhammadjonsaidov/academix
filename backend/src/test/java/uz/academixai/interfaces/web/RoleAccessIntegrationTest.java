@@ -568,7 +568,10 @@ class RoleAccessIntegrationTest {
             {"title":"Yangilangan vazifa","deadlineAt":"2026-06-02T18:00:00","maxScore":100}"""),
         new Endpoint(HttpMethod.DELETE, "/api/v1/teacher/homework/{assignmentId}", Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/submissions", Role.TEACHER),
+        new Endpoint(HttpMethod.GET, "/api/v1/teacher/submissions/review-queue", Role.TEACHER),
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/submissions/{submissionId}", Role.TEACHER),
+        new Endpoint(
+            HttpMethod.GET, "/api/v1/teacher/submissions/{submissionId}/image", Role.TEACHER),
         new Endpoint(
             HttpMethod.POST,
             "/api/v1/teacher/submissions/approve-clean/{assignmentId}",

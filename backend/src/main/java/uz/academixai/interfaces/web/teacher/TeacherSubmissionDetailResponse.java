@@ -10,6 +10,7 @@ public record TeacherSubmissionDetailResponse(
     UUID submissionId,
     UUID studentId,
     String studentName,
+    UUID assignmentId,
     String assignmentTitle,
     LocalDateTime submittedAt,
     boolean isLate,
@@ -17,7 +18,8 @@ public record TeacherSubmissionDetailResponse(
     String originalImageUrl,
     TeacherAiFeedbackResponse aiFeedback,
     TeacherGradeResponse previousGrade,
-    Integer suggestedGrade) {
+    Integer suggestedGrade,
+    String gradingMode) {
 
   public static TeacherSubmissionDetailResponse from(SubmissionWithFeedback item) {
     var submission = item.submission();
@@ -25,6 +27,7 @@ public record TeacherSubmissionDetailResponse(
         submission.id(),
         submission.studentId(),
         item.studentName(),
+        submission.assignmentId(),
         item.assignmentTitle(),
         submission.submittedAt(),
         submission.isLate(),
@@ -34,6 +37,7 @@ public record TeacherSubmissionDetailResponse(
         TeacherGradeResponse.from(item.grade()),
         item.feedback() == null
             ? null
-            : FivePointScale.fromPercent(item.feedback().aiScorePercent()));
+            : FivePointScale.fromPercent(item.feedback().aiScorePercent()),
+        item.gradingMode() == null ? null : item.gradingMode().name());
   }
 }
