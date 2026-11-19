@@ -8,7 +8,9 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import uz.academixai.domain.AIFeedback;
+import uz.academixai.domain.CriteriaScore;
 import uz.academixai.domain.HomeworkSubmission;
+import uz.academixai.domain.StepAnalysis;
 import uz.academixai.domain.SubmissionStatus;
 import uz.academixai.domain.SubmissionType;
 import uz.academixai.intelligence.application.port.out.AiMonthlyLimitLookup;
@@ -20,6 +22,10 @@ import uz.academixai.intelligence.application.port.out.OcrGateway;
 import uz.academixai.intelligence.application.port.out.ProgressAchievementAwarder;
 import uz.academixai.intelligence.application.port.out.SubmissionImageStore;
 import uz.academixai.intelligence.domain.AiCallCategory;
+import uz.academixai.intelligence.domain.GradingAnalysis;
+import uz.academixai.intelligence.domain.GradingCriterion;
+import uz.academixai.intelligence.domain.GradingModes;
+import uz.academixai.shared.ai.GradingMode;
 
 class HomeworkAiAnalysisServiceTest {
 
@@ -57,6 +63,58 @@ class HomeworkAiAnalysisServiceTest {
   }
 
   @Test
+  void languageAssignmentWithoutTeacherCriteriaIsGradedInLanguageModeWithLanguageRubric() {
+    UUID submissionId = UUID.randomUUID();
+    Store store =
+        new Store(
+            new HomeworkSubmission(
+                submissionId,
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                SubmissionType.TEXT,
+                "Kecha biz maktabda kitob o'qidik va insho yozdik.",
+                null,
+                SubmissionStatus.SUBMITTED,
+                false,
+                java.time.LocalDateTime.now(),
+                0));
+    store.context =
+        new HomeworkAnalysisStore.AssignmentContext(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "Ona tili",
+            7,
+            GradingMode.LANGUAGE,
+            List.of());
+    List<GradingMode> modes = new ArrayList<>();
+    List<List<GradingCriterion>> rubrics = new ArrayList<>();
+    GradingAi grading =
+        (mode, subject, criteria, text) -> {
+          modes.add(mode);
+          rubrics.add(criteria);
+          return new GradingAnalysis(
+              criteria.stream()
+                  .map(c -> new CriteriaScore(c.name(), c.weightPercent(), 80))
+                  .toList(),
+              "Yaxshi",
+              List.of(new StepAnalysis(1, "kecha", false, "Imlo", "Kecha")),
+              0.1,
+              "CLEAN");
+        };
+
+    service(store, (id, student, score, late) -> {}, noopNotifier(), grading).analyze(submissionId);
+
+    assertThat(modes).containsExactly(GradingMode.LANGUAGE);
+    assertThat(rubrics.getFirst()).isEqualTo(GradingModes.defaultCriteria(GradingMode.LANGUAGE));
+    assertThat(store.feedback)
+        .singleElement()
+        .extracting(AIFeedback::aiScorePercent)
+        .isEqualTo(80f);
+  }
+
+  @Test
   void duplicateDeliveryDoesNotInvokeAnyDownstreamPort() {
     Store store = new Store(null);
     store.claimed = false;
@@ -71,6 +129,14 @@ class HomeworkAiAnalysisServiceTest {
 
   private static HomeworkAiAnalysisService service(
       Store store, ProgressAchievementAwarder awards, AnalysisStatusNotifier notifications) {
+    return service(store, awards, notifications, (mode, subject, criteria, text) -> null);
+  }
+
+  private static HomeworkAiAnalysisService service(
+      Store store,
+      ProgressAchievementAwarder awards,
+      AnalysisStatusNotifier notifications,
+      GradingAi grading) {
     AiMonthlyLimitLookup limits = schoolId -> Optional.of(100);
     AiUsageCounter counter =
         new AiUsageCounter() {
@@ -84,7 +150,6 @@ class HomeworkAiAnalysisServiceTest {
         };
     SubmissionImageStore images = key -> new byte[0];
     OcrGateway ocr = image -> "";
-    GradingAi grading = (subject, criteria, text) -> null;
     return new HomeworkAiAnalysisService(
         store, images, ocr, grading, new AiBudgetService(limits, counter), awards, notifications);
   }
@@ -105,6 +170,7 @@ class HomeworkAiAnalysisServiceTest {
 
     private final HomeworkSubmission submission;
     private boolean claimed = true;
+    private AssignmentContext context;
     private final List<AIFeedback> feedback = new ArrayList<>();
     private final List<HomeworkSubmission> savedSubmissions = new ArrayList<>();
 
@@ -124,7 +190,7 @@ class HomeworkAiAnalysisServiceTest {
 
     @Override
     public Optional<AssignmentContext> findAssignmentContext(UUID assignmentId) {
-      return Optional.empty();
+      return Optional.ofNullable(context);
     }
 
     @Override

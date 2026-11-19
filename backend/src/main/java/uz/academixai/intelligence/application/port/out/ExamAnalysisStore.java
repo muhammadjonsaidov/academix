@@ -6,6 +6,7 @@ import java.util.UUID;
 import uz.academixai.domain.ExamAIFeedback;
 import uz.academixai.domain.ExamSubmission;
 import uz.academixai.intelligence.domain.GradingCriterion;
+import uz.academixai.shared.ai.GradingMode;
 
 /** Learning exam read/write boundary used by the asynchronous Intelligence analysis process. */
 public interface ExamAnalysisStore {
@@ -16,6 +17,7 @@ public interface ExamAnalysisStore {
       UUID subjectId,
       String subjectName,
       Integer grade,
+      GradingMode mode,
       List<GradingCriterion> criteria) {}
 
   boolean claimForAnalysis(UUID submissionId);

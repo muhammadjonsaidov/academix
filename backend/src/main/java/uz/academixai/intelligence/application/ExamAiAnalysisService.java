@@ -17,7 +17,7 @@ import uz.academixai.intelligence.application.port.out.OcrGateway;
 import uz.academixai.intelligence.application.port.out.SubmissionImageStore;
 import uz.academixai.intelligence.domain.AiCallCategory;
 import uz.academixai.intelligence.domain.GradingAnalysis;
-import uz.academixai.intelligence.domain.GradingCriterion;
+import uz.academixai.intelligence.domain.GradingModes;
 
 /** Intelligence-owned asynchronous OCR and grading process for scanned exam papers. */
 @Service
@@ -25,11 +25,6 @@ public class ExamAiAnalysisService {
 
   private static final Logger log = LoggerFactory.getLogger(ExamAiAnalysisService.class);
   private static final int MIN_MEANINGFUL_TEXT_LENGTH = 20;
-  private static final List<GradingCriterion> DEFAULT_CRITERIA =
-      List.of(
-          new GradingCriterion("Yechish usuli", 40),
-          new GradingCriterion("Javob to'g'riligi", 30),
-          new GradingCriterion("Tushunarlilik", 30));
 
   private final ExamAnalysisStore submissions;
   private final SubmissionImageStore images;
@@ -95,8 +90,11 @@ public class ExamAiAnalysisService {
     try {
       result =
           grading.grade(
+              context.mode(),
               subjectAndGrade(context),
-              context.criteria().isEmpty() ? DEFAULT_CRITERIA : context.criteria(),
+              context.criteria().isEmpty()
+                  ? GradingModes.defaultCriteria(context.mode())
+                  : context.criteria(),
               extractedText);
     } catch (AiProviderUnavailableException exception) {
       log.warn(

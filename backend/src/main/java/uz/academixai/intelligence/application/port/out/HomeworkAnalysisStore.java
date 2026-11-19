@@ -6,6 +6,7 @@ import java.util.UUID;
 import uz.academixai.domain.AIFeedback;
 import uz.academixai.domain.HomeworkSubmission;
 import uz.academixai.intelligence.domain.GradingCriterion;
+import uz.academixai.shared.ai.GradingMode;
 
 /** Learning read/write boundary used by the asynchronous homework analysis process. */
 public interface HomeworkAnalysisStore {
@@ -16,6 +17,7 @@ public interface HomeworkAnalysisStore {
       UUID subjectId,
       String subjectName,
       Integer grade,
+      GradingMode mode,
       List<GradingCriterion> criteria) {}
 
   boolean claimForAnalysis(UUID submissionId);

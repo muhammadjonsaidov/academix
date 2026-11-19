@@ -67,7 +67,7 @@ class ExamAiAnalysisServiceTest {
         };
     SubmissionImageStore images = key -> new byte[0];
     OcrGateway ocr = image -> "";
-    GradingAi grading = (subject, criteria, text) -> null;
+    GradingAi grading = (mode, subject, criteria, text) -> null;
     AnalysisStatusNotifier notifier =
         new AnalysisStatusNotifier() {
           @Override

@@ -7,6 +7,7 @@ import uz.academixai.intelligence.domain.GradingAnalysis;
 import uz.academixai.intelligence.domain.GradingCriterion;
 import uz.academixai.shared.ai.AiProvider;
 import uz.academixai.shared.ai.AiProviderUnavailableException;
+import uz.academixai.shared.ai.GradingMode;
 
 /** Compatibility adapter from the shared OpenAI-compatible client to the Intelligence port. */
 @Component
@@ -20,10 +21,11 @@ public class LegacyGradingAi implements GradingAi {
 
   @Override
   public GradingAnalysis grade(
-      String subjectAndGrade, List<GradingCriterion> criteria, String text) {
+      GradingMode mode, String subjectAndGrade, List<GradingCriterion> criteria, String text) {
     try {
       var result =
           provider.gradeSubmission(
+              mode,
               subjectAndGrade,
               criteria.stream()
                   .map(

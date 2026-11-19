@@ -20,7 +20,9 @@ import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.intelligence.application.port.out.ExamAnalysisStore;
 import uz.academixai.intelligence.domain.GradingCriterion;
+import uz.academixai.intelligence.domain.GradingModes;
 import uz.academixai.learning.application.GradingCriteriaService;
+import uz.academixai.shared.ai.GradingMode;
 
 /** JPA compatibility adapter over Learning's current exam-analysis tables. */
 @Repository
@@ -92,11 +94,9 @@ public class JpaExamAnalysisStore implements ExamAnalysisStore {
   }
 
   private ExamContext contextFrom(ExamEntity exam) {
-    String subjectName =
-        subjects
-            .findById(exam.toDomain().subjectId())
-            .map(subject -> subject.getName())
-            .orElse("Fan");
+    var subject = subjects.findById(exam.toDomain().subjectId());
+    String subjectName = subject.map(value -> value.getName()).orElse("Fan");
+    GradingMode mode = GradingModes.forSubject(subject.map(value -> value.getType()).orElse(null));
     Integer grade =
         classes.findById(exam.getClassId()).map(schoolClass -> schoolClass.getGrade()).orElse(null);
     List<GradingCriterion> configured =
@@ -109,6 +109,7 @@ public class JpaExamAnalysisStore implements ExamAnalysisStore {
         exam.toDomain().subjectId(),
         subjectName,
         grade,
+        mode,
         configured);
   }
 }

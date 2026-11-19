@@ -20,7 +20,9 @@ import uz.academixai.infrastructure.persistence.SchoolClassRepository;
 import uz.academixai.infrastructure.persistence.SubjectRepository;
 import uz.academixai.intelligence.application.port.out.HomeworkAnalysisStore;
 import uz.academixai.intelligence.domain.GradingCriterion;
+import uz.academixai.intelligence.domain.GradingModes;
 import uz.academixai.learning.application.GradingCriteriaService;
+import uz.academixai.shared.ai.GradingMode;
 
 /** JPA compatibility adapter over Learning's current homework-analysis tables. */
 @Repository
@@ -92,11 +94,9 @@ public class JpaHomeworkAnalysisStore implements HomeworkAnalysisStore {
   }
 
   private AssignmentContext contextFrom(HomeworkAssignmentEntity assignment) {
-    String subjectName =
-        subjects
-            .findById(assignment.getSubjectId())
-            .map(subject -> subject.getName())
-            .orElse("Fan");
+    var subject = subjects.findById(assignment.getSubjectId());
+    String subjectName = subject.map(value -> value.getName()).orElse("Fan");
+    GradingMode mode = GradingModes.forSubject(subject.map(value -> value.getType()).orElse(null));
     Integer grade =
         classes
             .findById(assignment.getClassId())
@@ -112,6 +112,7 @@ public class JpaHomeworkAnalysisStore implements HomeworkAnalysisStore {
         assignment.getSubjectId(),
         subjectName,
         grade,
+        mode,
         configured);
   }
 }

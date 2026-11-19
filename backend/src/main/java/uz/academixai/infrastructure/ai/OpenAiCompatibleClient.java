@@ -16,6 +16,7 @@ import uz.academixai.shared.ai.AiGradingResult;
 import uz.academixai.shared.ai.AiProvider;
 import uz.academixai.shared.ai.AiProviderUnavailableException;
 import uz.academixai.shared.ai.GradingCriterion;
+import uz.academixai.shared.ai.GradingMode;
 import uz.academixai.shared.ai.PsychologyAnalysisResult;
 import uz.academixai.shared.ai.PsychologySignalCandidate;
 
@@ -32,22 +33,65 @@ import uz.academixai.shared.ai.PsychologySignalCandidate;
 @EnableConfigurationProperties(OpenAiCompatibleProperties.class)
 public class OpenAiCompatibleClient implements AiProvider {
 
-  private static final String SYSTEM_PROMPT =
+  // One response contract for every grading mode, so parsing and the UI stay shared. The AI never
+  // returns a final grade: only per-criterion scores; the backend computes the percentage and the
+  // teacher gives the final grade.
+  private static final String RESPONSE_CONTRACT =
       """
-      Sen maktablar uchun yordamchi o'qituvchisan. Berilgan baholash mezonlari asosida yechimni \
-      qadam-baqadam tekshir, xatolarni ko'rsat, va matn mustaqil yozilganmi yoki AI orqali \
-      generatsiya qilinganmi bahola. O'quvchiga to'g'ridan-to'g'ri yakuniy baho ko'rsatma, faqat \
-      tahlil va mezon bo'yicha ball ber.
 
       Javobni FAQAT quyidagi JSON formatida qaytar, boshqa matn qo'shma:
       {
         "criteriaScores": [{"name": "...", "weightPercent": 0, "score": 0}],
         "feedback": "...",
-        "stepAnalyses": [{"stepNumber": 0, "stepContent": "...", "isCorrect": true, "errorDescription": null}],
+        "stepAnalyses": [{"stepNumber": 0, "stepContent": "...", "isCorrect": true, "errorDescription": null, "suggestion": null}],
         "plagiarismScore": 0.0,
         "plagiarismType": "CLEAN|SUSPICIOUS|AI_GENERATED",
         "plagiarismEvidence": "..."
-      }""";
+      }
+      criteriaScores: har bir berilgan mezon uchun 0-100 ball, mezon nomi va vazni o'zgarmasin. \
+      feedback: o'quvchiga 2-4 gapli, aniq va hurmatli izoh (nima yaxshi, nimani tuzatish kerak). \
+      Ish matni bo'sh yoki mavzuga aloqasiz bo'lsa, past ball qo'y va buni feedback'da ayt.""";
+
+  private static final String COMMON_RULES =
+      """
+      Sen maktab o'qituvchisiga yordam beruvchi tajribali tekshiruvchisan. Ish qo'lda yozilgan \
+      va OCR orqali matnga aylantirilgan bo'lishi mumkin: OCR'ga xos mayda buzilishlarni o'quvchi \
+      xatosi deb hisoblama. Matn mustaqil yozilganmi yoki AI orqali generatsiya qilinganmi, \
+      baholab ber. O'quvchiga yakuniy baho qo'yma — faqat mezonlar bo'yicha ball va tahlil.
+      """;
+
+  private static final String PROBLEM_SOLVING_PROMPT =
+      COMMON_RULES
+          + """
+          Bu masala yechish ishi (matematika, fizika, kimyo). Yechimni qadam-baqadam tekshir: \
+          usul to'g'rimi, hisob-kitob to'g'rimi, yakuniy javob to'g'rimi. stepAnalyses — yechimning \
+          har bir qadami: stepContent — qadam, isCorrect, xato bo'lsa errorDescription — nima \
+          noto'g'ri, suggestion — to'g'ri qadam yoki ko'rsatma.
+          """
+          + RESPONSE_CONTRACT;
+
+  private static final String LANGUAGE_PROMPT =
+      COMMON_RULES
+          + """
+          Bu til fanidan yozma ish (ona tili, rus tili yoki ingliz tili: diktant, mashq, insho). \
+          Ish qaysi tilda yozilgan bo'lsa, o'sha tilning qoidalari bo'yicha tekshir. Imlo, grammatika, \
+          tinish belgilari, so'z boyligi va matn tuzilishini bahola. stepAnalyses — topilgan har bir \
+          xato: stepContent — xato bor so'z yoki ibora (asl holicha), isCorrect=false, \
+          errorDescription — xato turi va qisqa qoida, suggestion — to'g'ri yozilishi. Xatolar \
+          ko'p bo'lsa, eng muhim 15 tasini yoz. Xato yo'q bo'lsa stepAnalyses bo'sh ro'yxat.
+          """
+          + RESPONSE_CONTRACT;
+
+  private static final String WRITTEN_RESPONSE_PROMPT =
+      COMMON_RULES
+          + """
+          Bu yozma javob yoki insho (tarix, adabiyot, biologiya, geografiya va boshqa fanlar). \
+          Faktlarning aniqligi, savolga to'liq javob berilgani, fikrning izchilligi va dalillar \
+          bilan asoslanganini bahola. stepAnalyses — javobdagi asosiy fikrlar: stepContent — fikr \
+          yoki da'vo, isCorrect — to'g'ri va asoslanganmi, errorDescription — noto'g'ri yoki \
+          to'liq emas bo'lsa izoh, suggestion — nimani qo'shish yoki tuzatish kerak.
+          """
+          + RESPONSE_CONTRACT;
 
   // academix_tz.md §3.4 — exact system prompt wording from the spec, layer 1 of the two-layer
   // jailbreak defense (layer 2 is TutorChatService's response-level bare-answer heuristic).
@@ -84,14 +128,26 @@ public class OpenAiCompatibleClient implements AiProvider {
 
   @CircuitBreaker(name = "aiProvider", fallbackMethod = "gradeSubmissionFallback")
   public AiGradingResult gradeSubmission(
-      String subjectAndGrade, List<GradingCriterion> criteria, String extractedText) {
+      GradingMode mode,
+      String subjectAndGrade,
+      List<GradingCriterion> criteria,
+      String extractedText) {
     String userContent = buildUserContent(subjectAndGrade, criteria, extractedText);
 
-    return parseGradingResult(complete(SYSTEM_PROMPT, userContent), objectMapper);
+    return parseGradingResult(complete(systemPromptFor(mode), userContent), objectMapper);
+  }
+
+  static String systemPromptFor(GradingMode mode) {
+    return switch (mode) {
+      case PROBLEM_SOLVING -> PROBLEM_SOLVING_PROMPT;
+      case LANGUAGE -> LANGUAGE_PROMPT;
+      case WRITTEN_RESPONSE -> WRITTEN_RESPONSE_PROMPT;
+    };
   }
 
   @SuppressWarnings("unused") // invoked reflectively by resilience4j on circuit-open/failure
   private AiGradingResult gradeSubmissionFallback(
+      GradingMode mode,
       String subjectAndGrade,
       List<GradingCriterion> criteria,
       String extractedText,
@@ -154,7 +210,7 @@ public class OpenAiCompatibleClient implements AiProvider {
         criteria.stream()
             .map(c -> "{name: '%s', weightPercent: %d}".formatted(c.name(), c.weightPercent()))
             .collect(Collectors.joining(", "));
-    return "Fan: %s. Baholash mezonlari: [%s]. Yechim matni: %s"
+    return "Fan: %s. Baholash mezonlari: [%s]. O'quvchi ishi matni: %s"
         .formatted(subjectAndGrade, criteriaJson, extractedText);
   }
 
@@ -181,10 +237,8 @@ public class OpenAiCompatibleClient implements AiProvider {
                 node.path("stepNumber").asInt(),
                 node.path("stepContent").asText(),
                 node.path("isCorrect").asBoolean(),
-                node.path("errorDescription").isNull()
-                    ? null
-                    : node.path("errorDescription").asText(),
-                null));
+                textOrNull(node.path("errorDescription")),
+                textOrNull(node.path("suggestion"))));
       }
       return new AiGradingResult(
           criteriaScores,
@@ -214,6 +268,10 @@ public class OpenAiCompatibleClient implements AiProvider {
         .body(requestBody)
         .retrieve()
         .body(tools.jackson.databind.JsonNode.class);
+  }
+
+  private static String textOrNull(JsonNode node) {
+    return node.isMissingNode() || node.isNull() || node.asText().isBlank() ? null : node.asText();
   }
 
   private static String completionContent(tools.jackson.databind.JsonNode response) {

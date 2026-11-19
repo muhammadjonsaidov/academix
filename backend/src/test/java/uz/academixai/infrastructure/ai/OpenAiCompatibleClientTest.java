@@ -11,6 +11,7 @@ import uz.academixai.domain.CriteriaScore;
 import uz.academixai.shared.ai.AiGradingResult;
 import uz.academixai.shared.ai.AiProviderUnavailableException;
 import uz.academixai.shared.ai.GradingCriterion;
+import uz.academixai.shared.ai.GradingMode;
 
 /**
  * Pure parsing-logic test against the exact grading JSON shape documented in academix_tz.md §3.2 —
@@ -95,6 +96,40 @@ class OpenAiCompatibleClientTest {
         .contains("Yechish usuli")
         .contains("40")
         .contains("5x + 3 = 18");
+  }
+
+  @Test
+  void eachGradingModeHasItsOwnPromptWithTheSharedResponseContract() {
+    String problem = OpenAiCompatibleClient.systemPromptFor(GradingMode.PROBLEM_SOLVING);
+    String language = OpenAiCompatibleClient.systemPromptFor(GradingMode.LANGUAGE);
+    String written = OpenAiCompatibleClient.systemPromptFor(GradingMode.WRITTEN_RESPONSE);
+
+    assertThat(problem).contains("qadam-baqadam").contains("criteriaScores");
+    assertThat(language).contains("Imlo").contains("criteriaScores").contains("suggestion");
+    assertThat(written).contains("Faktlarning aniqligi").contains("criteriaScores");
+    assertThat(problem).isNotEqualTo(language).isNotEqualTo(written);
+  }
+
+  @Test
+  void parsesTheCorrectionSuggestedForEachError() throws Exception {
+    String json =
+        """
+        {"criteriaScores": [], "feedback": "ok", "stepAnalyses": [
+          {"stepNumber": 1, "stepContent": "maktapda", "isCorrect": false,
+           "errorDescription": "Imlo", "suggestion": "maktabda"}]}""";
+    var response =
+        jackson3Mapper.readTree(
+            wrapAsChatCompletion(json.replace("\"", "\\\"").replace("\n", "\\n")));
+
+    var result = OpenAiCompatibleClient.parseGradingResult(response, objectMapper);
+
+    assertThat(result.stepAnalyses())
+        .singleElement()
+        .satisfies(
+            step -> {
+              assertThat(step.stepContent()).isEqualTo("maktapda");
+              assertThat(step.suggestion()).isEqualTo("maktabda");
+            });
   }
 
   private static String wrapAsChatCompletion(String escapedContent) {

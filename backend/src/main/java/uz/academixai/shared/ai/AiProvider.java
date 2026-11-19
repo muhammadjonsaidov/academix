@@ -6,7 +6,10 @@ import java.util.List;
 public interface AiProvider {
 
   AiGradingResult gradeSubmission(
-      String subjectAndGrade, List<GradingCriterion> criteria, String extractedText);
+      GradingMode mode,
+      String subjectAndGrade,
+      List<GradingCriterion> criteria,
+      String extractedText);
 
   String tutorChat(String subjectAndContext, String studentMessage);
 
