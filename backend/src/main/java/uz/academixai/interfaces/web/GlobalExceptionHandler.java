@@ -10,8 +10,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uz.academixai.shared.error.ApiErrorResponse;
@@ -141,6 +143,21 @@ public class GlobalExceptionHandler {
                 "ERR_VALIDATION",
                 "So'rov tanasi o'qilmadi (noto'g'ri yoki bo'sh JSON).",
                 "JSON formatini tekshirib, qayta yuboring."));
+  }
+
+  // A missing or unparsable query/path parameter (e.g. a non-UUID id) is a client mistake too.
+  @ExceptionHandler({
+    MissingServletRequestParameterException.class,
+    MethodArgumentTypeMismatchException.class
+  })
+  public ResponseEntity<ApiErrorResponse> handleBadParameter(Exception e) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(
+            new ApiErrorResponse(
+                400,
+                "ERR_VALIDATION",
+                "So'rov parametri yo'q yoki noto'g'ri.",
+                "Manzil va parametrlarni tekshirib, qayta yuboring."));
   }
 
   private static String describeFieldError(FieldError error) {

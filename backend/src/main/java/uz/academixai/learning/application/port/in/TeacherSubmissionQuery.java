@@ -11,7 +11,11 @@ import uz.academixai.domain.SubmissionStatus;
 public interface TeacherSubmissionQuery {
 
   record SubmissionWithFeedback(
-      HomeworkSubmission submission, String studentName, AIFeedback feedback, Grade grade) {}
+      HomeworkSubmission submission,
+      String studentName,
+      String assignmentTitle,
+      AIFeedback feedback,
+      Grade grade) {}
 
   List<SubmissionWithFeedback> list(
       UUID schoolId, UUID teacherId, UUID assignmentId, UUID classId, SubmissionStatus status);

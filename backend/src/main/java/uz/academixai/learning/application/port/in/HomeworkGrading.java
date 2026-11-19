@@ -14,4 +14,11 @@ public interface HomeworkGrading {
       int fivePointGrade,
       String teacherComment,
       boolean isExcellent);
+
+  /**
+   * Confirms the AI score of every finished, unflagged submission of one assignment in one go.
+   * Flagged work (possible copying or AI-written text) is left for an individual look. Returns how
+   * many submissions were graded.
+   */
+  int approveClean(UUID schoolId, UUID teacherId, UUID assignmentId);
 }

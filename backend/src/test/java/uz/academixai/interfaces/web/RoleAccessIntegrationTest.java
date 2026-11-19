@@ -571,6 +571,10 @@ class RoleAccessIntegrationTest {
         new Endpoint(HttpMethod.GET, "/api/v1/teacher/submissions/{submissionId}", Role.TEACHER),
         new Endpoint(
             HttpMethod.POST,
+            "/api/v1/teacher/submissions/approve-clean/{assignmentId}",
+            Role.TEACHER),
+        new Endpoint(
+            HttpMethod.POST,
             "/api/v1/teacher/submissions/{submissionId}/grade",
             Role.TEACHER,
             """

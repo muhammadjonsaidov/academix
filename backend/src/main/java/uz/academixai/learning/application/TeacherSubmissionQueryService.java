@@ -1,7 +1,10 @@
 package uz.academixai.learning.application;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.academixai.domain.HomeworkAssignment;
@@ -12,6 +15,7 @@ import uz.academixai.learning.application.port.out.HomeworkAssignmentStore;
 import uz.academixai.learning.application.port.out.HomeworkSubmissionReadRepository;
 import uz.academixai.learning.application.port.out.StudentNameLookup;
 import uz.academixai.learning.application.port.out.SubmissionAssessmentLookup;
+import uz.academixai.learning.domain.ReviewQueueOrder;
 import uz.academixai.shared.error.ApiException;
 
 /** Teacher-scoped submission read model owned by Learning. */
@@ -38,22 +42,27 @@ public class TeacherSubmissionQueryService implements TeacherSubmissionQuery {
   public List<SubmissionWithFeedback> list(
       UUID schoolId, UUID teacherId, UUID assignmentId, UUID classId, SubmissionStatus status) {
     List<HomeworkSubmission> results;
+    Map<UUID, String> titles;
     if (assignmentId != null) {
-      requireOwnedAssignment(schoolId, teacherId, assignmentId);
+      HomeworkAssignment assignment = requireOwnedAssignment(schoolId, teacherId, assignmentId);
+      titles = Map.of(assignment.id(), assignment.title());
       results = submissions.findByAssignmentId(assignmentId);
     } else {
-      List<UUID> assignmentIds =
+      titles =
           assignments.findBySchoolIdAndTeacherId(schoolId, teacherId).stream()
               .filter(assignment -> classId == null || assignment.classId().equals(classId))
-              .map(HomeworkAssignment::id)
-              .toList();
+              .collect(Collectors.toMap(HomeworkAssignment::id, HomeworkAssignment::title));
       results =
-          assignmentIds.isEmpty() ? List.of() : submissions.findByAssignmentIds(assignmentIds);
+          titles.isEmpty()
+              ? List.of()
+              : submissions.findByAssignmentIds(List.copyOf(titles.keySet()));
     }
-    return results.stream()
-        .filter(submission -> status == null || submission.status() == status)
-        .map(this::withFeedback)
-        .toList();
+    List<SubmissionWithFeedback> items =
+        results.stream()
+            .filter(submission -> status == null || submission.status() == status)
+            .map(submission -> withFeedback(submission, titles.get(submission.assignmentId())))
+            .toList();
+    return items.stream().sorted(order(status)).toList();
   }
 
   @Override
@@ -62,19 +71,37 @@ public class TeacherSubmissionQueryService implements TeacherSubmissionQuery {
         submissions
             .findByIdAndSchoolId(submissionId, schoolId)
             .orElseThrow(TeacherSubmissionQueryService::notFound);
-    requireOwnedAssignment(schoolId, teacherId, submission.assignmentId());
-    return withFeedback(submission);
+    HomeworkAssignment assignment =
+        requireOwnedAssignment(schoolId, teacherId, submission.assignmentId());
+    return withFeedback(submission, assignment.title());
   }
 
-  private SubmissionWithFeedback withFeedback(HomeworkSubmission submission) {
+  /**
+   * The review queue (work the AI finished, waiting for the teacher) puts flagged work first, then
+   * the oldest; every other view lists the newest first.
+   */
+  private static Comparator<SubmissionWithFeedback> order(SubmissionStatus status) {
+    Comparator<SubmissionWithFeedback> bySubmitted =
+        Comparator.comparing(item -> item.submission().submittedAt());
+    if (status == SubmissionStatus.AI_DONE) {
+      Comparator<SubmissionWithFeedback> flaggedFirst =
+          Comparator.comparing(item -> !ReviewQueueOrder.needsCloseLook(item.feedback()));
+      return flaggedFirst.thenComparing(bySubmitted);
+    }
+    return bySubmitted.reversed();
+  }
+
+  private SubmissionWithFeedback withFeedback(HomeworkSubmission submission, String title) {
     return new SubmissionWithFeedback(
         submission,
         names.fullName(submission.studentId()),
+        title,
         assessments.feedback(submission.id()).orElse(null),
         assessments.grade(submission.id()).orElse(null));
   }
 
-  private void requireOwnedAssignment(UUID schoolId, UUID teacherId, UUID assignmentId) {
+  private HomeworkAssignment requireOwnedAssignment(
+      UUID schoolId, UUID teacherId, UUID assignmentId) {
     HomeworkAssignment assignment =
         assignments
             .findByIdAndSchoolId(assignmentId, schoolId)
@@ -86,6 +113,7 @@ public class TeacherSubmissionQueryService implements TeacherSubmissionQuery {
           "Ushbu ma'lumotni ko'rishga ruxsatingiz yo'q.",
           "Faqat vazifani yaratgan o'qituvchi ko'rishi mumkin.");
     }
+    return assignment;
   }
 
   private static ApiException notFound() {

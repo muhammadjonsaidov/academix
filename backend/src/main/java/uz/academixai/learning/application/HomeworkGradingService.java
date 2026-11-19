@@ -17,6 +17,8 @@ import uz.academixai.learning.application.port.out.HomeworkSubmissionStore;
 import uz.academixai.learning.application.port.out.LearningNotifier;
 import uz.academixai.learning.application.port.out.StudentAchievementUpdater;
 import uz.academixai.learning.application.port.out.SubmissionAssessmentLookup;
+import uz.academixai.learning.domain.FivePointScale;
+import uz.academixai.learning.domain.ReviewQueueOrder;
 import uz.academixai.shared.error.ApiException;
 
 /** Final teacher grade command, including status transition and Progress update. */
@@ -75,7 +77,8 @@ public class HomeworkGradingService implements HomeworkGrading {
     AIFeedback feedback = assessments.feedback(submissionId).orElse(null);
     float aiScore = feedback == null ? 0f : feedback.aiScorePercent();
     boolean regraded = grades.findBySubmissionId(submissionId).isPresent();
-    boolean overridden = feedback != null && Math.abs(aiScore - score) > 0.01f;
+    // Scores are whole numbers; confirming 88.4% as 88 is agreeing with the AI, not overriding it.
+    boolean overridden = feedback != null && Math.round(aiScore) != score;
     Grade saved =
         grades.save(
             new Grade(
@@ -106,6 +109,42 @@ public class HomeworkGradingService implements HomeworkGrading {
     notifier.homeworkGraded(
         submission.studentId(), submissionId, assignment.title(), score, fivePointGrade, regraded);
     return saved;
+  }
+
+  @Override
+  public int approveClean(UUID schoolId, UUID teacherId, UUID assignmentId) {
+    HomeworkAssignment assignment =
+        assignments
+            .findByIdAndSchoolId(assignmentId, schoolId)
+            .orElseThrow(HomeworkGradingService::notFound);
+    if (!assignment.teacherId().equals(teacherId)) {
+      throw new ApiException(
+          HttpStatus.FORBIDDEN,
+          "ERR_ACCESS_DENIED",
+          "Ushbu ma'lumotni ko'rishga ruxsatingiz yo'q.",
+          "Faqat vazifani yaratgan o'qituvchi baholashi mumkin.");
+    }
+    int approved = 0;
+    for (HomeworkSubmission submission : submissionReads.findByAssignmentId(assignmentId)) {
+      if (submission.status() != SubmissionStatus.AI_DONE) {
+        continue;
+      }
+      AIFeedback feedback = assessments.feedback(submission.id()).orElse(null);
+      if (feedback == null || ReviewQueueOrder.needsCloseLook(feedback)) {
+        continue;
+      }
+      int score = Math.round(feedback.aiScorePercent());
+      grade(
+          schoolId,
+          teacherId,
+          submission.id(),
+          score,
+          FivePointScale.fromPercent(score),
+          null,
+          false);
+      approved++;
+    }
+    return approved;
   }
 
   private static ApiException notFound() {

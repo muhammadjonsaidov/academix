@@ -57,6 +57,16 @@ public class TeacherSubmissionController {
         submissionService.get(principal.schoolId(), principal.userId(), submissionId));
   }
 
+  /** Confirms the AI score of every clean, AI-checked submission of the assignment. */
+  @PostMapping("/approve-clean/{assignmentId}")
+  public ApproveCleanResponse approveClean(
+      @AuthenticationPrincipal AcademixPrincipal principal, @PathVariable UUID assignmentId) {
+    return new ApproveCleanResponse(
+        gradingService.approveClean(principal.schoolId(), principal.userId(), assignmentId));
+  }
+
+  public record ApproveCleanResponse(int approvedCount) {}
+
   @PostMapping("/{submissionId}/grade")
   public TeacherGradeResponse grade(
       @AuthenticationPrincipal AcademixPrincipal principal,
