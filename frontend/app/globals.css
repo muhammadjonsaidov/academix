@@ -5,38 +5,19 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * AcademiX visual system — "teacher's red pen on an exercise book"
- * -----------------------------------------------------------------------
- * Five named anchor colors ground the whole system in the product's actual
- * subject matter (AI grading handwritten schoolwork the way a teacher
- * would), replacing the previous cool-slate/indigo system:
- *   --paper        warm exercise-book paper (page background)
- *   --ink          fountain-pen blue-black (text, primary actions)
- *   --pen-red      literal red-pen ink — AI corrections/errors/destructive
- *                  actions ONLY, never decorative
- *   --chalk-green  chalkboard green — success/verified/graded-correct
- *   --graphite     pencil graphite — secondary text/borders/muted
- * Every other token below is either one of these five directly, or a
- * `color-mix()` of them — so retuning the palette later means editing five
- * values, not thirty independently-picked ones.
- *
- * Five role accents (admin/teacher/student/parent/psychologist) are spaced
- * around the *cool* half of the hue wheel (~195deg-340deg), deliberately
- * kept out of both the warm 20deg-85deg severity/pen-red band and away from
- * chalk-green's own hue (~155deg) — a role chip must never read as an alert
- * or a "verified" mark. Recharts categorical colors (--chart-1..5) reuse
- * these same five hues directly — one palette, two jobs.
- *
- * One MORE family sits above the five: the AI accent (--ai / --ai-gradient),
- * a vibrant indigo→violet arc (~262deg-301deg). It is the single non-neutral
- * *identity* color in the system and is reserved for moments where "the AI
- * itself" is the subject — hero/landing gradients, the AI Tutor, the live
- * grading demo, marketing CTAs. All product *data* (grades, signals, roles)
- * keeps its own semantics; the gradient only ever means "a machine is
- * thinking/acting here." It sits adjacent to the cool role band but off every
- * individual role hue, and far from chalk-green/pen-red, so it can never be
- * mistaken for a verdict or a severity state.
+ * AcademiX visual system: pencil and red pen on a squared notebook.
+ * See docs/design.md. Anchors:
+ *   --paper        cool notebook white (page)        dark: "doska" board blue
+ *   --ink          school-ink navy (text, primary)
+ *   --katak        the notebook's grid lines (borders, dividers)
+ *   --pencil       the AI's marks: provisional analysis, secondary text
+ *   --pen-red      the teacher's red pen: confirmed grades and errors only
+ *   --chalk-green  correct / graded
+ *   --marker       highlighter: work that needs a human look, nothing else
+ * Everything else is a color-mix() of these, so retuning means editing the
+ * anchors, not thirty values.
  */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -45,11 +26,16 @@
   --color-pen-red: var(--pen-red);
   --color-chalk-green: var(--chalk-green);
   --color-graphite: var(--graphite);
+  --color-pencil: var(--pencil);
+  --color-katak: var(--katak);
+  --color-marker: var(--marker);
+  --color-marker-foreground: var(--marker-foreground);
   --font-sans: var(--font-body);
   --font-mono: var(--font-geist-mono);
-  /* Display face: Fraunces, wired via --font-heading-override in layout.tsx;
-     the var() fallback keeps headings legible if the font ever fails to load. */
-  --font-heading: var(--font-heading-override, var(--font-body));
+  /* One family for UI and headings (Onest); Caveat is the teacher's hand and
+     is used only through font-hand (grade marks, red-pen notes). */
+  --font-heading: var(--font-body);
+  --font-hand: var(--font-hand-override, cursive);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -143,221 +129,167 @@
 }
 
 :root {
-  /* The five named anchors — see the block comment above. Literal hex, not
-     oklch, so the exact approved values are never lost to rounding. */
-  --paper: #faf7f0;
-  --ink: #1c2b3a;
-  --pen-red: #b23a2e;
-  --chalk-green: #3d6b4f;
-  --graphite: #6b6459;
+  --paper: #f6f8fb;
+  --ink: #16284a;
+  --katak: #cad8ec;
+  --pencil: #5a6a84;
+  --pen-red: #c8233a;
+  --chalk-green: #127a57;
+  --marker: #ffe14d;
+  --marker-foreground: #3b3000;
+  /* Kept as an alias: older components still say "graphite". */
+  --graphite: var(--pencil);
 
   --background: var(--paper);
   --foreground: var(--ink);
-  /* Card reads as a crisper, slightly lighter sheet resting on the warmer
-     paper-colored desk behind it — same "card a hair lighter than page"
-     relationship the previous system used. */
-  --card: color-mix(in oklch, white 35%, var(--paper));
+  --card: #ffffff;
   --card-foreground: var(--ink);
-  --popover: var(--card);
+  --popover: #ffffff;
   --popover-foreground: var(--ink);
   --primary: var(--ink);
-  --primary-foreground: color-mix(in oklch, white 25%, var(--paper));
-  --secondary: color-mix(in oklch, var(--graphite) 12%, var(--paper));
+  --primary-foreground: #ffffff;
+  --secondary: color-mix(in oklch, var(--katak) 45%, var(--paper));
   --secondary-foreground: var(--ink);
-  --muted: color-mix(in oklch, var(--graphite) 9%, var(--paper));
-  --muted-foreground: color-mix(in oklch, var(--graphite) 88%, var(--ink));
-  --accent: color-mix(in oklch, var(--ink) 8%, var(--paper));
+  --muted: color-mix(in oklch, var(--katak) 30%, var(--paper));
+  --muted-foreground: color-mix(in oklch, var(--pencil) 92%, var(--ink));
+  --accent: color-mix(in oklch, var(--katak) 40%, var(--paper));
   --accent-foreground: var(--ink);
   --destructive: var(--pen-red);
-  --border: color-mix(in oklch, var(--graphite) 28%, var(--paper));
-  --input: color-mix(in oklch, var(--graphite) 32%, var(--paper));
-  --ring: color-mix(in oklch, var(--ink) 45%, var(--paper));
-  /* Slightly rounder than the old 0.5rem — reads more contemporary while the
-     paper/ink identity is untouched. */
+  --border: color-mix(in oklch, var(--katak) 80%, var(--pencil));
+  --input: color-mix(in oklch, var(--katak) 70%, var(--pencil));
+  --ring: color-mix(in oklch, var(--ink) 55%, var(--katak));
   --radius: 0.625rem;
-  --sidebar: color-mix(in oklch, var(--graphite) 5%, var(--paper));
+  --sidebar: #ffffff;
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--ink);
-  --sidebar-primary-foreground: color-mix(in oklch, white 25%, var(--paper));
-  --sidebar-accent: color-mix(in oklch, var(--ink) 10%, var(--paper));
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: color-mix(in oklch, var(--katak) 40%, var(--paper));
   --sidebar-accent-foreground: var(--ink);
-  --sidebar-border: color-mix(in oklch, var(--graphite) 22%, var(--paper));
+  --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
 
-  /* Role accents (light) — cool-arc hues only, see block comment. Teacher
-     nudged 199→195 and psychologist moved 152→235 (was sitting almost
-     exactly on chalk-green's own ~155deg hue, i.e. a psychologist chip and
-     a "graded correct" mark used to read as the same color family). */
+  /* Role accents: a small name-tag hue per role (sidebar chip, avatar ring),
+     kept cool and quiet so they never read as a grade or an alert. */
   --role-admin: oklch(0.46 0.09 264);
   --role-admin-muted: oklch(0.94 0.02 264);
   --role-admin-foreground: oklch(0.99 0.006 264);
-
-  --role-teacher: oklch(0.48 0.075 195);
-  --role-teacher-muted: oklch(0.94 0.02 195);
-  --role-teacher-foreground: oklch(0.99 0.006 195);
-
+  --role-teacher: oklch(0.47 0.08 215);
+  --role-teacher-muted: oklch(0.94 0.02 215);
+  --role-teacher-foreground: oklch(0.99 0.006 215);
   --role-psychologist: oklch(0.47 0.07 235);
   --role-psychologist-muted: oklch(0.94 0.02 235);
   --role-psychologist-foreground: oklch(0.99 0.006 235);
+  --role-parent: oklch(0.48 0.09 300);
+  --role-parent-muted: oklch(0.94 0.025 300);
+  --role-parent-foreground: oklch(0.99 0.006 300);
+  --role-student: oklch(0.5 0.1 250);
+  --role-student-muted: oklch(0.94 0.03 250);
+  --role-student-foreground: oklch(0.99 0.006 250);
 
-  --role-parent: oklch(0.5 0.1 340);
-  --role-parent-muted: oklch(0.94 0.025 340);
-  --role-parent-foreground: oklch(0.99 0.006 340);
-
-  --role-student: oklch(0.52 0.12 300);
-  --role-student-muted: oklch(0.94 0.03 300);
-  --role-student-foreground: oklch(0.99 0.006 300);
-
-  /* Severity scale (light) — the warm ramp climbs toward --pen-red itself,
-     so CRITICAL is literally "the red pen," not a fourth unrelated hue. */
-  --severity-low: color-mix(in oklch, var(--graphite) 90%, var(--ink));
-  --severity-low-bg: color-mix(in oklch, var(--graphite) 8%, var(--paper));
-
+  --severity-low: var(--pencil);
+  --severity-low-bg: var(--muted);
   --severity-medium: oklch(0.5 0.11 80);
   --severity-medium-bg: oklch(0.95 0.05 80);
-
   --severity-high: oklch(0.48 0.15 45);
   --severity-high-bg: oklch(0.94 0.07 42);
-
   --severity-critical: var(--pen-red);
-  --severity-critical-foreground: color-mix(in oklch, white 20%, var(--paper));
+  --severity-critical-foreground: #ffffff;
 
-  /* AI-pipeline status (light) — processing stays in the ink/brand family
-     (a process/trust state, not an alert or a verdict). */
-  --status-processing: oklch(0.42 0.045 249);
-  --status-processing-bg: color-mix(in oklch, var(--ink) 8%, var(--paper));
-
-  --status-skipped: var(--graphite);
-  --status-skipped-bg: color-mix(in oklch, var(--graphite) 10%, var(--paper));
+  --status-processing: var(--pencil);
+  --status-processing-bg: var(--muted);
+  --status-skipped: var(--pencil);
+  --status-skipped-bg: color-mix(in oklch, var(--pencil) 10%, var(--paper));
 
   --success: var(--chalk-green);
-  --success-bg: color-mix(in oklch, var(--chalk-green) 12%, var(--paper));
-  --success-foreground: color-mix(in oklch, white 20%, var(--paper));
+  --success-bg: color-mix(in oklch, var(--chalk-green) 11%, white);
+  --success-foreground: #ffffff;
 
-  /* AI accent (light) — indigo→violet gradient anchors. --ai-foreground is
-     the near-white text that sits ON the gradient; --ai-soft is the tinted
-     chip/badge fill; --ai-gradient is the single shared gradient direction
-     used by text-ai-gradient / bg-ai-gradient everywhere (one value to
-     retune, not a dozen). */
-  --ai: oklch(0.56 0.19 275);
-  --ai-soft: color-mix(in oklch, var(--ai) 10%, var(--paper));
-  --ai-foreground: color-mix(in oklch, white 92%, var(--ai));
-  --ai-gradient:
-    linear-gradient(
-      135deg,
-      oklch(0.55 0.19 262) 0%,
-      oklch(0.57 0.21 283) 55%,
-      oklch(0.63 0.19 301) 100%
-    );
+  /* The AI has no decorative colour: it writes in pencil. These names stay
+     because components use them; they now resolve to the pencil/ink family. */
+  --ai: var(--pencil);
+  --ai-soft: color-mix(in oklch, var(--pencil) 10%, white);
+  --ai-foreground: #ffffff;
+  --ai-gradient: linear-gradient(var(--ink), var(--ink));
 }
 
 .dark {
-  /* "Night notebook" — ink becomes the page, paper becomes the ink. Wired to
-     ThemeToggle (components/shared/ThemeToggle.tsx), which flips the `.dark`
-     class on <html>, persists the choice, and adds `.theme-transition` for
-     ~400ms around the flip (see the cross-fade rule near the bottom of this
-     file). Kept in step with the light palette on the same color-mix()
-     principle, so it can't silently rot out of sync with the five anchors. */
-  --background: color-mix(in oklch, var(--ink) 92%, black);
-  --foreground: color-mix(in oklch, var(--paper) 92%, white);
-  --card: color-mix(in oklch, var(--ink) 80%, black);
-  --card-foreground: var(--foreground);
-  --popover: var(--card);
-  --popover-foreground: var(--foreground);
-  --primary: color-mix(in oklch, var(--paper) 85%, white);
-  --primary-foreground: color-mix(in oklch, var(--ink) 85%, black);
-  --secondary: color-mix(in oklch, var(--graphite) 35%, black);
-  --secondary-foreground: var(--foreground);
-  --muted: color-mix(in oklch, var(--graphite) 30%, black);
-  --muted-foreground: color-mix(in oklch, var(--graphite) 70%, white);
-  --accent: color-mix(in oklch, var(--paper) 15%, var(--background));
-  --accent-foreground: var(--foreground);
-  --destructive: color-mix(in oklch, var(--pen-red) 85%, white);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: color-mix(in oklch, var(--paper) 55%, var(--background));
-  --sidebar: color-mix(in oklch, var(--ink) 78%, black);
-  --sidebar-foreground: var(--foreground);
-  --sidebar-primary: color-mix(in oklch, var(--paper) 85%, white);
-  --sidebar-primary-foreground: color-mix(in oklch, var(--ink) 85%, black);
-  --sidebar-accent: color-mix(in oklch, var(--paper) 12%, var(--background));
-  --sidebar-accent-foreground: var(--foreground);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --paper: #111c2e;
+  --ink: #e6ecf5;
+  --katak: #2a3a55;
+  --pencil: #9aaac2;
+  --pen-red: #ff6b7a;
+  --chalk-green: #4cc79a;
+  --marker: #e8c547;
+  --marker-foreground: #2a2200;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: #162338;
+  --card-foreground: var(--ink);
+  --popover: #1a2840;
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: #111c2e;
+  --secondary: #1f2e47;
+  --secondary-foreground: var(--ink);
+  --muted: #1b2a42;
+  --muted-foreground: var(--pencil);
+  --accent: #22324d;
+  --accent-foreground: var(--ink);
+  --destructive: var(--pen-red);
+  --border: #2a3a55;
+  --input: #34466a;
+  --ring: #8fa6c8;
+  --sidebar: #142035;
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: #111c2e;
+  --sidebar-accent: #22324d;
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: #2a3a55;
   --sidebar-ring: var(--ring);
 
-  /* Role accents (dark) — same hue plan as light mode (see :root comment). */
-  --role-admin: oklch(0.72 0.08 264);
+  --role-admin: oklch(0.74 0.08 264);
   --role-admin-muted: oklch(0.3 0.05 264);
   --role-admin-foreground: oklch(0.15 0.02 264);
-
-  --role-teacher: oklch(0.74 0.07 195);
-  --role-teacher-muted: oklch(0.3 0.05 195);
-  --role-teacher-foreground: oklch(0.15 0.02 195);
-
-  --role-psychologist: oklch(0.72 0.065 235);
+  --role-teacher: oklch(0.76 0.07 215);
+  --role-teacher-muted: oklch(0.3 0.05 215);
+  --role-teacher-foreground: oklch(0.15 0.02 215);
+  --role-psychologist: oklch(0.74 0.065 235);
   --role-psychologist-muted: oklch(0.3 0.05 235);
   --role-psychologist-foreground: oklch(0.15 0.02 235);
+  --role-parent: oklch(0.76 0.08 300);
+  --role-parent-muted: oklch(0.3 0.05 300);
+  --role-parent-foreground: oklch(0.15 0.02 300);
+  --role-student: oklch(0.76 0.09 250);
+  --role-student-muted: oklch(0.32 0.06 250);
+  --role-student-foreground: oklch(0.15 0.02 250);
 
-  --role-parent: oklch(0.74 0.09 340);
-  --role-parent-muted: oklch(0.3 0.05 340);
-  --role-parent-foreground: oklch(0.15 0.02 340);
-
-  --role-student: oklch(0.76 0.11 300);
-  --role-student-muted: oklch(0.32 0.06 300);
-  --role-student-foreground: oklch(0.15 0.02 300);
-
-  /* Severity scale (dark) */
-  --severity-low: oklch(0.72 0.012 78);
-  --severity-low-bg: oklch(0.28 0.01 78);
-
-  --severity-medium: oklch(0.78 0.12 82);
+  --severity-low: var(--pencil);
+  --severity-low-bg: var(--muted);
+  --severity-medium: oklch(0.8 0.12 82);
   --severity-medium-bg: oklch(0.32 0.06 80);
-
-  --severity-high: oklch(0.72 0.15 46);
+  --severity-high: oklch(0.74 0.15 46);
   --severity-high-bg: oklch(0.32 0.08 45);
+  --severity-critical: var(--pen-red);
+  --severity-critical-foreground: #1a0b0e;
 
-  --severity-critical: color-mix(in oklch, var(--pen-red) 80%, white);
-  --severity-critical-foreground: oklch(0.15 0.02 29);
+  --status-processing: var(--pencil);
+  --status-processing-bg: var(--muted);
+  --status-skipped: var(--pencil);
+  --status-skipped-bg: #1b2a42;
 
-  /* AI-pipeline status (dark) */
-  --status-processing: oklch(0.75 0.05 249);
-  --status-processing-bg: oklch(0.3 0.04 249);
+  --success: var(--chalk-green);
+  --success-bg: color-mix(in oklch, var(--chalk-green) 16%, #111c2e);
+  --success-foreground: #0d2a20;
 
-  --status-skipped: oklch(0.68 0.015 78);
-  --status-skipped-bg: oklch(0.28 0.012 78);
-
-  --success: color-mix(in oklch, var(--chalk-green) 78%, white);
-  --success-bg: oklch(0.3 0.05 155);
-  --success-foreground: oklch(0.15 0.02 155);
-
-  /* AI accent (dark) — same gradient plan, lifted lightness for dark bg. */
-  --ai: oklch(0.72 0.17 283);
-  --ai-soft: color-mix(in oklch, var(--ai) 18%, black);
-  --ai-foreground: oklch(0.18 0.03 283);
-  --ai-gradient:
-    linear-gradient(
-      135deg,
-      oklch(0.7 0.17 262) 0%,
-      oklch(0.72 0.18 283) 55%,
-      oklch(0.78 0.15 301) 100%
-    );
+  --ai: var(--pencil);
+  --ai-soft: #1f2e47;
+  --ai-foreground: #111c2e;
+  --ai-gradient: linear-gradient(var(--ink), var(--ink));
 }
 
-/*
- * Role-adaptive accent layer
- * -----------------------------------------------------------------------
- * DashboardShell stamps `data-role="ADMIN|TEACHER|..."` on its root wrapper;
- * these rules remap the generic --accent-role* vars to that role's own token
- * family. Because the underlying --role-* tokens already flip in `.dark`,
- * light/dark both work with zero extra rules here. Components inside the
- * shell use the generic utilities below (text-accent-role etc.) and pick up
- * the right hue automatically — no per-page hardcoded role classes.
- *
- * Scope discipline: this is ATMOSPHERE (header rules, stat icon chips, role
- * badges) — primary buttons/links stay ink, and semantic color systems
- * (severity, AI-pipeline status, grading rails, success) are never remapped
- * through these vars.
- */
+/* Role-adaptive accent layer: DashboardShell stamps data-role on its root. */
 [data-role="ADMIN"] {
   --accent-role: var(--role-admin);
   --accent-role-muted: var(--role-admin-muted);
@@ -384,8 +316,6 @@
   --accent-role-foreground: var(--role-psychologist-foreground);
 }
 
-/* Generic role-accent utilities — fall back to the neutral brand tokens if
-   used outside a [data-role] scope, so nothing ever renders transparent. */
 @utility text-accent-role {
   color: var(--accent-role, var(--primary));
 }
@@ -402,6 +332,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv11";
+    -webkit-font-smoothing: antialiased;
   }
   html {
     @apply font-sans;
@@ -411,28 +343,21 @@
   h3,
   h4 {
     font-family: var(--font-heading);
-    letter-spacing: -0.01em;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
   }
 
-  /* Quality-floor requirement: visible keyboard focus. Button/FormField (and anything
-     built on them) already carry their own focus-visible ring, but a bare next/link
-     <Link> — used unwrapped for the persistent sidebar nav (every role, every page),
-     "view all" links, and whole-card links on parent/psychologist/student dashboards —
-     has nothing else styling it, so it fell back to each browser's own default focus
-     indicator: present, but not the system's ink-derived --ring token, and easy to lose
-     against --sidebar's tinted background. One base-layer rule covers every such link
-     instead of hand-adding focus-visible classes at each call site. Doesn't affect
-     Button-as-<Link> (`render={<Link />}`): Button's own `outline-none` + ring classes
-     live in Tailwind's utilities layer, which always wins over this base layer. */
+  /* Visible keyboard focus for bare links (Button carries its own ring). */
   a:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
 
-  /* Quality-floor requirement: reduced motion is respected everywhere,
-     including the skeleton shimmer / spinner / critical-severity pulse
-     introduced by this system. */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -445,58 +370,55 @@
   }
 }
 
-/*
- * Signature element: the "grading rail"
- * -----------------------------------------------------------------------
- * AcademiX's whole product thesis is "AI marks handwritten work the way a
- * teacher would." Every card/row that represents a piece of graded work
- * carries a 3px left rail whose color/style encodes its AI-pipeline state
- * — a systemized, restrained echo of a teacher's margin mark, used as the
- * one recurring signature device instead of decorative flourishes.
- */
+/* Grading rail: a 3px margin mark on rows that represent a piece of work. */
 @utility rail-verified {
   border-left: 3px solid var(--success);
 }
 @utility rail-processing {
-  border-left: 3px dashed var(--status-processing);
+  border-left: 3px dashed var(--pencil);
 }
 @utility rail-skipped {
   border-left: 3px solid var(--status-skipped);
-  background-image: repeating-linear-gradient(
-    135deg,
-    var(--status-skipped-bg) 0px,
-    var(--status-skipped-bg) 6px,
-    transparent 6px,
-    transparent 12px
-  );
 }
 @utility rail-flagged {
-  border-left: 3px solid var(--severity-medium);
+  border-left: 3px solid var(--marker);
 }
 @utility rail-critical {
   border-left: 3px solid var(--severity-critical);
 }
 
-/* Utility face for verified/precise numeric data (scores, XP, percentages,
-   IDs, timestamps) — a deliberate typographic signal that this number came
-   from the AI/grading pipeline, not free text. */
+/* Numbers: same face as the text, tabular so columns line up. */
 @utility font-data {
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
-/*
- * Motion system: "ink settles onto paper"
- * -----------------------------------------------------------------------
- * One vocabulary, three moves, all opt-in and all killed by the global
- * prefers-reduced-motion rule above:
- *   rise       content settles up-and-in on mount (page/route transitions)
- *   ink-draw   an InkMark stroke draws itself — the signature moment,
- *              reserved for "the AI just marked this" reveals
- *   stamp-in   a grade/badge stamps down onto the sheet
- * Durations stay under 400ms; easing is a single shared "settle" curve so
- * every animated element in the app decelerates the same way.
- */
+/* The teacher's hand — grade numerals and red-pen notes only. */
+@utility font-hand {
+  font-family: var(--font-hand);
+  font-weight: 600;
+}
+
+/* Highlighter swipe behind text: flagged work only. */
+@utility marker {
+  background-image: linear-gradient(
+    100deg,
+    transparent 2%,
+    color-mix(in oklch, var(--marker) 85%, transparent) 4%,
+    color-mix(in oklch, var(--marker) 70%, transparent) 94%,
+    transparent 97%
+  );
+  color: var(--marker-foreground);
+  border-radius: 0.2em 0.5em;
+  padding: 0.05em 0.35em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.dark .marker {
+  color: var(--marker-foreground);
+}
+
+/* Motion answers actions; these are opt-in and killed by reduced motion. */
 @keyframes rise {
   from {
     opacity: 0;
@@ -507,94 +429,46 @@
     transform: translateY(0);
   }
 }
-
 @keyframes ink-draw {
   to {
     stroke-dashoffset: 0;
   }
 }
-
 @keyframes stamp-in {
   from {
     opacity: 0;
-    transform: scale(1.35) rotate(-12deg);
+    transform: scale(1.3) rotate(-10deg);
   }
   60% {
     opacity: 1;
   }
   to {
     opacity: 1;
-    transform: scale(1) rotate(-6deg);
+    transform: scale(1) rotate(-4deg);
   }
 }
-
 @utility animate-rise {
-  animation: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: rise 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-
-/* Per-child staggered rise for card grids / list pages: apply to the parent,
-   children animate in reading order. Delay caps at the 12th child so a long
-   table doesn't keep the user waiting — everything later lands together. */
+/* Retired: per-section fade-ins read as generated. Kept as a no-op so the
+   class name in older markup is harmless. */
 @utility stagger-rise {
-  > * {
-    animation: rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-  > :nth-child(2) {
-    animation-delay: 40ms;
-  }
-  > :nth-child(3) {
-    animation-delay: 80ms;
-  }
-  > :nth-child(4) {
-    animation-delay: 120ms;
-  }
-  > :nth-child(5) {
-    animation-delay: 160ms;
-  }
-  > :nth-child(6) {
-    animation-delay: 200ms;
-  }
-  > :nth-child(7) {
-    animation-delay: 240ms;
-  }
-  > :nth-child(8) {
-    animation-delay: 280ms;
-  }
-  > :nth-child(9) {
-    animation-delay: 320ms;
-  }
-  > :nth-child(10) {
-    animation-delay: 360ms;
-  }
-  > :nth-child(11) {
-    animation-delay: 400ms;
-  }
-  > :nth-child(n + 12) {
-    animation-delay: 440ms;
-  }
+  display: revert-layer;
 }
-
-/* Draws an InkMark's strokes (see ink-mark.tsx — paths carry pathLength=1).
-   Two strokes of a cross draw in sequence, like a real pen lifting between
-   them. Opt-in via <InkMark draw />. */
 .ink-draw path {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: ink-draw 0.4s ease-out forwards;
+  animation: ink-draw 0.45s ease-out forwards;
   animation-delay: var(--ink-draw-delay, 0s);
 }
 .ink-draw path:nth-child(2) {
   animation-delay: calc(var(--ink-draw-delay, 0s) + 0.28s);
 }
-
 @utility animate-stamp-in {
-  animation: stamp-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: stamp-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Live-demo OCR sweep — a hairline that walks the notebook sheet top→bottom
-   while the landing demo "reads" the handwriting. Top % is relative to the
-   positioned sheet, so it sweeps the whole sheet height regardless of size.
-   Reduced motion: killed by the global prefers-reduced-motion rule above. */
+/* Landing demo: the OCR pass reading the page. */
 @keyframes scan-sweep {
   0% {
     top: 0%;
@@ -617,11 +491,10 @@
   right: 0;
   top: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--ai), transparent);
+  background: linear-gradient(90deg, transparent, var(--pencil), transparent);
   animation: scan-sweep 1.5s ease-in-out infinite;
 }
 
-/* AI Tutor typing indicator — three ink dots breathing while the model thinks. */
 @keyframes typing-bounce {
   0%,
   60%,
@@ -642,333 +515,74 @@
   animation: typing-bounce 1.1s ease-in-out infinite;
 }
 
-/* Theme-toggle cross-fade — ThemeToggle adds .theme-transition to <html> for ~400ms
-   around the .dark class flip, so the palette swap reads as one smooth ink↔night
-   settle instead of a hard cut. Color properties only (no transform/layout), so it
-   can't fight card-lift or the rise/stamp animations. Reduced motion: the global
-   prefers-reduced-motion rule above wins — its !important transition-duration
-   beats this non-important shorthand, so the swap is instant there. */
 .theme-transition,
 .theme-transition *,
 .theme-transition *::before,
 .theme-transition *::after {
   transition:
-    background-color 0.35s ease,
-    color 0.35s ease,
-    border-color 0.35s ease,
-    fill 0.35s ease,
-    stroke 0.35s ease;
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    fill 0.3s ease,
+    stroke 0.3s ease;
 }
 
-/* Hover treatment for clickable cards/rows: the sheet lifts a hair off the
-   desk and its edge sharpens toward ink — transform/shadow only, no color
-   flood, so the grading rail and status tints stay legible. */
+/* Clickable rows/cards: the edge sharpens toward ink. No lift, no glow. */
 @utility card-lift {
-  transition:
-    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.18s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
   &:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 1px 2px oklch(0 0 0 / 0.04),
-      0 4px 12px oklch(0 0 0 / 0.07);
-    border-color: color-mix(in oklch, var(--ink) 28%, var(--border));
+    border-color: color-mix(in oklch, var(--ink) 35%, var(--border));
   }
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 2px oklch(0 0 0 / 0.05);
-  }
+}
+@utility hover-glow {
+  transition: background-color 0.15s ease;
 }
 
-/*
- * AI accent helpers — see the anchor-color block comment at the top for when
- * these are allowed. text-ai-gradient is display type on hero/demo moments;
- * bg-ai-gradient is the CTA/button/chip fill; border-ai-soft is the tinted
- * edge for AI-flavored cards. All three read one shared gradient direction.
- */
+/* Former AI-gradient helpers, now plain ink/pencil (see :root). */
 @utility text-ai-gradient {
-  background-image: var(--ai-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-/* Fallback: if background-clip:text is unsupported, gradient text must not
-   render as invisible — it falls back to the ink anchor. Un-layered rules
-   beat the layered @utility output, so this wins only where needed. */
-@supports not (background-clip: text) {
-  .text-ai-gradient {
-    background-image: none;
-    color: var(--ink);
-  }
+  color: var(--ink);
 }
 @utility bg-ai-gradient {
-  background-image: var(--ai-gradient);
+  background-color: var(--ink);
+  color: var(--primary-foreground);
 }
 @utility border-ai-soft {
-  border-color: color-mix(in oklch, var(--ai) 35%, transparent);
+  border-color: var(--border);
 }
 
-/*
- * Ambient background textures — subtle, modern-SaaS patterning that reads
- * as depth without competing with the paper/ink identity.
- *   bg-grid-paper  faint ruled grid (hero) — same spirit as the notebook
- *                  sheet, abstracted to full-bleed background
- *   bg-dots        fine dot grid (CTA band)
- */
+/* The squared notebook page. Used in the landing hero and empty states only. */
 @utility bg-grid-paper {
+  background-color: var(--card);
   background-image:
-    linear-gradient(to right, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 4%, transparent) 1px, transparent 1px);
-  background-size: 44px 44px;
-}
-@utility bg-dots {
-  background-image: radial-gradient(
-    color-mix(in oklch, var(--foreground) 9%, transparent) 1px,
-    transparent 1px
-  );
+    linear-gradient(to right, color-mix(in oklch, var(--katak) 75%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklch, var(--katak) 75%, transparent) 1px, transparent 1px);
   background-size: 22px 22px;
 }
-
-/*
- * Aurora drift — the hero's ambient gradient blobs slowly breathe (translate
- * + scale on a long alternate loop) so the background feels alive without
- * drawing the eye. Multiple blobs get staggered --aurora-delay inline styles.
- * Killed by the global prefers-reduced-motion rule.
- */
-@keyframes drift {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(36px, -28px) scale(1.07);
-  }
-  100% {
-    transform: translate(-22px, 18px) scale(0.95);
-  }
+@utility bg-dots {
+  background-image: none;
 }
-.aurora {
-  animation: drift 16s ease-in-out infinite alternate;
-  animation-delay: var(--aurora-delay, 0s);
-}
-
-/*
- * Shine sweep — a light band passes over gradient CTAs (scoped to actual
- * buttons/links so the decorative aurora blobs that also use bg-ai-gradient
- * never get the effect). Static band under reduced motion, per the global
- * rule (0.01ms duration freezes it mid-sweep, which reads as a soft sheen).
- */
-@keyframes shine-sweep {
-  from {
-    transform: translateX(-160%) skewX(-20deg);
-  }
-  to {
-    transform: translateX(260%) skewX(-20deg);
-  }
-}
-a.bg-ai-gradient,
-button.bg-ai-gradient {
-  position: relative;
-  overflow: hidden;
-}
-a.bg-ai-gradient::after,
-button.bg-ai-gradient::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 40%,
-    color-mix(in oklch, white 40%, transparent) 50%,
-    transparent 60%
-  );
-  transform: translateX(-160%) skewX(-20deg);
-  animation: shine-sweep 4.5s ease-in-out infinite;
-  pointer-events: none;
-}
-
-/*
- * Hover glow — card/row hover gets a soft halo in the surrounding accent hue
- * (resolves via --accent-role inside a role-scoped shell, --ai otherwise).
- * Pairs with card-lift: lift moves the card, glow gives it presence.
- */
-@utility hover-glow {
-  transition:
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-  &:hover {
-    box-shadow:
-      0 0 0 1px color-mix(in oklch, var(--accent-role, var(--ai)) 28%, transparent),
-      0 14px 44px -14px color-mix(in oklch, var(--accent-role, var(--ai)) 38%, transparent);
-    border-color: color-mix(in oklch, var(--accent-role, var(--ai)) 42%, transparent);
-  }
-}
-
-/*
- * Exercise-book sheet — landing/hero prop (see app/page.tsx). Ruled lines +
- * the red margin rule of a real daftar page, drawn with gradients so it
- * scales to any size. --sheet-rule spacing matches the hero's line-height.
- */
 @utility notebook-sheet {
-  --sheet-rule: 2rem;
   background-color: var(--card);
-  /* Theme-aware anchors: --destructive / --foreground resolve to the same
-     values as --pen-red / --ink in light mode but flip to readable light
-     tones on the dark "night notebook" — same lines, both themes. */
   background-image:
     linear-gradient(
       to right,
       transparent calc(2.75rem - 1px),
-      color-mix(in oklch, var(--destructive) 45%, transparent) calc(2.75rem - 1px),
-      color-mix(in oklch, var(--destructive) 45%, transparent) 2.75rem,
+      color-mix(in oklch, var(--pen-red) 45%, transparent) calc(2.75rem - 1px),
+      color-mix(in oklch, var(--pen-red) 45%, transparent) 2.75rem,
       transparent 2.75rem
     ),
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent calc(var(--sheet-rule) - 1px),
-      color-mix(in oklch, var(--foreground) 12%, transparent) calc(var(--sheet-rule) - 1px),
-      color-mix(in oklch, var(--foreground) 12%, transparent) var(--sheet-rule)
-    );
+    linear-gradient(to right, color-mix(in oklch, var(--katak) 80%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklch, var(--katak) 80%, transparent) 1px, transparent 1px);
+  background-size: auto, 1rem 1rem, 1rem 1rem;
 }
 
-/*
- * Infinite feature marquee — a slow, seam-less loop of product keywords that
- * reads as "a live product, in motion". Two identical tracks translated -50%
- * make the loop pixel-perfect (items carry their own right margin instead of
- * flex gap so both halves are exactly equal width). Hover pauses it.
- */
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-.marquee-mask {
-  overflow: hidden;
-  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
-}
+/* Retired ambient effects; names kept inert for any leftover markup. */
+.aurora,
+.gradient-ring,
 .marquee-track {
-  display: flex;
-  width: max-content;
-  animation: marquee 32s linear infinite;
+  animation: none;
 }
-.marquee-track:hover {
-  animation-play-state: paused;
-}
-
-/*
- * Animated gradient ring — a light that slowly travels around a card's border
- * (hero demo panel, closing CTA). Wrapper technique: the moving gradient lives
- * in the wrapper's border-box background, content stays a normal child below,
- * so there are no z-index/mask pitfalls. Inner rounded must sit ~1.5px inside
- * the wrapper's radius to look crisp.
- */
-@keyframes border-flow {
-  0%,
-  100% {
-    background-position: 0 0, 0% 0;
-  }
-  50% {
-    background-position: 0 0, -130% 0;
-  }
-}
-.gradient-ring {
-  padding: 1.5px;
-  border: 1px solid transparent;
-  background:
-    linear-gradient(
-        color-mix(in oklch, var(--card) 88%, transparent),
-        color-mix(in oklch, var(--card) 88%, transparent)
-      )
-      padding-box,
-    linear-gradient(115deg, transparent 22%, var(--ai) 50%, transparent 78%) border-box;
-  background-size: auto, 240% 100%;
-  animation: border-flow 6s ease-in-out infinite;
-}
-
-/*
- * Hero sweep — the role-accent light travels along the dashboard hero's bottom
- * edge every few seconds, mirroring the shell hairline above it. Atmosphere
- * only; killed by reduced motion. The hero section itself is overflow-hidden,
- * so the ::after light clips cleanly as it exits the right edge.
- */
+.shell-hairline::after,
 .hero-sweep::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: -45%;
-  height: 2px;
-  width: 45%;
-  background: linear-gradient(90deg, transparent, var(--accent-role), transparent);
-  animation: hero-sweep-move 6s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes hero-sweep-move {
-  0% {
-    left: -45%;
-    opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  55%,
-  100% {
-    left: 105%;
-    opacity: 0;
-  }
-}
-
-/*
- * Shell hairline sweep — a soft light passes over the dashboard's role-accent
- * top hairline every few seconds. Atmosphere only; killed by reduced motion.
- */
-.shell-hairline {
-  overflow: hidden;
-}
-.shell-hairline::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -40%;
-  width: 40%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in oklch, white 55%, transparent),
-    transparent
-  );
-  animation: hairline-sweep 7s ease-in-out infinite;
-}
-@keyframes hairline-sweep {
-  0% {
-    left: -40%;
-  }
-  60%,
-  100% {
-    left: 110%;
-  }
-}
-
-/* Reduced-motion guards for the additions above — these must beat the global
-   * { animation-duration: 0.01ms !important } rule, hence !important here. */
-@media (prefers-reduced-motion: reduce) {
-  .marquee-track {
-    animation: none !important;
-  }
-  .gradient-ring {
-    animation: none !important;
-  }
-  .shell-hairline::after {
-    animation: none;
-    opacity: 0;
-  }
-  .hero-sweep::after {
-    animation: none;
-    opacity: 0;
-  }
+  content: none;
 }

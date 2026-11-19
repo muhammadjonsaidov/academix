@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePsychologyStore } from "@/stores/usePsychologyStore";
 import type { ApiErrorResponse } from "@/types/auth";
+import { formatDate, formatDateTime } from "@/lib/format";
 
 export default function PsychologistSignalDetailPage() {
   const params = useParams<{ signalId: string }>();
@@ -105,7 +106,7 @@ export default function PsychologistSignalDetailPage() {
             <Badge variant={SEVERITY_BADGE_VARIANT[signal.severity]}>
               {SEVERITY_LABEL[signal.severity]}
             </Badge>
-            <span className="font-data">{new Date(signal.detectedAt).toLocaleString()}</span>
+            <span className="font-data">{formatDateTime(signal.detectedAt)}</span>
             {signal.isManipulation ? (
               <Badge variant="destructive" className="gap-1">
                 <AlertTriangle className="size-3" strokeWidth={1.75} />
@@ -178,7 +179,7 @@ export default function PsychologistSignalDetailPage() {
               <ul className="space-y-1 text-xs">
                 {studentBehaviorProfile.xpTrend.slice(0, 5).map((entry) => (
                   <li key={entry.id} className="font-data">
-                    {new Date(entry.occurredAt).toLocaleDateString()}: +{entry.xp} ({entry.reason})
+                    {formatDate(entry.occurredAt)}: +{entry.xp} ({entry.reason})
                   </li>
                 ))}
                 {studentBehaviorProfile.xpTrend.length === 0 ? (

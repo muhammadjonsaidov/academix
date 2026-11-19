@@ -6,6 +6,7 @@ import type {
   CriteriaItem,
   GradeSubmissionRequest,
   Homework,
+  ReviewQueueItem,
   SignalSeverity,
   TeacherClass,
   TeacherPsychologicalSignal,
@@ -37,6 +38,7 @@ interface TeacherState {
   submissionsFilters: SubmissionFilters;
   selectedSubmission: TeacherSubmissionDetail | null;
   gradingCriteria: CriteriaItem[];
+  reviewQueue: ReviewQueueItem[] | null;
 
   fetchClasses: () => Promise<void>;
   fetchSubjects: () => Promise<void>;
@@ -52,6 +54,13 @@ interface TeacherState {
   setSubmissionsPageSize: (size: number) => Promise<void>;
   fetchSubmission: (submissionId: string) => Promise<void>;
   gradeSubmission: (submissionId: string, request: GradeSubmissionRequest) => Promise<void>;
+  fetchReviewQueue: () => Promise<void>;
+  /** The student's photo as an object URL (the API needs the bearer token, so no plain <img src>). */
+  fetchSubmissionImage: (submissionId: string) => Promise<string | null>;
+  /** The next AI-checked submission of the same assignment waiting for the teacher, if any. */
+  findNextToReview: (assignmentId: string, currentId: string) => Promise<string | null>;
+  /** Confirms the AI score of every clean, AI-checked submission of the assignment. */
+  approveClean: (assignmentId: string) => Promise<number>;
 
   fetchGradingCriteria: (subjectId: string) => Promise<void>;
   updateGradingCriteria: (subjectId: string, criteria: CriteriaItem[]) => Promise<void>;
@@ -73,6 +82,7 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
   submissionsFilters: {},
   selectedSubmission: null,
   gradingCriteria: [],
+  reviewQueue: null,
   classStudents: [],
   psychologicalSignals: [],
 
@@ -182,6 +192,39 @@ export const useTeacherStore = create<TeacherState>((set, get) => ({
   gradeSubmission: async (submissionId, request) => {
     await apiClient.post(`/teacher/submissions/${submissionId}/grade`, request);
     await get().fetchSubmission(submissionId);
+  },
+
+  fetchReviewQueue: async () => {
+    const { data } = await apiClient.get<ReviewQueueItem[]>("/teacher/submissions/review-queue");
+    set({ reviewQueue: data });
+  },
+
+  fetchSubmissionImage: async (submissionId) => {
+    try {
+      const { data } = await apiClient.get<Blob>(`/teacher/submissions/${submissionId}/image`, {
+        responseType: "blob",
+      });
+      return URL.createObjectURL(data);
+    } catch (error) {
+      if ((error as { response?: { status?: number } }).response?.status === 404) return null;
+      throw error;
+    }
+  },
+
+  findNextToReview: async (assignmentId, currentId) => {
+    const { data } = await apiClient.get<PageResponse<TeacherSubmissionListItem>>(
+      "/teacher/submissions",
+      { params: { assignmentId, status: "AI_DONE", page: 0, size: 5 } },
+    );
+    return data.items.find((item) => item.submissionId !== currentId)?.submissionId ?? null;
+  },
+
+  approveClean: async (assignmentId) => {
+    const { data } = await apiClient.post<{ approvedCount: number }>(
+      `/teacher/submissions/approve-clean/${assignmentId}`,
+    );
+    await get().fetchReviewQueue();
+    return data.approvedCount;
   },
 
   fetchGradingCriteria: async (subjectId) => {

@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { DashboardShell } from "@/components/shell/DashboardShell";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { fieldClass, FormField, SelectField } from "@/components/shared/FormField";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTeacherStore } from "@/stores/useTeacherStore";
 import type { ApiErrorResponse } from "@/types/auth";
 import type { Homework } from "@/types/teacher";
+import { formatDateTime } from "@/lib/format";
 
 // LocalDateTime from the backend ("2026-08-01T10:00:00") -> value a <input type="datetime-local">
 // accepts ("2026-08-01T10:00").
@@ -39,6 +41,8 @@ export default function TeacherHomeworkPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     fetchClasses().catch(() => {});
@@ -55,6 +59,7 @@ export default function TeacherHomeworkPage() {
   }
 
   function resetForm() {
+    setShowForm(false);
     setEditingId(null);
     setClassId("");
     setSubjectId("");
@@ -66,6 +71,9 @@ export default function TeacherHomeworkPage() {
 
   function startEdit(hw: Homework) {
     setError(null);
+    setNotice(null);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setEditingId(hw.id);
     setClassId(hw.classId);
     setSubjectId(hw.subjectId);
@@ -108,6 +116,7 @@ export default function TeacherHomeworkPage() {
           maxScore: Number(maxScore),
         });
         resetForm();
+        setNotice("Vazifa saqlandi.");
       } else {
         await createHomework({
           classId,
@@ -117,9 +126,8 @@ export default function TeacherHomeworkPage() {
           deadlineAt,
           maxScore: Number(maxScore),
         });
-        setTitle("");
-        setDescription("");
-        setDeadlineAt("");
+        resetForm();
+        setNotice(`"${title}" berildi. Sinf o'quvchilariga xabar yuborildi.`);
       }
     } catch (err) {
       const apiError = (err as { response?: { data?: ApiErrorResponse } }).response?.data;
@@ -134,11 +142,34 @@ export default function TeacherHomeworkPage() {
 
   return (
     <DashboardShell role="TEACHER">
-      <h2 className="mb-4 font-heading text-lg font-semibold">Uy vazifalari</h2>
+      <PageHeader
+        className="mb-6"
+        title="Uy vazifalari"
+        description="Vazifa bering — o'quvchilar Telegram'da xabar oladi, topshirilgan ishlarni AI tekshiradi."
+        actions={
+          !showForm ? (
+            <Button
+              onClick={() => {
+                setNotice(null);
+                setShowForm(true);
+              }}
+            >
+              Yangi vazifa berish
+            </Button>
+          ) : null
+        }
+      />
 
+      {notice ? (
+        <p role="status" className="mb-4 text-sm text-success">
+          {notice}
+        </p>
+      ) : null}
+
+      {showForm ? (
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>{editingId ? "Vazifani tahrirlash" : "Yangi vazifa yaratish"}</CardTitle>
+          <CardTitle>{editingId ? "Vazifani tahrirlash" : "Yangi vazifa"}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -224,17 +255,16 @@ export default function TeacherHomeworkPage() {
                     : "Yaratilmoqda..."
                   : editingId
                     ? "Saqlash"
-                    : "Vazifa yaratish"}
+                    : "Vazifani berish"}
               </Button>
-              {editingId ? (
-                <Button type="button" variant="ghost" onClick={resetForm} disabled={isSubmitting}>
-                  Bekor qilish
-                </Button>
-              ) : null}
+              <Button type="button" variant="ghost" onClick={resetForm} disabled={isSubmitting}>
+                Bekor qilish
+              </Button>
             </div>
           </form>
         </CardContent>
       </Card>
+      ) : null}
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
 
@@ -242,7 +272,7 @@ export default function TeacherHomeworkPage() {
         <EmptyState
           icon={BookOpen}
           title="Hozircha uy vazifalari yo'q"
-          description="Yuqoridagi forma orqali birinchi vazifangizni yarating."
+          description="«Yangi vazifa berish» tugmasi bilan birinchi vazifani bering."
         />
       ) : (
         <Card>
@@ -259,18 +289,20 @@ export default function TeacherHomeworkPage() {
                 </tr>
               </thead>
               <tbody>
-                {homework.map((hw) => (
+                {[...homework]
+                  .sort((a, b) => new Date(b.deadlineAt).getTime() - new Date(a.deadlineAt).getTime())
+                  .map((hw) => (
                   <tr key={hw.id} className="border-b border-border last:border-0">
                     <td className="px-6 py-3 font-medium">{hw.title}</td>
                     <td className="py-3">{classFullName(hw.classId)}</td>
                     <td className="py-3">{subjectName(hw.subjectId)}</td>
-                    <td className="py-3 font-data">{new Date(hw.deadlineAt).toLocaleString()}</td>
+                    <td className="py-3 font-data">{formatDateTime(hw.deadlineAt)}</td>
                     <td className="space-x-3 px-6 py-3 text-right">
                       <Link
                         href={`/dashboard/teacher/submissions?assignmentId=${hw.id}`}
                         className="text-sm underline"
                       >
-                        Topshiriqlar
+                        Ishlar
                       </Link>
                       <button
                         type="button"

@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StampBadge } from "@/components/ui/stamp-badge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { useStudentStore } from "@/stores/useStudentStore";
+import { formatDate } from "@/lib/format";
 
 export default function StudentBadgesPage() {
   const badges = useStudentStore((state) => state.badges);
@@ -50,7 +51,7 @@ export default function StudentBadgesPage() {
                 <p className="font-medium">{badge.name}</p>
                 <p className="text-sm text-muted-foreground">{badge.description}</p>
                 <p className="font-data text-xs text-muted-foreground">
-                  {new Date(badge.awardedAt).toLocaleDateString()}
+                  {formatDate(badge.awardedAt)}
                 </p>
               </CardContent>
             </Card>

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import type { NotificationType } from "@/types/notification";
+import { formatDate } from "@/lib/format";
 
 // Per-type icon + accent so a glance separates "yutuq" from "signal" from "muddat".
 // Colors reuse the system's semantic tokens only — no new hues.
@@ -48,7 +49,7 @@ function relativeTime(iso: string): string {
   const days = Math.floor(hours / 24);
   if (days === 1) return "kecha";
   if (days < 7) return `${days} kun oldin`;
-  return new Date(iso).toLocaleDateString();
+  return formatDate(iso);
 }
 
 // Deviation — no notification inbox UI is documented anywhere (matches the backend

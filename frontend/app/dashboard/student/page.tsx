@@ -18,10 +18,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StampBadge } from "@/components/ui/stamp-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { GradeMark } from "@/components/shared/GradeMark";
 import { ProgressBar } from "@/components/shared/ProgressBar";
 import { StatCard } from "@/components/student/StatCard";
 import { useStudentStore } from "@/stores/useStudentStore";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { deadlineLabel, formatDate } from "@/lib/format";
 
 export default function StudentDashboardPage() {
   const dashboard = useStudentStore((state) => state.dashboard);
@@ -100,6 +102,79 @@ export default function StudentDashboardPage() {
           />
         </div>
 
+        <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between gap-2">
+              Topshirish kerak
+              <Link href="/dashboard/student/homework" className="text-sm font-normal text-muted-foreground hover:text-foreground hover:underline">
+                Hammasi
+              </Link>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dashboard.pendingHomework.length > 0 ? (
+              <ul className="space-y-2">
+                {dashboard.pendingHomework.map((hw) => (
+                  <li
+                    key={hw.assignmentId}
+                    className="flex items-center justify-between gap-3 border-b border-border py-2 text-sm last:border-0"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="min-w-0 truncate">
+                        {hw.title} <span className="text-muted-foreground">({hw.subject})</span>
+                      </span>
+                      {hw.isLate ? (
+                        <Badge variant="destructive" className="shrink-0">
+                          Kechikkan
+                        </Badge>
+                      ) : null}
+                    </span>
+                    <span className="shrink-0 text-muted-foreground">{deadlineLabel(hw.deadlineAt)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState
+                icon={BookOpen}
+                title="Hozircha vazifalar yo'q"
+                description="Yangi uy vazifalari shu yerda ko'rinadi."
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>So&apos;nggi baholar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dashboard.recentGrades.length > 0 ? (
+              <ul className="space-y-2">
+                {dashboard.recentGrades.map((grade) => (
+                  <li
+                    key={grade.submissionId}
+                    className="flex items-center justify-between gap-3 border-b border-border py-2 text-sm last:border-0"
+                  >
+                    <span className="flex min-w-0 items-center gap-3">
+                      <GradeMark grade={grade.fivePointGrade} size="sm" />
+                      <span className="font-data font-medium">{grade.score} ball</span>
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{formatDate(grade.gradedAt)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState
+                icon={GraduationCap}
+                title="Hozircha baholar yo'q"
+                description="Baholangan ishlaringiz shu yerda ko'rinadi."
+              />
+            )}
+          </CardContent>
+        </Card>
+        </div>
+
         {dashboard.xpToNextBadge > 0 ? (
           <Card>
             <CardHeader className="flex-row items-center justify-between">
@@ -138,7 +213,7 @@ export default function StudentDashboardPage() {
                   <div
                     key={badge.id}
                     title={badge.description}
-                    className="card-lift hover-glow flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+                    className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
                   >
                     <StampBadge variant="chalk-green" size="md" className="shrink-0">
                       <span className="text-lg leading-none">{badge.icon}</span>
@@ -160,80 +235,6 @@ export default function StudentDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Topshirilishi kerak</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dashboard.pendingHomework.length > 0 ? (
-              <ul className="space-y-2">
-                {dashboard.pendingHomework.map((hw) => (
-                  <li
-                    key={hw.assignmentId}
-                    className="card-lift hover-glow flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm"
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span className="min-w-0 truncate">
-                        {hw.title} <span className="text-muted-foreground">({hw.subject})</span>
-                      </span>
-                      {hw.isLate ? (
-                        <Badge variant="destructive" className="shrink-0">
-                          Kechikkan
-                        </Badge>
-                      ) : null}
-                    </span>
-                    <span className="font-data shrink-0 text-muted-foreground">
-                      {new Date(hw.deadlineAt).toLocaleString()}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <EmptyState
-                icon={BookOpen}
-                title="Hozircha vazifalar yo'q"
-                description="Yangi uy vazifalari shu yerda ko'rinadi."
-              />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>So&apos;nggi baholar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dashboard.recentGrades.length > 0 ? (
-              <ul className="space-y-2">
-                {dashboard.recentGrades.map((grade, i) => (
-                  <li
-                    key={grade.submissionId}
-                    className="rail-verified flex items-center justify-between gap-3 rounded-md bg-muted/40 p-3 pl-4 text-sm"
-                  >
-                    <span className="flex min-w-0 items-center gap-3">
-                      <span
-                        className="animate-stamp-in font-data bg-success-bg text-success flex size-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ring-1 ring-current"
-                        style={{ animationDelay: `${i * 80}ms` }}
-                      >
-                        {grade.fivePointGrade}
-                      </span>
-                      <span className="font-data font-medium">{grade.score} ball</span>
-                    </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {new Date(grade.gradedAt).toLocaleString()}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <EmptyState
-                icon={GraduationCap}
-                title="Hozircha baholar yo'q"
-                description="Baholangan ishlaringiz shu yerda ko'rinadi."
-              />
-            )}
-          </CardContent>
-        </Card>
       </div>
     </DashboardShell>
   );

@@ -39,6 +39,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { useParentStore } from "@/stores/useParentStore";
 import type { ApiErrorResponse } from "@/types/auth";
+import { formatDate } from "@/lib/format";
 
 const TREND_CONFIG: Record<
   string,
@@ -371,7 +372,7 @@ export default function ParentChildDetailPage() {
                   <span className="flex items-center gap-2">
                     {h.isLate ? <Badge variant="destructive">Kechikkan</Badge> : null}
                     <span className="font-data text-muted-foreground">
-                      {new Date(h.deadlineAt).toLocaleDateString()}
+                      {formatDate(h.deadlineAt)}
                     </span>
                   </span>
                 </li>

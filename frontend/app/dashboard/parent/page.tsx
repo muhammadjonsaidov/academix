@@ -2,24 +2,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpen, ChevronRight, Flame, Users } from "lucide-react";
+import { ChevronRight, Users } from "lucide-react";
 import { DashboardHero } from "@/components/shared/DashboardHero";
 import { DashboardShell } from "@/components/shell/DashboardShell";
-import { StatTile } from "@/components/shared/StatTile";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { GradeMark } from "@/components/shared/GradeMark";
+import { TelegramConnect } from "@/components/shared/TelegramConnect";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useParentStore } from "@/stores/useParentStore";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useParentStore } from "@/stores/useParentStore";
+import type { ChildSummary } from "@/types/parent";
 
-function initials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((part) => part.charAt(0))
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+function summarySentence(children: ChildSummary[]): string {
+  const pending = children.reduce((sum, c) => sum + c.pendingHomeworkCount, 0);
+  if (children.length === 0) return "Farzandingiz maktab tizimiga bog'langach, uning baholari shu yerda chiqadi.";
+  if (pending === 0) return "Hamma vazifalar topshirilgan. Yangi baho kelsa, Telegram'ga ham xabar boradi.";
+  return `${pending} ta vazifa hali topshirilmagan. Yangi baho kelsa, Telegram'ga ham xabar boradi.`;
 }
 
 export default function ParentDashboardPage() {
@@ -29,33 +27,17 @@ export default function ParentDashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchDashboard().catch(() => setError("Bosh sahifani yuklab bo'lmadi."));
+    fetchDashboard().catch(() => setError("Ma'lumotni yuklab bo'lmadi. Sahifani yangilang."));
   }, [fetchDashboard]);
 
   const children = dashboard?.children ?? [];
-  const activeToday = children.filter((c) => c.todayActivity).length;
-  const pendingTotal = children.reduce((sum, c) => sum + c.pendingHomeworkCount, 0);
-
-  const heroDescription = dashboard
-    ? `${children.length} ta farzand · bugun ${activeToday} tasi faol · ${pendingTotal} ta bajarilmagan vazifa`
-    : "Farzandlaringizning faolligi, vazifalari va baholarini shu yerdan kuzatishingiz mumkin.";
 
   return (
     <DashboardShell role="PARENT">
-      <div className="space-y-6">
+      <div className="space-y-8">
         <DashboardHero
-          title={firstName ? `Salom, ${firstName}!` : "Salom!"}
-          description={heroDescription}
-          actions={
-            <>
-              <Badge variant="role-parent">
-                {children.length} farzand
-              </Badge>
-              <Badge variant={activeToday > 0 ? "success" : "outline"}>
-                Bugun {activeToday} faol
-              </Badge>
-            </>
-          }
+          title={firstName ? `Salom, ${firstName}` : "Salom"}
+          description={dashboard ? summarySentence(children) : "Farzandlaringiz natijalari yuklanmoqda…"}
         />
 
         {error ? (
@@ -66,107 +48,75 @@ export default function ParentDashboardPage() {
 
         {!dashboard && !error ? (
           <div className="grid gap-4 md:grid-cols-2">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <Card key={i}>
-                <CardContent className="space-y-3 pt-6">
-                  <Skeleton className="h-5 w-1/2" />
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-4 w-2/3" />
-                </CardContent>
-              </Card>
-            ))}
+            <Skeleton className="h-36" />
+            <Skeleton className="h-36" />
           </div>
-        ) : null}
-
-        {dashboard && children.length > 0 ? (
-          <>
-            <div className="stagger-rise grid grid-cols-3 gap-4">
-              <StatTile label="Farzandlar" value={children.length} icon={Users} />
-              <StatTile label="Bugun faol" value={activeToday} icon={Flame} />
-              <StatTile label="Bajarilmagan vazifalar" value={pendingTotal} icon={BookOpen} />
-            </div>
-
-            <div className="stagger-rise grid gap-4 md:grid-cols-2">
-              {children.map((child) => (
-                <Link
-                  key={child.studentId}
-                  href={`/dashboard/parent/children/${child.studentId}`}
-                  className="group block"
-                >
-                  <Card className="card-lift relative h-full overflow-hidden transition-colors group-hover:border-role-parent">
-                    {/* Role-accent top hairline — same note as the shell's header bar */}
-                    <span
-                      aria-hidden
-                      className="bg-role-parent absolute inset-x-0 top-0 h-0.5 opacity-50"
-                    />
-                    <CardContent className="flex flex-col gap-3 pt-6">
-                      <div className="flex items-center gap-3">
-                        <span className="bg-role-parent-muted text-role-parent flex size-10 shrink-0 items-center justify-center rounded-full font-heading text-sm font-semibold ring-1 ring-current">
-                          {initials(child.name)}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold">{child.name}</p>
-                          <p className="truncate text-sm text-muted-foreground">{child.className}</p>
-                        </div>
-                        {child.todayActivity ? (
-                          <span
-                            className="relative flex size-2.5 shrink-0"
-                            title="Bugun faol bo'lgan"
-                          >
-                            <span className="bg-role-parent absolute inline-flex h-full w-full animate-ping rounded-full opacity-60" />
-                            <span className="bg-role-parent relative inline-flex size-2.5 rounded-full" />
-                          </span>
-                        ) : (
-                          <span
-                            className="size-2.5 shrink-0 rounded-full bg-muted"
-                            title="Bugun faollik yo'q"
-                          />
-                        )}
-                        <ChevronRight
-                          className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
-                          strokeWidth={1.75}
-                        />
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={child.todayActivity ? "success" : "outline"}>
-                          {child.todayActivity ? "Bugun faol bo'lgan" : "Bugun faollik yo'q"}
-                        </Badge>
-                        {child.pendingHomeworkCount > 0 ? (
-                          <Badge variant="outline">
-                            {child.pendingHomeworkCount} ta bajarilmagan vazifa
-                          </Badge>
-                        ) : (
-                          <Badge variant="success">Barcha vazifalar bajarilgan</Badge>
-                        )}
-                      </div>
-
-                      {child.recentGrade ? (
-                        <p className="text-sm text-muted-foreground">
-                          So&apos;nggi baho:{" "}
-                          <span className="font-data font-medium text-foreground">
-                            {child.recentGrade.score} ({child.recentGrade.fivePointGrade})
-                          </span>
-                        </p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Hozircha baholar yo&apos;q.</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </>
         ) : null}
 
         {dashboard && children.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border py-12 text-center">
-            <Users className="size-8 text-muted-foreground" strokeWidth={1.75} />
-            <p className="text-sm font-medium">Hozircha bog&apos;langan farzand yo&apos;q</p>
-            <p className="text-sm text-muted-foreground">
-              Maktab administratori bilan bog&apos;laning.
-            </p>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="Bog'langan farzand yo'q"
+            description="Maktab ma'muriyatidan farzandingizni hisobingizga bog'lab berishni so'rang."
+          />
+        ) : null}
+
+        {children.length > 0 ? (
+          <ul className="grid gap-4 md:grid-cols-2">
+            {children.map((child) => (
+              <li key={child.studentId}>
+                <Link
+                  href={`/dashboard/parent/children/${child.studentId}`}
+                  className="card-lift group flex h-full items-start gap-4 rounded-[10px] border border-border bg-card p-5"
+                >
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <div>
+                      <p className="truncate text-lg font-semibold">{child.name}</p>
+                      <p className="text-sm text-muted-foreground">{child.className}</p>
+                    </div>
+                    <dl className="space-y-1 text-[0.9375rem]">
+                      <div className="flex gap-2">
+                        <dt className="text-muted-foreground">So&apos;nggi baho:</dt>
+                        <dd>
+                          {child.recentGrade ? (
+                            <span className="font-data">{child.recentGrade.score} ball</span>
+                          ) : (
+                            "hali yo'q"
+                          )}
+                        </dd>
+                      </div>
+                      <div className="flex gap-2">
+                        <dt className="text-muted-foreground">Topshirilmagan:</dt>
+                        <dd className={child.pendingHomeworkCount > 0 ? "font-medium" : ""}>
+                          {child.pendingHomeworkCount > 0 ? `${child.pendingHomeworkCount} ta vazifa` : "yo'q"}
+                        </dd>
+                      </div>
+                      <div className="flex gap-2">
+                        <dt className="text-muted-foreground">Bugun:</dt>
+                        <dd>{child.todayActivity ? "tizimda ishlagan" : "kirmagan"}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-3">
+                    {child.recentGrade ? <GradeMark grade={child.recentGrade.fivePointGrade} /> : null}
+                    <ChevronRight
+                      className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                      strokeWidth={1.75}
+                    />
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {dashboard ? (
+          <section aria-labelledby="telegram-heading" className="max-w-xl space-y-2">
+            <h2 id="telegram-heading" className="text-lg font-semibold">
+              Baholarni Telegram&apos;da olish
+            </h2>
+            <TelegramConnect />
+          </section>
         ) : null}
       </div>
     </DashboardShell>

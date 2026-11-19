@@ -59,24 +59,12 @@ export function StatTile({
   className,
 }: StatTileProps) {
   return (
-    <Card className={cn("card-lift hover-glow relative overflow-hidden", className)}>
-      {/* Soft role-accent corner wash — atmosphere only, behind the content */}
-      <span
-        aria-hidden
-        className="bg-accent-role/10 absolute -top-8 -right-8 size-24 rounded-full blur-2xl"
-      />
-      <CardContent className="relative flex items-center gap-4 py-5">
-        <span
-          className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-lg ring-1 ring-current",
-            accentClassName,
-          )}
-        >
-          <Icon className="size-5" strokeWidth={1.75} />
-        </span>
+    <Card className={cn("relative", className)}>
+      <CardContent className="flex items-start justify-between gap-3 py-4">
         <div className="min-w-0">
-          <div className="flex items-baseline gap-2">
-            <p className="font-data text-2xl leading-none font-semibold">
+          <p className="text-sm leading-snug text-muted-foreground">{label}</p>
+          <div className="mt-1.5 flex items-baseline gap-2">
+            <p className="font-data text-[1.75rem] leading-none font-semibold tracking-tight">
               <AnimatedValue value={value} />
             </p>
             {delta ? (
@@ -90,8 +78,8 @@ export function StatTile({
               </span>
             ) : null}
           </div>
-          <p className="mt-1.5 text-xs leading-snug text-muted-foreground">{label}</p>
         </div>
+        <Icon className={cn("size-5 shrink-0 text-muted-foreground", accentClassName && "opacity-80")} strokeWidth={1.75} />
       </CardContent>
     </Card>
   );

@@ -22,17 +22,12 @@ export const metadata = {
 export default function NotFoundPage() {
   return (
     <div className="relative isolate flex min-h-screen flex-col overflow-hidden bg-background">
-      {/* Ambient AI glow — same language as the landing hero */}
-      <div aria-hidden className="absolute inset-0 -z-10">
-        <div className="bg-ai-gradient absolute -top-32 left-1/2 size-[28rem] -translate-x-1/2 rounded-full opacity-15 blur-3xl" />
-        <div className="absolute -right-20 -bottom-24 size-80 rounded-full bg-chalk-green/10 blur-3xl" />
-      </div>
 
       <header className="flex items-center justify-between px-6 py-4 lg:px-12">
         <span className="flex items-center gap-2.5">
           <Image src="/logo-mark.svg" alt="" width={32} height={29} priority />
           <span className="font-heading text-base font-semibold">
-            AcademiX <span className="text-ai-gradient">AI</span>
+            AcademiX AI
           </span>
         </span>
         <Link href="/" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
@@ -45,7 +40,7 @@ export default function NotFoundPage() {
           {/* Ruled sheet with the red-pen mark */}
           <div className="notebook-sheet relative mb-8 flex h-56 w-full max-w-md items-center justify-center overflow-hidden rounded-lg border border-border shadow-lg">
             <p
-              className="font-heading text-ai-gradient select-none text-[7rem] leading-none font-bold"
+              className="font-heading text-pencil select-none text-[7rem] leading-none font-bold"
               aria-hidden
             >
               404
@@ -60,7 +55,7 @@ export default function NotFoundPage() {
           </div>
 
           <h1 className="font-heading text-2xl font-semibold">
-            Bu sahifa <span className="text-ai-gradient">topilmadi</span>
+            Bu sahifa topilmadi
           </h1>
           <p className="mt-3 max-w-sm text-sm text-muted-foreground">
             Sahifa o&apos;chirilgan, ko&apos;chirilgan yoki manzil noto&apos;g&apos;ri kiritilgan

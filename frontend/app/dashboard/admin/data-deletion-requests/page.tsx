@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminStore } from "@/stores/useAdminStore";
 import type { ApiErrorResponse } from "@/types/auth";
+import { formatDate } from "@/lib/format";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "Kutilmoqda",
@@ -110,7 +111,7 @@ export default function AdminDataDeletionRequestsPage() {
                         {request.requestedBy}
                       </td>
                       <td className="py-2.5 font-data text-muted-foreground">
-                        {new Date(request.requestedAt).toLocaleDateString("uz-UZ")}
+                        {formatDate(request.requestedAt)}
                       </td>
                       <td className="py-2.5">
                         <Badge variant={request.status === "PENDING" ? "flagged" : "secondary"}>

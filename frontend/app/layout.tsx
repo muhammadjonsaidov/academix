@@ -1,22 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Geist_Mono, Manrope } from "next/font/google";
+import { Caveat, Geist_Mono, Onest } from "next/font/google";
 import "./globals.css";
 
-// Body/UI face — Manrope (variable font, covers the 400-700 weights the UI uses).
-// Warmer/rounder than Inter, which sits better against Fraunces' serif headings on
-// the warm paper palette. Var renamed --font-inter → --font-body to match reality;
-// globals.css's @theme references updated in step.
-const manrope = Manrope({
+// One face for the whole interface. Onest is drawn for Latin and Cyrillic UI, so
+// Uzbek (o', g') and Russian text set the same way. See docs/design.md.
+const onest = Onest({
   variable: "--font-body",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext", "cyrillic"],
 });
 
-// Heading display face — serif textbook feel, restrained to H1/H2. Feeds the
-// --font-heading-override slot globals.css's --font-heading fallback chain
-// already expects (see the block comment at the top of globals.css).
-const fraunces = Fraunces({
-  variable: "--font-heading-override",
-  subsets: ["latin"],
+// The teacher's hand: only the circled grade and red-pen notes (font-hand).
+const caveat = Caveat({
+  variable: "--font-hand-override",
+  subsets: ["latin", "latin-ext", "cyrillic"],
   weight: ["600", "700"],
 });
 
@@ -108,10 +104,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf7f0" },
-    // Night-notebook background: color-mix(in oklch, var(--ink) 92%, black)
-    // with --ink #1c2b3a resolves to ≈ #19262f — keep the chrome bar in step.
-    { media: "(prefers-color-scheme: dark)", color: "#19262f" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f8fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#111c2e" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -128,7 +122,7 @@ export default function RootLayout({
       // The pre-paint theme script below adds `dark` to this element before hydration —
       // an expected, deliberate server/client difference (standard theming pattern).
       suppressHydrationWarning
-      className={`${manrope.variable} ${fraunces.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${onest.variable} ${caveat.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {/* Apply the saved theme before first paint — avoids a light-mode flash for dark-mode

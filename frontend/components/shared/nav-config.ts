@@ -85,6 +85,7 @@ export const NAV_CONFIG: Record<Role, NavGroup[]> = {
     {
       label: "O'qitish",
       items: [
+        { href: "/dashboard/teacher/submissions", label: "Ishlarni tekshirish", icon: FileCheck2 },
         { href: "/dashboard/teacher/homework", label: "Uy vazifalari", icon: BookOpen },
         { href: "/dashboard/teacher/exams", label: "Nazorat ishlari", icon: ClipboardList },
         {
@@ -98,7 +99,6 @@ export const NAV_CONFIG: Record<Role, NavGroup[]> = {
       label: "Sinf",
       items: [
         { href: "/dashboard/teacher/classes", label: "Sinflarim", icon: School },
-        { href: "/dashboard/teacher/submissions", label: "Topshirilgan ishlar", icon: FileCheck2 },
         ...(FEATURES.psychology
           ? [
               {

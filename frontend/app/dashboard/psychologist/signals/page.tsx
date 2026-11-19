@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePsychologyStore } from "@/stores/usePsychologyStore";
 import type { SignalSeverity } from "@/types/psychologist";
+import { formatDateTime } from "@/lib/format";
 
 /**
  * Backend filter (`GET /psychologist/signals?severity=`) only accepts a single severity
@@ -179,7 +180,7 @@ export default function PsychologistSignalsPage() {
                         </Badge>
                       </td>
                       <td className="py-2.5 font-data text-muted-foreground">
-                        {new Date(signal.detectedAt).toLocaleString()}
+                        {formatDateTime(signal.detectedAt)}
                       </td>
                       <td className="py-2.5 text-right">
                         <Link

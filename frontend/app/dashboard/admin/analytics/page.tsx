@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminAnalyticsStore } from "@/stores/useAdminAnalyticsStore";
+import { formatShortDate } from "@/lib/format";
 
 type Period = "monthly" | "quarter";
 
@@ -106,7 +107,7 @@ function AnalyticsBody({ period }: { period: Period }) {
   const progressData = useMemo(
     () =>
       schoolProgress.map((p) => ({
-        label: new Date(p.periodStart).toLocaleDateString(),
+        label: formatShortDate(p.periodStart),
         avgScore: p.avgScore,
         gradedCount: p.gradedCount,
       })),

@@ -95,10 +95,6 @@ export default function InitialSetupPage() {
 
   return (
     <main className="bg-grid-paper relative isolate flex min-h-screen items-center justify-center p-4 py-8">
-      <div
-        aria-hidden
-        className="bg-ai-gradient absolute top-0 left-1/2 -z-10 size-[32rem] -translate-x-1/2 rounded-full opacity-15 blur-3xl"
-      />
       <Card className="animate-rise w-full max-w-2xl shadow-lg">
         <CardHeader className="space-y-3">
           <Link

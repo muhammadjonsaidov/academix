@@ -63,10 +63,6 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
       >
         Asosiy mazmunga o&apos;tish
       </a>
-      <div
-        aria-hidden
-        className="bg-gradient-to-r from-[var(--accent-role)] via-[var(--accent-role)] to-transparent shell-hairline pointer-events-none absolute top-0 right-0 left-0 z-50 h-0.5"
-      />
       <aside className="hidden lg:flex lg:w-sidebar lg:shrink-0 lg:flex-col lg:border-r lg:border-sidebar-border lg:bg-sidebar">
         <SidebarBrand role={role} />
         <SidebarNavigation role={role} pathname={pathname} />
@@ -89,7 +85,7 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
           id="dashboard-content"
           key={pathname}
           aria-label={pageTitle}
-          className="animate-rise mx-auto flex w-full max-w-[90rem] flex-1 p-4 sm:p-6"
+          className="animate-rise mx-auto flex w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
         >
           <div className="min-w-0 flex-1">{children}</div>
         </main>

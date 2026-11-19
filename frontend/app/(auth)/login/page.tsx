@@ -67,11 +67,6 @@ export default function LoginPage() {
 
   return (
     <main className="relative isolate flex min-h-screen flex-1 items-center justify-center overflow-hidden bg-background p-4">
-      {/* Ambient AI + chalk glows — same language as the landing hero */}
-      <div aria-hidden className="absolute inset-0 -z-10">
-        <div className="bg-ai-gradient absolute -top-32 left-1/2 size-[26rem] -translate-x-1/2 rounded-full opacity-15 blur-3xl" />
-        <div className="absolute -bottom-24 -left-16 size-80 rounded-full bg-chalk-green/10 blur-3xl" />
-      </div>
 
       <div className="animate-rise w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
@@ -83,7 +78,7 @@ export default function LoginPage() {
             priority
           />
           <h1 className="font-heading text-xl font-semibold">
-            AcademiX <span className="text-ai-gradient">AI</span>
+            AcademiX AI
           </h1>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-ai-soft bg-ai-soft/60 px-2.5 py-0.5 text-xs font-medium text-ai">
             <Sparkles className="size-3" strokeWidth={1.75} />

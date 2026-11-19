@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTeacherStore } from "@/stores/useTeacherStore";
 import type { ApiErrorResponse } from "@/types/auth";
 import type { SignalSeverity } from "@/types/teacher";
+import { formatDateTime } from "@/lib/format";
 
 const SEVERITY_LABEL: Record<SignalSeverity, string> = {
   LOW: "Past",
@@ -127,8 +128,8 @@ export default function TeacherPsychologicalSignalsPage() {
                   ) : null}
                   <p className="text-xs text-muted-foreground">
                     {signal.resolved
-                      ? `Hal qilingan${signal.resolvedAt ? ` — ${new Date(signal.resolvedAt).toLocaleString()}` : ""}`
-                      : `Aniqlangan — ${new Date(signal.detectedAt).toLocaleString()}`}
+                      ? `Hal qilingan${signal.resolvedAt ? ` — ${formatDateTime(signal.resolvedAt)}` : ""}`
+                      : `Aniqlangan — ${formatDateTime(signal.detectedAt)}`}
                   </p>
                 </div>
                 {!signal.resolved ? (

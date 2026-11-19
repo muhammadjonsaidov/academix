@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTeacherAnalyticsStore } from "@/stores/useTeacherAnalyticsStore";
 import { useTeacherStore } from "@/stores/useTeacherStore";
 import type { SubmissionStatus } from "@/types/teacher";
+import { formatDate } from "@/lib/format";
 
 export default function TeacherStudentProgressPage() {
   const params = useParams<{ studentId: string }>();
@@ -125,7 +126,7 @@ export default function TeacherStudentProgressPage() {
                 >
                   <span>{x.reason}</span>
                   <span className="font-data text-muted-foreground">
-                    +{x.xp} XP — {new Date(x.date).toLocaleDateString()}
+                    +{x.xp} XP — {formatDate(x.date)}
                   </span>
                 </div>
               ))}
@@ -150,7 +151,7 @@ export default function TeacherStudentProgressPage() {
                 >
                   <StatusLabel status={s.status}>{s.status}</StatusLabel>
                   <span className="font-data text-muted-foreground">
-                    {new Date(s.submittedAt).toLocaleDateString()}
+                    {formatDate(s.submittedAt)}
                     {s.isLate ? " (kech)" : ""}
                   </span>
                 </div>

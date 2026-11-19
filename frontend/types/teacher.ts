@@ -90,28 +90,51 @@ export interface TeacherSubmissionListItem {
   submissionId: string;
   studentName: string;
   studentId: string;
+  assignmentId: string;
+  assignmentTitle: string | null;
   submittedAt: string;
   isLate: boolean;
   status: SubmissionStatus;
   aiFeedback: TeacherAiFeedback | null;
+  /** 5-point grade matching the AI score (86+ → 5, 71+ → 4, 56+ → 3); a suggestion only. */
+  suggestedGrade: number | null;
+}
+
+/** GET /teacher/submissions/review-queue — one row per assignment with AI-checked work waiting. */
+export interface ReviewQueueItem {
+  assignmentId: string;
+  assignmentTitle: string;
+  waiting: number;
+  /** Work the AI flagged as possibly copied or AI-written — needs an individual look. */
+  flagged: number;
+  oldestSubmittedAt: string | null;
 }
 
 export interface TeacherSubmissionDetail {
   submissionId: string;
   studentId: string;
   studentName: string;
+  assignmentId: string;
+  assignmentTitle: string | null;
   submittedAt: string;
   isLate: boolean;
   status: SubmissionStatus;
   originalImageUrl: string | null;
   aiFeedback: TeacherAiFeedback | null;
   previousGrade: TeacherGrade | null;
+  suggestedGrade: number | null;
+  /** How this subject is checked; decides what the analysis rows are called. */
+  gradingMode: GradingMode | null;
 }
+
+export type GradingMode = "PROBLEM_SOLVING" | "LANGUAGE" | "WRITTEN_RESPONSE";
 
 export interface GradeSubmissionRequest {
   score: number;
   fivePointGrade: number;
   teacherComment: string;
+  /** Marks the work as exemplary: +20 XP for the student. */
+  isExcellent?: boolean;
 }
 
 export interface CriteriaItem {

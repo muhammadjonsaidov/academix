@@ -12,6 +12,7 @@ import { FULL_STATUS_META, StatusLabel } from "@/components/shared/submission-st
 import { subscribeToAiStatus } from "@/hooks/useRealtime";
 import { useStudentStore } from "@/stores/useStudentStore";
 import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/lib/format";
 
 export default function StudentSubmissionsPage() {
   const submissions = useStudentStore((state) => state.submissions);
@@ -64,7 +65,7 @@ export default function StudentSubmissionsPage() {
                   <CardContent className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <span className="font-data text-sm text-muted-foreground">
-                        {new Date(s.submittedAt).toLocaleString()}
+                        {formatDateTime(s.submittedAt)}
                       </span>
                       {s.isLate ? <Badge variant="severity-medium">Kechikkan</Badge> : null}
                     </div>

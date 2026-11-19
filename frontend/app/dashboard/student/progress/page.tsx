@@ -34,6 +34,7 @@ import { ProgressBar } from "@/components/student/ProgressBar";
 import { StatCard } from "@/components/student/StatCard";
 import { useStudentStore } from "@/stores/useStudentStore";
 import { cn } from "@/lib/utils";
+import { formatDate, formatShortDate } from "@/lib/format";
 
 export default function StudentProgressPage() {
   const progress = useStudentStore((state) => state.progress);
@@ -56,7 +57,7 @@ export default function StudentProgressPage() {
     let total = 0;
     for (const [day, xp] of [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b))) {
       total += xp;
-      trend.push({ label: new Date(day).toLocaleDateString(), totalXp: total });
+      trend.push({ label: formatShortDate(day), totalXp: total });
     }
     return trend;
   }, [progress?.xpHistory]);
@@ -209,7 +210,7 @@ export default function StudentProgressPage() {
                     >
                       <span>{x.reason}</span>
                       <span className="font-data text-muted-foreground">
-                        +{x.xp} XP · {new Date(x.date).toLocaleDateString()}
+                        +{x.xp} XP · {formatDate(x.date)}
                       </span>
                     </li>
                   ))}

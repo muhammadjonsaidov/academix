@@ -2,64 +2,55 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  BookOpen,
-  ClipboardCheck,
-  GraduationCap,
-  School,
-  Star,
-  TrendingUp,
-} from "lucide-react";
+import { BookOpen, CheckCheck, ClipboardCheck } from "lucide-react";
 import { DashboardHero, HeroAction } from "@/components/shared/DashboardHero";
 import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ProgressBar } from "@/components/shared/ProgressBar";
-import { StatTile, StatTileSkeleton, type StatTileDelta } from "@/components/shared/StatTile";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTeacherAnalyticsStore } from "@/stores/useTeacherAnalyticsStore";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate } from "@/lib/format";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useTeacherAnalyticsStore } from "@/stores/useTeacherAnalyticsStore";
+import { useTeacherStore } from "@/stores/useTeacherStore";
+import type { ReviewQueueItem } from "@/types/teacher";
 
-/** Turns the already-fetched rating trend string ("-0.5", "+0.3", "0", ...) into a
- * StatTile delta chip — sign decides tone; an empty trend renders no chip at all. */
-function ratingDelta(trend: string): StatTileDelta | undefined {
-  const trimmed = trend.trim();
-  if (!trimmed) return undefined;
-  const numeric = Number.parseFloat(trimmed);
-  const tone: StatTileDelta["tone"] =
-    Number.isNaN(numeric) || numeric === 0 ? "neutral" : numeric > 0 ? "positive" : "negative";
-  return { label: trimmed, tone };
+/** "14 ta ish sizni kutmoqda, 3 tasi diqqat talab qiladi." — the one sentence that matters. */
+function queueSentence(queue: ReviewQueueItem[]): string {
+  const waiting = queue.reduce((sum, item) => sum + item.waiting, 0);
+  const flagged = queue.reduce((sum, item) => sum + item.flagged, 0);
+  if (waiting === 0) return "Hamma ishlar tekshirilgan. Yangi ishlar kelganda shu yerda paydo bo'ladi.";
+  const base = `${waiting} ta ish sizni kutmoqda`;
+  return flagged > 0 ? `${base}, ${flagged} tasi diqqat talab qiladi.` : `${base}.`;
 }
 
 export default function TeacherDashboardPage() {
+  const firstName = useAuthStore((state) => state.user?.firstName);
   const dashboard = useTeacherAnalyticsStore((state) => state.dashboard);
   const fetchDashboard = useTeacherAnalyticsStore((state) => state.fetchDashboard);
-  const firstName = useAuthStore((state) => state.user?.firstName);
+  const queue = useTeacherStore((state) => state.reviewQueue);
+  const fetchReviewQueue = useTeacherStore((state) => state.fetchReviewQueue);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchDashboard().catch(() => setError("Bosh sahifani yuklab bo'lmadi."));
-  }, [fetchDashboard]);
-
-  const heroDescription = dashboard
-    ? `${dashboard.pendingSubmissions} kutilayotgan ish · bugun ${dashboard.gradedToday} baholandi · ${dashboard.myClasses.length} sinf`
-    : "Sinflaringiz, baholash jarayoni va reyting bo'yicha umumiy holat.";
+    Promise.all([fetchReviewQueue(), fetchDashboard()]).catch(() =>
+      setError("Bosh sahifani yuklab bo'lmadi. Sahifani yangilang."),
+    );
+  }, [fetchReviewQueue, fetchDashboard]);
 
   return (
     <DashboardShell role="TEACHER">
-      <div className="space-y-6">
+      <div className="space-y-8">
         <DashboardHero
-          title={firstName ? `Salom, ${firstName}!` : "Salom!"}
-          description={heroDescription}
+          title={firstName ? `Salom, ${firstName}` : "Salom"}
+          description={queue ? queueSentence(queue) : "Tekshirish navbati yuklanmoqda…"}
           actions={
             <>
               <HeroAction href="/dashboard/teacher/homework" icon={BookOpen}>
-                Yangi vazifa
+                Yangi vazifa berish
               </HeroAction>
-              <HeroAction href="/dashboard/teacher/submissions" icon={ClipboardCheck}>
-                Ishlarni baholash
-              </HeroAction>
-              <HeroAction href="/dashboard/teacher/classes" icon={School}>
-                Sinflarim
+              <HeroAction href="/dashboard/teacher/exams" icon={ClipboardCheck}>
+                Nazorat ishi
               </HeroAction>
             </>
           }
@@ -67,72 +58,157 @@ export default function TeacherDashboardPage() {
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-        {!dashboard && !error ? (
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatTileSkeleton />
-            <StatTileSkeleton />
-            <StatTileSkeleton />
-            <StatTileSkeleton />
+        <section aria-labelledby="queue-heading" className="space-y-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 id="queue-heading" className="text-lg font-semibold">
+              Tekshirish navbati
+            </h2>
+            <Link
+              href="/dashboard/teacher/submissions"
+              className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Barcha ishlar
+            </Link>
           </div>
-        ) : null}
+          {queue === null && !error ? <QueueSkeleton /> : null}
+          {queue && queue.length === 0 ? (
+            <EmptyState
+              icon={CheckCheck}
+              title="Navbat bo'sh"
+              description="AI tekshirgan ishlar shu yerga tushadi. Yangi vazifa bering — o'quvchilar topshirgach, AI ularni bir necha daqiqada tekshiradi."
+            />
+          ) : null}
+          {queue && queue.length > 0 ? (
+            <ul className="divide-y divide-border overflow-hidden rounded-[10px] border border-border bg-card">
+              {queue.map((item) => (
+                <QueueRow key={item.assignmentId} item={item} />
+              ))}
+            </ul>
+          ) : null}
+        </section>
 
         {dashboard ? (
-          <>
-            <div className="stagger-rise grid grid-cols-2 gap-4 lg:grid-cols-4">
-              <StatTile
-                label="Kutilayotgan ishlar"
-                value={dashboard.pendingSubmissions}
-                icon={ClipboardCheck}
-              />
-              <StatTile label="Bugun baholandi" value={dashboard.gradedToday} icon={GraduationCap} />
-              <StatTile
-                label="Reyting"
-                value={`${dashboard.myRating.score}/5`}
-                icon={Star}
-                delta={ratingDelta(dashboard.myRating.trend)}
-              />
-              <StatTile label="Sinflarim" value={dashboard.myClasses.length} icon={School} />
-            </div>
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+            <section aria-labelledby="today-heading" className="space-y-3">
+              <h2 id="today-heading" className="text-lg font-semibold">
+                Bugun
+              </h2>
+              <dl className="space-y-2 text-[0.9375rem]">
+                <div className="flex items-baseline justify-between gap-3 border-b border-border pb-2">
+                  <dt className="text-muted-foreground">Baholangan ishlar</dt>
+                  <dd className="font-data font-semibold">{dashboard.gradedToday}</dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-3 border-b border-border pb-2">
+                  <dt className="text-muted-foreground">Hali AI tekshirayotgan yoki kutayotgan</dt>
+                  <dd className="font-data font-semibold">{dashboard.pendingSubmissions}</dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-muted-foreground">Sinflarim</dt>
+                  <dd className="font-data font-semibold">{dashboard.myClasses.length}</dd>
+                </div>
+              </dl>
+            </section>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="size-4 text-muted-foreground" strokeWidth={1.75} />
-                  Sinflar bo&apos;yicha o&apos;zlashtirish
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {dashboard.classProgressSummary.map((c) => (
-                  <Link
-                    key={c.classId}
-                    href={`/dashboard/teacher/classes/${c.classId}/analytics`}
-                    className="card-lift hover-glow block space-y-1.5 rounded-md border border-border px-3 py-2.5 text-sm transition-colors"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="truncate font-medium">{c.className}</span>
-                      <span className="font-data shrink-0 text-muted-foreground">{c.avgScore}%</span>
-                    </div>
-                    <ProgressBar
-                      value={c.avgScore}
-                      tone={c.avgScore >= 70 ? "success" : c.avgScore >= 50 ? "role" : "destructive"}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {c.gradedCount} baholangan · {c.studentCount} o&apos;quvchi
-                    </p>
-                  </Link>
-                ))}
-                {dashboard.classProgressSummary.length === 0 ? (
-                  <EmptyState
-                    icon={School}
-                    title="Ma'lumot yo'q"
-                    description="Sinflaringiz bo'yicha o'zlashtirish ma'lumotlari hali mavjud emas."
-                  />
-                ) : null}
-              </CardContent>
-            </Card>
-          </>
+            <section aria-labelledby="classes-heading" className="space-y-3">
+              <h2 id="classes-heading" className="text-lg font-semibold">
+                Sinflar o&apos;zlashtirishi
+              </h2>
+              {dashboard.classProgressSummary.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Birinchi ishlar baholangach, har bir sinfning o&apos;rtacha natijasi shu yerda chiqadi.
+                </p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {dashboard.classProgressSummary.map((c) => (
+                    <li key={c.classId}>
+                      <Link
+                        href={`/dashboard/teacher/classes/${c.classId}/analytics`}
+                        className="grid grid-cols-[5rem_minmax(0,1fr)_3rem] items-center gap-3 py-2.5 text-sm"
+                      >
+                        <span className="truncate font-medium">{c.className}</span>
+                        <ProgressBar
+                          value={c.avgScore}
+                          tone={c.avgScore >= 70 ? "success" : c.avgScore >= 50 ? "role" : "destructive"}
+                        />
+                        <span className="font-data text-right text-muted-foreground">{c.avgScore}%</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
         ) : null}
       </div>
     </DashboardShell>
+  );
+}
+
+function QueueRow({ item }: { item: ReviewQueueItem }) {
+  const approveClean = useTeacherStore((state) => state.approveClean);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const clean = item.waiting - item.flagged;
+
+  async function handleApprove() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const approved = await approveClean(item.assignmentId);
+      setMessage(`${approved} ta ish baholandi.`);
+    } catch {
+      setMessage("Tasdiqlab bo'lmadi. Qayta urinib ko'ring.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <li className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+      <div className="min-w-0 space-y-1">
+        <p className="truncate font-medium">{item.assignmentTitle}</p>
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+          <span className="font-data">{item.waiting} ta ish</span>
+          {item.flagged > 0 ? (
+            <span className="marker text-xs font-medium">
+              {item.flagged} tasi shubhali
+            </span>
+          ) : null}
+          {item.oldestSubmittedAt ? <span>eng eskisi {formatDate(item.oldestSubmittedAt)}</span> : null}
+        </p>
+        {message ? (
+          <p role="status" className="text-sm text-success">
+            {message}
+          </p>
+        ) : null}
+      </div>
+      <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+        {clean > 0 ? (
+          <Button size="sm" variant="outline" onClick={handleApprove} disabled={busy}>
+            {busy ? "Tasdiqlanmoqda…" : `${clean} ta toza ishni tasdiqlash`}
+          </Button>
+        ) : null}
+        <Button
+          size="sm"
+          render={
+            <Link
+              href={`/dashboard/teacher/submissions?assignmentId=${item.assignmentId}&status=AI_DONE`}
+            />
+          }
+        >
+          Tekshirishni boshlash
+        </Button>
+      </div>
+    </li>
+  );
+}
+
+function QueueSkeleton() {
+  return (
+    <div className="space-y-px overflow-hidden rounded-[10px] border border-border">
+      <Skeleton className="h-20 rounded-none" />
+      <Skeleton className="h-20 rounded-none" />
+      <Skeleton className="h-20 rounded-none" />
+    </div>
   );
 }

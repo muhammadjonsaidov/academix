@@ -6,9 +6,9 @@ import { BookOpen, CheckCircle2, ImageIcon, Type } from "lucide-react";
 import { DashboardShell } from "@/components/shell/DashboardShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { FileField } from "@/components/shared/FileField";
 import { fieldClass } from "@/components/shared/FormField";
 import { HOMEWORK_STATUS_META, StatusLabel } from "@/components/shared/submission-status";
@@ -16,16 +16,18 @@ import { useStudentStore } from "@/stores/useStudentStore";
 import type { StudentHomework, SubmissionType, SubmitHomeworkResponse } from "@/types/student";
 import type { ApiErrorResponse } from "@/types/auth";
 import { cn } from "@/lib/utils";
+import { deadlineLabel, formatDateTime } from "@/lib/format";
 
+// A photo of the notebook page is the usual way to hand in work, so it comes first.
 const TYPE_OPTIONS: { value: SubmissionType; label: string; icon: typeof Type }[] = [
+  { value: "IMAGE", label: "Daftar surati", icon: ImageIcon },
   { value: "TEXT", label: "Matn", icon: Type },
-  { value: "IMAGE", label: "Rasm", icon: ImageIcon },
-  { value: "MIXED", label: "Matn + rasm", icon: BookOpen },
+  { value: "MIXED", label: "Surat + matn", icon: BookOpen },
 ];
 
 function SubmitForm({ assignmentId, onDone }: { assignmentId: string; onDone: () => void }) {
   const submitHomework = useStudentStore((state) => state.submitHomework);
-  const [type, setType] = useState<SubmissionType>("TEXT");
+  const [type, setType] = useState<SubmissionType>("IMAGE");
   const [textContent, setTextContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +81,7 @@ function SubmitForm({ assignmentId, onDone }: { assignmentId: string; onDone: ()
               className={cn(
                 "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors",
                 active
-                  ? "border-role-student bg-role-student-muted text-role-student"
+                  ? "border-foreground bg-foreground text-background"
                   : "border-border text-muted-foreground hover:bg-muted/60",
               )}
             >
@@ -103,58 +105,58 @@ function SubmitForm({ assignmentId, onDone }: { assignmentId: string; onDone: ()
           accept="image/jpeg,image/png"
           onChange={(e) => setImage(e.target.files?.[0] ?? null)}
           fileName={image?.name}
-          hint="JPG yoki PNG rasm"
-          buttonLabel="Rasm tanlang"
+          hint="Varaqni yorug' joyda, to'liq sig'adigan qilib suratga oling (JPG yoki PNG)"
+          buttonLabel="Surat tanlash"
         />
       )}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Topshirilmoqda..." : "Topshirish"}
+        {isSubmitting ? "Yuborilmoqda…" : "Ishni yuborish"}
       </Button>
     </form>
   );
 }
 
-function HomeworkCard({ hw }: { hw: StudentHomework }) {
+function HomeworkRow({ hw }: { hw: StudentHomework }) {
   const [isOpen, setIsOpen] = useState(false);
   const meta = HOMEWORK_STATUS_META[hw.submissionStatus];
+  const pending = hw.submissionStatus === "PENDING";
+  const due = deadlineLabel(hw.deadlineAt);
+  const overdue = due === "muddati o'tgan";
 
   return (
-    <Card className={cn(meta.rail || undefined)}>
-      <CardContent>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-medium">{hw.title}</p>
-            <p className="text-sm text-muted-foreground">
-              {hw.subject} · Muddat:{" "}
-              <span className="font-data">{new Date(hw.deadlineAt).toLocaleString()}</span>
-              {hw.isLate ? (
-                <Badge variant="severity-medium" className="ml-2">
-                  Kechikkan
-                </Badge>
-              ) : null}
-            </p>
-            {hw.myTask ? (
-              <p className="mt-2 rounded-md bg-muted/50 p-2 text-sm">
-                <span className="font-medium">Topshiriq: </span>
-                {hw.myTask.taskContent}
-              </p>
-            ) : null}
-          </div>
-          <div className="flex shrink-0 flex-col items-end gap-2">
+    <li className="px-4 py-4 sm:px-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <p className="font-medium">{hw.title}</p>
+          <p className="text-sm text-muted-foreground">
+            {hw.subject} ·{" "}
+            {pending ? (
+              <span className={cn(overdue ? "font-medium text-pen-red" : "")}>
+                {due === "muddati o'tgan" ? "Muddati o'tgan — hali ham topshirsa bo'ladi" : due}
+              </span>
+            ) : (
+              <span className="font-data">{formatDateTime(hw.deadlineAt)}</span>
+            )}
+          </p>
+          {hw.myTask?.taskContent ? (
+            <p className="max-w-2xl pt-1 text-[0.9375rem]">{hw.myTask.taskContent}</p>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {pending ? (
+            <Button size="sm" variant={isOpen ? "outline" : "default"} onClick={() => setIsOpen((v) => !v)}>
+              {isOpen ? "Yopish" : "Topshirish"}
+            </Button>
+          ) : (
             <Badge variant={meta.badgeVariant}>
               <StatusLabel status={hw.submissionStatus}>{meta.label}</StatusLabel>
             </Badge>
-            {hw.submissionStatus === "PENDING" ? (
-              <Button variant="outline" size="sm" onClick={() => setIsOpen((v) => !v)}>
-                Topshirish
-              </Button>
-            ) : null}
-          </div>
+          )}
         </div>
-        {isOpen ? <SubmitForm assignmentId={hw.assignmentId} onDone={() => {}} /> : null}
-      </CardContent>
-    </Card>
+      </div>
+      {isOpen ? <SubmitForm assignmentId={hw.assignmentId} onDone={() => {}} /> : null}
+    </li>
   );
 }
 
@@ -166,36 +168,72 @@ export default function StudentHomeworkPage() {
 
   useEffect(() => {
     fetchHomework()
-      .catch(() => setError("Vazifalarni yuklab bo'lmadi."))
+      .catch(() => setError("Vazifalarni yuklab bo'lmadi. Sahifani yangilang."))
       .finally(() => setIsLoading(false));
   }, [fetchHomework]);
 
+  const pending = homework
+    .filter((hw) => hw.submissionStatus === "PENDING")
+    .sort((a, b) => new Date(a.deadlineAt).getTime() - new Date(b.deadlineAt).getTime());
+  const done = homework.filter((hw) => hw.submissionStatus !== "PENDING");
+
   return (
     <DashboardShell role="STUDENT">
-      <h2 className="mb-4 font-heading text-lg font-semibold">Vazifalar</h2>
+      <div className="space-y-8">
+        <PageHeader
+          title="Vazifalar"
+          description={
+            isLoading
+              ? "Vazifalar yuklanmoqda…"
+              : pending.length > 0
+                ? `${pending.length} ta vazifani topshirish kerak. Eng yaqin muddatlisi tepada.`
+                : "Hamma vazifalar topshirilgan."
+          }
+        />
 
-      {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      {isLoading ? (
-        <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {homework.map((hw) => (
-            <HomeworkCard key={hw.assignmentId} hw={hw} />
-          ))}
-          {homework.length === 0 ? (
-            <EmptyState
-              icon={BookOpen}
-              title="Hozircha vazifalar yo'q"
-              description="O'qituvchingiz yangi vazifa berganda shu yerda ko'rinadi."
-            />
-          ) : null}
-        </div>
-      )}
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-20" />
+            ))}
+          </div>
+        ) : homework.length === 0 ? (
+          <EmptyState
+            icon={BookOpen}
+            title="Hozircha vazifa yo'q"
+            description="O'qituvchingiz yangi vazifa berganda shu yerda va Telegram'da ko'rasiz."
+          />
+        ) : (
+          <>
+            {pending.length > 0 ? (
+              <section aria-labelledby="pending-heading" className="space-y-3">
+                <h2 id="pending-heading" className="text-lg font-semibold">
+                  Topshirish kerak
+                </h2>
+                <ul className="divide-y divide-border overflow-hidden rounded-[10px] border border-border bg-card">
+                  {pending.map((hw) => (
+                    <HomeworkRow key={hw.assignmentId} hw={hw} />
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+            {done.length > 0 ? (
+              <section aria-labelledby="done-heading" className="space-y-3">
+                <h2 id="done-heading" className="text-lg font-semibold">
+                  Topshirilganlar
+                </h2>
+                <ul className="divide-y divide-border overflow-hidden rounded-[10px] border border-border bg-card">
+                  {done.map((hw) => (
+                    <HomeworkRow key={hw.assignmentId} hw={hw} />
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+          </>
+        )}
+      </div>
     </DashboardShell>
   );
 }

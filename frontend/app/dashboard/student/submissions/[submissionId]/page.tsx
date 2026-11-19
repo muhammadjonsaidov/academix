@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { RefreshCw, UserCheck } from "lucide-react";
 import { DashboardShell } from "@/components/shell/DashboardShell";
+import { GradeMark } from "@/components/shared/GradeMark";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { FULL_STATUS_META, StatusLabel } from "@/components/shared/submission-st
 import { subscribeToAiStatus } from "@/hooks/useRealtime";
 import { useStudentStore } from "@/stores/useStudentStore";
 import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/lib/format";
 
 const REFETCHABLE_STATUSES = new Set(["SUBMITTED", "AI_PROCESSING"]);
 
@@ -76,10 +78,10 @@ export default function StudentSubmissionDetailPage() {
     <DashboardShell role="STUDENT">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="font-heading text-lg font-semibold">Topshiriq natijasi</h2>
+          <h1 className="text-2xl font-semibold tracking-tight">Ish natijasi</h1>
           <p className="text-sm text-muted-foreground">
             Topshirilgan:{" "}
-            <span className="font-data">{new Date(submission.submittedAt).toLocaleString()}</span>
+            <span className="font-data">{formatDateTime(submission.submittedAt)}</span>
             {submission.isLate ? (
               <Badge variant="severity-medium" className="ml-2">
                 Kechikkan
@@ -93,6 +95,29 @@ export default function StudentSubmissionDetailPage() {
       </div>
 
       {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
+
+      {submission.grade ? (
+        <section
+          aria-labelledby="grade-heading"
+          className="mb-6 flex items-start gap-4 rounded-[10px] border border-border bg-card p-5"
+        >
+          <GradeMark grade={submission.grade.fivePointGrade} size="lg" />
+          <div className="min-w-0 space-y-1">
+            <h2 id="grade-heading" className="text-base font-semibold">
+              O&apos;qituvchi bahosi: <span className="font-data">{submission.grade.score}</span> ball
+            </h2>
+            {submission.grade.teacherComment ? (
+              <p className="text-[0.9375rem]">«{submission.grade.teacherComment}»</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">O&apos;qituvchi izoh qoldirmagan.</p>
+            )}
+          </div>
+        </section>
+      ) : !isProcessing ? (
+        <p className="mb-6 text-sm text-muted-foreground">
+          O&apos;qituvchi hali baho qo&apos;ymagan. Baho qo&apos;yilishi bilan sizga xabar keladi.
+        </p>
+      ) : null}
 
       {isProcessing ? (
         <Card className="rail-processing mb-6">
@@ -113,7 +138,7 @@ export default function StudentSubmissionDetailPage() {
         <Card className="rail-skipped mb-6">
           <CardContent className="flex items-center gap-2 text-sm">
             <UserCheck className="size-4 shrink-0 text-status-skipped" strokeWidth={1.75} />
-            <span>AI byudjeti tugagani sababli bu ish qo&apos;lda baholanadi.</span>
+            <span>Bu ishni o&apos;qituvchingiz o&apos;zi tekshiradi.</span>
           </CardContent>
         </Card>
       ) : null}
@@ -121,7 +146,7 @@ export default function StudentSubmissionDetailPage() {
       {submission.aiFeedback ? (
         <Card className={cn("mb-6", meta.rail || undefined)}>
           <CardHeader>
-            <CardTitle>AI fikri</CardTitle>
+            <CardTitle>Ishingiz tahlili</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm">{submission.aiFeedback.feedback}</p>
@@ -151,13 +176,15 @@ export default function StudentSubmissionDetailPage() {
                     ) : (
                       <InkMark variant="cross" label="Xato" className="mt-0.5 size-4" />
                     )}
-                    <span>
-                      <span className="font-medium">{step.stepNumber}.</span> {step.stepContent}
-                      {step.errorDescription ? (
-                        <span className="block text-muted-foreground">{step.errorDescription}</span>
+                    <span className="min-w-0 space-y-0.5">
+                      <span className={cn("block", !step.isCorrect && "text-pen-red line-through decoration-pen-red/60")}>
+                        {step.stepContent}
+                      </span>
+                      {!step.isCorrect && step.suggestion ? (
+                        <span className="block font-medium text-success">{step.suggestion}</span>
                       ) : null}
-                      {step.suggestion ? (
-                        <span className="block text-muted-foreground">💡 {step.suggestion}</span>
+                      {!step.isCorrect && step.errorDescription ? (
+                        <span className="block text-muted-foreground">{step.errorDescription}</span>
                       ) : null}
                     </span>
                   </li>
@@ -170,28 +197,6 @@ export default function StudentSubmissionDetailPage() {
         <p className="mb-6 text-sm text-muted-foreground">AI tahlili hali mavjud emas.</p>
       ) : null}
 
-      {submission.grade ? (
-        <Card className="rail-verified">
-          <CardHeader>
-            <CardTitle>Baho</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-data text-2xl font-semibold">
-              {submission.grade.score}{" "}
-              <span className="text-base font-normal text-muted-foreground">
-                ({submission.grade.fivePointGrade})
-              </span>
-            </p>
-            {submission.grade.teacherComment ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                {submission.grade.teacherComment}
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : (
-        <p className="text-sm text-muted-foreground">Hali baholanmagan.</p>
-      )}
     </DashboardShell>
   );
 }

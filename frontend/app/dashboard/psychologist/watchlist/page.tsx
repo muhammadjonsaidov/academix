@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePsychologyStore } from "@/stores/usePsychologyStore";
 import type { ApiErrorResponse } from "@/types/auth";
+import { formatDate } from "@/lib/format";
 
 export default function PsychologistWatchlistPage() {
   const watchlist = usePsychologyStore((state) => state.watchlist);
@@ -143,7 +144,7 @@ export default function PsychologistWatchlistPage() {
                       <td className="py-2.5 font-medium">{entry.studentName}</td>
                       <td className="py-2.5 text-muted-foreground">{entry.reason ?? "—"}</td>
                       <td className="py-2.5 font-data text-muted-foreground">
-                        {new Date(entry.addedAt).toLocaleDateString()}
+                        {formatDate(entry.addedAt)}
                       </td>
                       <td className="py-2.5 text-right">
                         <Button

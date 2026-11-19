@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PaginationControl } from "@/components/shared/PaginationControl";
 import { useStudentStore } from "@/stores/useStudentStore";
+import { formatDateTime } from "@/lib/format";
 
 export default function StudentXpHistoryPage() {
   const xpHistory = useStudentStore((state) => state.xpHistory);
@@ -56,7 +57,7 @@ export default function StudentXpHistoryPage() {
                 <div className="min-w-0">
                   <p className="truncate font-medium">{item.reason}</p>
                   <p className="font-data text-xs text-muted-foreground">
-                    {new Date(item.date).toLocaleString()}
+                    {formatDateTime(item.date)}
                   </p>
                 </div>
                 <span className="font-data shrink-0 text-base font-semibold text-role-student">

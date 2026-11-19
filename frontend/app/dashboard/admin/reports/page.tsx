@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminStore } from "@/stores/useAdminStore";
 import { useReportStore } from "@/stores/useReportStore";
 import type { ReportType } from "@/types/report";
+import { formatDateTime } from "@/lib/format";
 
 const TYPE_LABEL: Record<ReportType, string> = {
   SCHOOL: "Maktab",
@@ -195,7 +196,7 @@ export default function AdminReportsPage() {
                       <Badge variant="outline">{TYPE_LABEL[r.type]}</Badge>
                       <span className="font-medium">{r.quarter}</span>
                       <span className="font-data text-xs text-muted-foreground">
-                        {new Date(r.generatedAt).toLocaleString()}
+                        {formatDateTime(r.generatedAt)}
                       </span>
                     </div>
                     <Button
