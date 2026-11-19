@@ -79,7 +79,12 @@ class ExamAiAnalysisServiceTest {
               UUID teacherId, UUID studentId, UUID submissionId, SubmissionStatus status) {}
         };
     return new ExamAiAnalysisService(
-        store, images, ocr, grading, new AiBudgetService(limits, counter), notifier);
+        store,
+        images,
+        ocr,
+        grading,
+        new AiBudgetService(limits, counter, (school, category, used, allocated) -> {}),
+        notifier);
   }
 
   private static final class Store implements ExamAnalysisStore {

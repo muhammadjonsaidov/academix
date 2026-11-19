@@ -14,6 +14,7 @@ import uz.academixai.learning.application.port.out.GradeStore;
 import uz.academixai.learning.application.port.out.HomeworkAssignmentStore;
 import uz.academixai.learning.application.port.out.HomeworkSubmissionReadRepository;
 import uz.academixai.learning.application.port.out.HomeworkSubmissionStore;
+import uz.academixai.learning.application.port.out.LearningNotifier;
 import uz.academixai.learning.application.port.out.StudentAchievementUpdater;
 import uz.academixai.learning.application.port.out.SubmissionAssessmentLookup;
 import uz.academixai.shared.error.ApiException;
@@ -28,6 +29,7 @@ public class HomeworkGradingService implements HomeworkGrading {
   private final SubmissionAssessmentLookup assessments;
   private final GradeStore grades;
   private final StudentAchievementUpdater achievementUpdater;
+  private final LearningNotifier notifier;
 
   public HomeworkGradingService(
       HomeworkSubmissionReadRepository submissionReads,
@@ -35,13 +37,15 @@ public class HomeworkGradingService implements HomeworkGrading {
       HomeworkAssignmentStore assignments,
       SubmissionAssessmentLookup assessments,
       GradeStore grades,
-      StudentAchievementUpdater achievementUpdater) {
+      StudentAchievementUpdater achievementUpdater,
+      LearningNotifier notifier) {
     this.submissionReads = submissionReads;
     this.submissionWrites = submissionWrites;
     this.assignments = assignments;
     this.assessments = assessments;
     this.grades = grades;
     this.achievementUpdater = achievementUpdater;
+    this.notifier = notifier;
   }
 
   @Override
@@ -70,6 +74,7 @@ public class HomeworkGradingService implements HomeworkGrading {
     }
     AIFeedback feedback = assessments.feedback(submissionId).orElse(null);
     float aiScore = feedback == null ? 0f : feedback.aiScorePercent();
+    boolean regraded = grades.findBySubmissionId(submissionId).isPresent();
     boolean overridden = feedback != null && Math.abs(aiScore - score) > 0.01f;
     Grade saved =
         grades.save(
@@ -98,6 +103,8 @@ public class HomeworkGradingService implements HomeworkGrading {
             submission.xpEarned()));
     achievementUpdater.applyGrade(
         submissionId, submission.studentId(), score, submission.isLate(), isExcellent);
+    notifier.homeworkGraded(
+        submission.studentId(), submissionId, assignment.title(), score, fivePointGrade, regraded);
     return saved;
   }
 

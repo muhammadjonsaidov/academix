@@ -65,7 +65,11 @@ class TutorChatServiceTest {
     AiMonthlyLimitLookup limits = schoolId -> Optional.of(100);
     ChatAbuseGuard guard = studentId -> {};
     return new TutorChatService(
-        store, assignments, guard, new AiBudgetService(limits, counter), ai);
+        store,
+        assignments,
+        guard,
+        new AiBudgetService(limits, counter, (school, category, used, allocated) -> {}),
+        ai);
   }
 
   private static TutorAi failAi() {

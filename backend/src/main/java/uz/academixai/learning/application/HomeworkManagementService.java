@@ -9,6 +9,7 @@ import uz.academixai.domain.HomeworkAssignment;
 import uz.academixai.learning.application.port.in.HomeworkManagement;
 import uz.academixai.learning.application.port.out.HomeworkAssignmentStore;
 import uz.academixai.learning.application.port.out.HomeworkSubmissionQuery;
+import uz.academixai.learning.application.port.out.LearningNotifier;
 import uz.academixai.school.application.port.in.TeacherAccess;
 import uz.academixai.shared.error.ApiException;
 
@@ -19,14 +20,17 @@ public class HomeworkManagementService implements HomeworkManagement {
   private final HomeworkAssignmentStore assignments;
   private final HomeworkSubmissionQuery submissions;
   private final TeacherAccess teacherAccess;
+  private final LearningNotifier notifier;
 
   public HomeworkManagementService(
       HomeworkAssignmentStore assignments,
       HomeworkSubmissionQuery submissions,
-      TeacherAccess teacherAccess) {
+      TeacherAccess teacherAccess,
+      LearningNotifier notifier) {
     this.assignments = assignments;
     this.submissions = submissions;
     this.teacherAccess = teacherAccess;
+    this.notifier = notifier;
   }
 
   @Override
@@ -42,20 +46,23 @@ public class HomeworkManagementService implements HomeworkManagement {
       int maxScore) {
     teacherAccess.requireAssignedToClassAndSubject(schoolId, teacherId, classId, subjectId);
 
-    return assignments.save(
-        new HomeworkAssignment(
-            UUID.randomUUID(),
-            schoolId,
-            classId,
-            subjectId,
-            teacherId,
-            title,
-            description,
-            LocalDateTime.now(),
-            deadlineAt,
-            maxScore,
-            true,
-            syllabusReference));
+    HomeworkAssignment saved =
+        assignments.save(
+            new HomeworkAssignment(
+                UUID.randomUUID(),
+                schoolId,
+                classId,
+                subjectId,
+                teacherId,
+                title,
+                description,
+                LocalDateTime.now(),
+                deadlineAt,
+                maxScore,
+                true,
+                syllabusReference));
+    notifier.homeworkAssigned(schoolId, classId, saved.id(), title, deadlineAt);
+    return saved;
   }
 
   @Override

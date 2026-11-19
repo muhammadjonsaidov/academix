@@ -151,7 +151,13 @@ class HomeworkAiAnalysisServiceTest {
     SubmissionImageStore images = key -> new byte[0];
     OcrGateway ocr = image -> "";
     return new HomeworkAiAnalysisService(
-        store, images, ocr, grading, new AiBudgetService(limits, counter), awards, notifications);
+        store,
+        images,
+        ocr,
+        grading,
+        new AiBudgetService(limits, counter, (school, category, used, allocated) -> {}),
+        awards,
+        notifications);
   }
 
   private static AnalysisStatusNotifier noopNotifier() {
