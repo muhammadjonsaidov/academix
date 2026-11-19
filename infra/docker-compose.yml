@@ -219,6 +219,7 @@ services:
     volumes:
       - ./seed/bootstrap.sql:/bootstrap.sql:ro
       - ./seed/demo-seed.sql:/demo-seed.sql:ro
+      - ./seed/subjects-seed.sql:/subjects-seed.sql:ro
     entrypoint:
       - /bin/sh
       - -c
@@ -227,6 +228,7 @@ services:
         until wget -qO- http://backend:8080/actuator/health 2>/dev/null | grep -q UP; do sleep 3; done
         psql -v ON_ERROR_STOP=1 -h postgres -U ${DATABASE_USERNAME:-academix} -d academix -f /bootstrap.sql
         psql -v ON_ERROR_STOP=1 -h postgres -U ${DATABASE_USERNAME:-academix} -d academix -f /demo-seed.sql
+        psql -v ON_ERROR_STOP=1 -h postgres -U ${DATABASE_USERNAME:-academix} -d academix -f /subjects-seed.sql
         echo "Seed complete — demo logins ready."
     restart: "no"
     profiles: ["demo"]

@@ -74,3 +74,6 @@ test-results/
 /academix_tz.md
 /academix_backend_tdd.md
 /academix_frontend_tdd.md
+
+# Superdesign design-tool context (generated)
+.superdesign/

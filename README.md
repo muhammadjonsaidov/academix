@@ -1,167 +1,144 @@
 # AcademiX AI
 
-A SaaS platform for schools in Uzbekistan that saves teachers grading time: a teacher (or student)
-photographs a handwritten homework or exam, AI reads it, checks it step by step against the
-teacher's criteria, flags copied or AI-generated work, and proposes a score — the teacher always
-gives the final grade. Parents follow results through their dashboard and Telegram, and students
-are motivated with XP, streaks and badges.
+**Live:** [academixai.uz](https://academixai.uz)
 
-Four core roles: **Admin**, **Teacher**, **Student**, **Parent**. A fifth, **Psychologist**, comes
-with the optional psychological well-being add-on module (off by default — see below).
+AcademiX AI gives teachers in Uzbek schools back the hours they spend checking notebooks. A student
+(or the teacher) photographs a handwritten page; the AI reads it, checks it the way that subject is
+checked, flags copied or machine-written work and suggests a score. **The teacher always gives the
+final grade.** Parents see the grade and the teacher's comment on their phone, in Telegram.
 
-## Status
+What we sell is teachers' time and parents' trust. Every feature is judged by those two questions.
 
-Built and verified end-to-end: auth and password recovery, school setup and Excel bulk import,
-the AI homework/exam grading pipeline (OCR + merged grading/plagiarism call, per-school AI budget
-with graceful degradation), teacher review and final grading, gamification, parent dashboard,
-Telegram bot + notifications, admin analytics, quarterly PDF reports and the AI Tutor chat.
+## The problem
 
-Removed in the MVP-focus cleanup (2026-11): per-student unique task generation, handwriting
-biometrics (and the parent biometric-consent flow), and the syllabus/lesson-plan pipeline. Their
-database tables are still present but unused.
+A teacher in Uzbekistan spends 6–8 hours a week checking notebooks — the same arithmetic error, the
+same spelling mistake, thirty times over. Parents see a number in an electronic journal weeks later,
+with no reason attached. Existing tools are journals (Kundalik, my.maktab.uz) or don't read
+handwriting (Google Classroom).
 
-### Optional module: psychological monitoring
+## How it works
 
-Nightly AI analysis of student activity, the Psychologist role and dashboard, and teacher signal
-views. It is a paid add-on and **off by default**. Switch it on with one variable —
-`ACADEMIX_FEATURE_PSYCHOLOGY=true` in `infra/.env` (it feeds the backend, the Telegram bot and the
-frontend build). While off, its endpoints are not registered and Psychologist accounts cannot sign
-in.
+1. **Photo.** The student photographs the notebook page (typed answers work too).
+2. **The AI checks it, in one of three modes picked from the subject:**
 
-## Stack
+   | Mode | Subjects | What the teacher sees |
+   |---|---|---|
+   | Problem solving | Mathematics, physics, chemistry | Each step marked right or wrong, with the correct step |
+   | Language | Uzbek, Russian, English | Every spelling, grammar and punctuation error with its correction |
+   | Written response | History, biology, geography, literature, other | Each claim checked for accuracy and completeness |
 
-- **Backend**: Java 21, Spring Boot 4.1, Gradle, PostgreSQL 18 (pgvector image), Redis, RabbitMQ,
-  Flyway, Resilience4j
-- **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, shadcn/ui
-  (Base UI), Zustand, Axios
-- **Storage**: SeaweedFS (S3-compatible)
-- **AI**: Google Cloud Vision (OCR) and any OpenAI-compatible provider (grading + plagiarism,
-  tutor chat, psychology signals)
-- **PDF reports**: JasperReports
-- **Bot**: Telegram
+   The same call scores the teacher's own rubric criteria and checks originality. The AI never sets
+   the grade: it returns per-criterion scores and the backend computes a suggested percentage.
+3. **The teacher confirms.** The home screen is a review queue: flagged work first, oldest next.
+   Clean work for an assignment is confirmed in one click; anything else opens side by side with
+   the student's photo, and the 5-point grade is suggested from the score.
+4. **Parents and students are told.** A confirmed grade reaches the student and their parents
+   (inbox + Telegram); new assignments and next-day deadlines send reminders.
 
-Exact pinned versions and every real integration finding from building this (dependency quirks,
-framework gotchas, config that actually works vs. what the docs imply) live in the internal
-`CLAUDE.md` — see "Documentation" below.
+Exams work the same way in bulk: the teacher uploads a stack of scanned papers after a proctored test.
 
-## Repository layout
+**Degrades, never blocks.** Each school has a monthly AI allowance split into exam (15%), homework
+(65%) and tutor chat (20%). Admins are warned at 80%. When a budget runs out, work is still accepted
+and lands in the teacher's "grade by hand" tab — nothing is lost.
 
-```
-backend/       Java 21 + Spring Boot + Gradle project (DDD/Clean Architecture)
-frontend/      Next.js + TypeScript project (App Router)
-telegram-bot/  separate Java 21 + Spring Boot service — own build, own container, own .env
-infra/         docker-compose.yml, nginx, postgres-init, seaweedfs-config, demo seed
-docs/          architecture notes (modular monolith, tenancy/RLS, production roadmap)
-```
+## Business model
 
-Backend is a modular monolith: one bounded context per package (`identity`, `school`, `learning`,
-`intelligence`, `progress`, `wellbeing`, `family`, `notification`, `reporting`), each with
-`domain/`, `application/` (ports), `infrastructure/` and web adapters — boundaries are enforced by
-ArchUnit tests. A shrinking legacy `domain/`, `infrastructure/` and `interfaces/web/` tree still
-holds shared entities and most controllers. Frontend is type-based
-at the top level (`app/`, `components/`, `stores/`, `types/`), role-scoped only where components
-genuinely differ per role.
+Schools pay per month by size (VAT and contract terms in `BIZNES_MODEL.md`):
 
-## Getting started
+| Plan | Students | AI checks / month | Price / month |
+|---|---|---|---|
+| Starter | up to 150 | 4 000 | 1 800 000 so'm |
+| Standard | up to 400 | 12 000 | 4 000 000 so'm |
+| Pro | up to 900 | 30 000 | 7 200 000 so'm |
 
-### 1. Environment
+Sales start with a paid pilot (one quarter, two classes, one subject, 50% off) measured against
+KPIs agreed up front. Add-ons: a psychological well-being module, exam packs, Parent Premium.
 
-```
-cp backend/.env.example backend/.env
-cp frontend/.env.local.example frontend/.env.local
-cp telegram-bot/.env.example telegram-bot/.env
-```
+## Roles
 
-Fill in the real secrets in `backend/.env` (`AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL_TEXT`,
-`GOOGLE_VISION_API_KEY`,
-`TELEGRAM_BOT_TOKEN`) — everything else already has working local-dev defaults.
-`TELEGRAM_BOT_TOKEN` must be set to the **same value** in `telegram-bot/.env`: both services act
-as the same bot identity. The app boots and
-degrades gracefully without the AI/Telegram keys (submissions still accept, just skip AI
-grading/delivery) — see the internal `CLAUDE.md`'s graceful-degradation notes.
+| Role | Main screen |
+|---|---|
+| Teacher | Review queue, homework and exams, class analytics, own grading criteria |
+| Student | What is due (deadline in words), results with every mistake explained, XP, streaks, badges, an AI tutor that won't hand out answers |
+| Parent | Each child's latest confirmed grade, homework still due, Telegram link |
+| Admin (director) | School setup and Excel import, teachers, classes, analytics, quarterly PDF reports, AI usage |
+| Psychologist | Only with the optional well-being module (off by default) |
 
-`JWT_SECRET` in `backend/.env` and `frontend/.env.local` **must be byte-for-byte identical** —
-different values silently break every authenticated request.
+## Design
 
-### 2. Full stack in Docker — one command (recommended)
+Pencil and red pen on a squared school notebook: the AI's analysis is drawn in pencil (provisional),
+only a grade the teacher confirmed appears as the red, circled numeral, and work that needs a human
+look carries a yellow highlighter. Full system in [`docs/design.md`](docs/design.md).
+
+## Architecture
 
 ```
-cp infra/.env.example infra/.env   # optional: real AI/Telegram secrets
+backend/       Java 21, Spring Boot 4.1 — modular monolith (identity, school, learning,
+               intelligence, progress, family, notification, reporting, optional wellbeing)
+frontend/      Next.js 16 (App Router), React 19, TypeScript 5.9, Tailwind 4, Zustand
+telegram-bot/  separate Spring Boot service: account linking, notification delivery
+infra/         docker-compose (+ production / tunnel overlays), nginx, seed data
+docs/          design system, tenancy (RLS), modular-monolith notes
+```
+
+- **Tenant isolation in the database:** PostgreSQL row-level security on tenant tables; the
+  application connects as a restricted role and every unit of work declares its school.
+- **AI is asynchronous:** RabbitMQ queues with a transactional outbox; retries go to a dead-letter
+  queue. OCR is Google Cloud Vision; text models use any OpenAI-compatible endpoint (DeepSeek by
+  default), behind a Resilience4j circuit breaker.
+- **Storage:** SeaweedFS (S3-compatible); student photos are served only through an authenticated
+  API.
+- **Quality gates:** ~700 backend tests (JUnit 5, Testcontainers, ArchUnit rules for context
+  boundaries and RLS coverage), Vitest and Playwright on the frontend, Spotless formatting.
+- **Delivery:** GitHub Actions CI; every push to `main` deploys to the production server through a
+  self-hosted runner, with health checks and automatic rollback.
+
+## Running it
+
+### Full stack in Docker
+
+```
+cp infra/.env.example infra/.env     # add AI / Vision / Telegram keys to enable those features
 cd infra
 docker compose --profile demo up -d --build
 ```
 
-Brings up the **whole product**: Postgres + Redis + RabbitMQ + SeaweedFS,
-backend (`http://localhost:8080`), frontend (`http://localhost:3000`), telegram-bot, and a
-one-shot `seed` service that fills the DB with demo data (`infra/seed/bootstrap.sql` first, then
-`infra/seed/demo-seed.sql`). The `demo` profile is deliberately required because it creates known
-`Test1234!` credentials and must never be used for production.
+Starts PostgreSQL, Redis, RabbitMQ, SeaweedFS, the backend (`:8080`), frontend (`:3000`),
+Telegram bot and a one-off seed with a sample school: five teachers across five subjects, two
+classes, students, parents and checked work. Sample logins use the password `Test1234!` — the
+`demo` profile exists only for local use and must never run in production.
 
-Demo logins (password `Test1234!` for all) — full list in `infra/seed/demo-seed.sql`:
+| Role | Phone |
+|---|---|
+| Admin | +998901234567 |
+| Teacher (mathematics) | +998911112233 |
+| Teacher (Uzbek / English / history) | +998915207341 / +998916738420 / +998917462053 |
+| Student | +998933334455 |
+| Parent | +998977001122 |
 
-| Role        | Phone          |
-|-------------|----------------|
-| Admin       | +998901234567  |
-| Teacher     | +998911112233  |
-| Student     | +998933334455  |
-| Parent      | +998977001122  |
-| Psychologist| +998955501234 (only with `ACADEMIX_FEATURE_PSYCHOLOGY=true`) |
+Without AI keys the app still runs: submissions are accepted and teachers grade by hand.
 
-Optional extras, still profile-gated:
-
-```
-docker compose --profile antivirus up -d clamav   # upload virus scanning (needs ACADEMIX_CLAMAV_ENABLED=true)
-docker compose --profile prod up -d               # nginx TLS + nightly postgres backup
-```
-
-For a non-demo local stack, omit `--profile demo`; provision the first school/admin through the
-approved bootstrap procedure rather than demo credentials.
-
-### 3. Backend (local dev, no Docker)
+### Pieces on their own
 
 ```
-cd backend
-./gradlew bootRun     # http://localhost:8080
-./gradlew test         # JUnit 5 + Testcontainers
+cd backend && ./gradlew bootRun        # JDK 21; tests: ./gradlew test (needs Docker + infra seaweedfs)
+cd frontend && npm install && npm run dev
+cd telegram-bot && ./gradlew bootRun   # :8081
 ```
 
-Use **JDK 21** (CI does). google-java-format, which `spotlessCheck` runs in CI, crashes under newer
-JDKs; if you switched JDKs, force a fresh run with `./gradlew spotlessApply --rerun-tasks`.
+`JWT_SECRET` must be byte-for-byte identical in `backend/.env` and `frontend/.env.local`, and
+`TELEGRAM_BOT_TOKEN` the same in the backend and the bot.
 
-**`./gradlew test` needs Docker plus SeaweedFS** — Testcontainers starts Postgres/RabbitMQ/Redis
-itself, but `FileStorageService` reaches for the S3 endpoint at startup, so run
-`docker compose up -d seaweedfs` in `infra/` first. Without it most integration tests fail with a
-misleading `ApplicationContext failure threshold exceeded` that names no root cause.
+### Optional well-being module
 
-### 4. Frontend (local dev, no Docker)
-
-```
-cd frontend
-npm install
-npm run dev            # http://localhost:3000
-npm run test
-```
-
-### 5. Telegram bot
-
-With Docker, telegram-bot comes up together with everything else (works with or without
-`TELEGRAM_BOT_TOKEN` — no token = bot skips polling, the app still works).
-
-Running it standalone (no Docker):
-
-```
-cd telegram-bot
-./gradlew bootRun      # http://localhost:8081
-```
+Psychological monitoring (nightly analysis, the Psychologist role) is a paid add-on and off by
+default. `ACADEMIX_FEATURE_PSYCHOLOGY=true` in `infra/.env` switches it on for the backend, bot and
+frontend build; while off its endpoints don't exist and psychologist accounts can't sign in.
 
 ## Documentation
 
-All of the following are **kept locally and deliberately not committed** (see `.gitignore`) — they
-exist in a working checkout but not on GitHub, so they're listed here by name rather than linked:
-
-- `CLAUDE.md` — architecture, stack decisions and the conventions any future change should follow
-- `LESSONS.md` — every real bug/deviation found while building this (the "reality checks")
-- `ROADMAP.md` — sprint-by-sprint build history and what's left
-- `academix_tz.md` / `academix_backend_tdd.md` / `academix_frontend_tdd.md` — the original spec
-  docs, source of truth for every API/enum/queue contract (their unique-task, handwriting and
-  syllabus/lesson-plan sections describe features that have since been removed)
+- [`docs/design.md`](docs/design.md) — design system: concept, colour, type, layout, copy
+- [`docs/architecture/tenancy.md`](docs/architecture/tenancy.md) — how row-level security is applied
+- [`docs/architecture/ddd-modular-monolith.md`](docs/architecture/ddd-modular-monolith.md) — bounded contexts and their rules
+- [`frontend/ARCHITECTURE.md`](frontend/ARCHITECTURE.md) — frontend structure
+- [`BIZNES_MODEL.md`](BIZNES_MODEL.md) — business model, pricing, go-to-market (Uzbek)

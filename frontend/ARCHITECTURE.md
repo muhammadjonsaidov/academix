@@ -35,8 +35,15 @@ success states. Routes compose a feature view and must not contain transport cal
 - **State machine UI**: every remote view renders loading, error, empty and populated states.
   Empty states contain the next meaningful action when the user has permission to take it.
 - **Design tokens first**: use the semantic tokens in `globals.css` (`background`, `primary`,
-  `success`, severity and role accents). The approved paper/ink palette is not duplicated as
-  arbitrary hex values in components.
+  `success`, `pencil`, `pen-red`, `marker`, severity and role accents); never raw hex in
+  components. The rules behind them are in `../docs/design.md`: the AI's output is pencil
+  (`PencilScore`), only a teacher-confirmed grade is the red circled `GradeMark`, and the `marker`
+  highlighter is for flagged work only.
+- **Dates and copy**: format every date with `lib/format.ts` (`formatDate`, `formatDateTime`,
+  `deadlineLabel`) — never `toLocaleString`. Copy is plain Uzbek (Latin) from the user's side;
+  an action keeps its name from button to confirmation ("Bahoni tasdiqlash" → "Baho qo'yilgan").
+- **Page header**: `PageHeader` (or `DashboardHero` on a role's home) renders the page's one `h1`
+  and a sentence about what needs doing — no labels above headings.
 
 ## Accessibility and responsive contract
 

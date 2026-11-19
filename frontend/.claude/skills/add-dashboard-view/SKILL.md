@@ -12,7 +12,7 @@ description: Add or change a page/view in one of AcademiX's role dashboards (adm
 5. **States**: loading (Skeleton), error, empty (`EmptyState` with the next action), populated. Redirects/`setState` only inside `useEffect`.
 6. **Visibility**: students never see plagiarism scores; parents only their own child; psychologists no lesson content. Bulk "approve all" skips `flaggedForReview` items.
 7. **Optional modules**: psychology pages/nav go behind `FEATURES.psychology` from `lib/features.ts` (nav items) and are listed in `PSYCHOLOGY_ROUTE_PREFIXES` (route guard).
-8. **Styling**: semantic tokens from `globals.css`; chart/inline colors via `components/shared/chart-style.ts` (`--color-*` vars). Base UI primitives in `components/ui/` (not Radix).
+8. **Styling**: read `docs/design.md` first. Semantic tokens from `globals.css`; chart/inline colors via `components/shared/chart-style.ts` (`--color-*` vars). AI output in pencil (`PencilScore`), confirmed grades as `GradeMark`, flagged work with the `marker` utility. Lists as divided rows in one bordered panel, not grids of identical cards. Title via `PageHeader`. Dates via `lib/format.ts`. Base UI primitives in `components/ui/` (not Radix).
 9. No i18n plumbing (single language in v1).
 
 Done = `npm run lint && npx tsc --noEmit && npm run test && npm run build` all clean.

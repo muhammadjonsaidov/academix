@@ -313,11 +313,15 @@ in Learning.
 
 ## Ordered implementation plan
 
-1. Complete Identity ports for token issuance, sessions, rate limiting and school-context lookup.
-2. Complete School ownership and membership management (school/class administration is complete;
-   subject, teacher membership and student profile remain).
-3. Migrate Learning around submission and grading aggregates; publish submission events after commit.
-4. Move AI, handwriting and OCR behind `Intelligence` ports and consume Learning events.
-5. Migrate Wellbeing and Notification to event-driven consumers.
-6. Add architectural dependency tests when Spring Modulith publishes a stable Spring Boot 4.1
-   compatible release, or enforce the same package rules with ArchUnit if it is needed earlier.
+Done: Identity ports (tokens, sessions, rate limits, school-context lookup); ArchUnit rules for
+context boundaries, framework-free domains and RLS coverage; Learning publishes submission events
+through the outbox and Intelligence consumes them behind its own ports (OCR, grading in three
+subject modes, budget). Learning also owns its notifications through the `LearningNotifier` port.
+
+Remaining, in order — and only when a feature touches the code anyway:
+
+1. School: subject and teacher membership, student profiles out of the legacy tree.
+2. Learning: `GradingCriteriaService` and the teacher submission controllers out of
+   `interfaces/web`.
+3. Wellbeing (optional module) and the remaining Notification producers as event consumers.
+4. Replace hand-written frontend types with an OpenAPI-generated client.
