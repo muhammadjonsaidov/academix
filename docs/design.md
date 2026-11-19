@@ -52,6 +52,8 @@ the pencil, because that is its role in the product.
 - **Caveat** only for the teacher's hand: the circled grade numeral and red-pen margin notes on the
   landing page. Never for labels, buttons or body text.
 - Tabular figures (`font-variant-numeric: tabular-nums`) for scores, counts and dates.
+- Both fonts are self-hosted (`frontend/public/fonts`, SIL OFL, `@font-face` in `globals.css`) so
+  builds never depend on reaching Google Fonts; only the scripts a page uses are downloaded.
 - Sentence case everywhere; no all-caps labels, no eyebrow text above headings.
 
 ## Layout

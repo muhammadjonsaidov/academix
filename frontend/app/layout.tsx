@@ -1,25 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Caveat, Geist_Mono, Onest } from "next/font/google";
 import "./globals.css";
 
-// One face for the whole interface. Onest is drawn for Latin and Cyrillic UI, so
-// Uzbek (o', g') and Russian text set the same way. See docs/design.md.
-const onest = Onest({
-  variable: "--font-body",
-  subsets: ["latin", "latin-ext", "cyrillic"],
-});
-
-// The teacher's hand: only the circled grade and red-pen notes (font-hand).
-const caveat = Caveat({
-  variable: "--font-hand-override",
-  subsets: ["latin", "latin-ext", "cyrillic"],
-  weight: ["600", "700"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Fonts are self-hosted from public/fonts (@font-face rules in globals.css), so neither CI nor
+// the production Docker build depends on reaching Google Fonts. See docs/design.md.
 
 // The site's canonical origin. Locally it's localhost; on Vercel set
 // NEXT_PUBLIC_SITE_URL=https://academix.vercel.app so OG/canonical URLs point at the
@@ -122,8 +105,17 @@ export default function RootLayout({
       // The pre-paint theme script below adds `dark` to this element before hydration —
       // an expected, deliberate server/client difference (standard theming pattern).
       suppressHydrationWarning
-      className={`${onest.variable} ${caveat.variable} ${geistMono.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
+      <head>
+        <link
+          rel="preload"
+          href="/fonts/onest-latin-wght-normal.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         {/* Apply the saved theme before first paint — avoids a light-mode flash for dark-mode
             users on every reload. Reads the same key ThemeToggle writes. */}
