@@ -99,7 +99,7 @@ export default function TeacherDashboardPage() {
                   <dd className="font-data font-semibold">{dashboard.gradedToday}</dd>
                 </div>
                 <div className="flex items-baseline justify-between gap-3 border-b border-border pb-2">
-                  <dt className="text-muted-foreground">Hali AI tekshirayotgan yoki kutayotgan</dt>
+                  <dt className="text-muted-foreground">Baholanmagan ishlar</dt>
                   <dd className="font-data font-semibold">{dashboard.pendingSubmissions}</dd>
                 </div>
                 <div className="flex items-baseline justify-between gap-3">
@@ -130,7 +130,7 @@ export default function TeacherDashboardPage() {
                           value={c.avgScore}
                           tone={c.avgScore >= 70 ? "success" : c.avgScore >= 50 ? "role" : "destructive"}
                         />
-                        <span className="font-data text-right text-muted-foreground">{c.avgScore}%</span>
+                        <span className="font-data text-right text-muted-foreground">{Math.round(c.avgScore)}%</span>
                       </Link>
                     </li>
                   ))}
@@ -146,6 +146,7 @@ export default function TeacherDashboardPage() {
 
 function QueueRow({ item }: { item: ReviewQueueItem }) {
   const approveClean = useTeacherStore((state) => state.approveClean);
+  const refreshDashboard = useTeacherAnalyticsStore((state) => state.fetchDashboard);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const clean = item.waiting - item.flagged;
@@ -156,6 +157,7 @@ function QueueRow({ item }: { item: ReviewQueueItem }) {
     try {
       const approved = await approveClean(item.assignmentId);
       setMessage(`${approved} ta ish baholandi.`);
+      refreshDashboard().catch(() => {});
     } catch {
       setMessage("Tasdiqlab bo'lmadi. Qayta urinib ko'ring.");
     } finally {

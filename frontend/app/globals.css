@@ -453,7 +453,7 @@
 /* Retired: per-section fade-ins read as generated. Kept as a no-op so the
    class name in older markup is harmless. */
 @utility stagger-rise {
-  display: revert-layer;
+  --stagger-retired: 1;
 }
 .ink-draw path {
   stroke-dasharray: 1;

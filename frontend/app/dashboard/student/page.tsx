@@ -65,12 +65,11 @@ export default function StudentDashboardPage() {
     <DashboardShell role="STUDENT">
       <div className="space-y-6">
         <DashboardHero
-          title={firstName ? `Salom, ${firstName}!` : "Salom!"}
+          title={firstName ? `Salom, ${firstName}` : "Salom"}
           description={
-            <>
-              {dashboard.profile.totalXp} XP to&apos;plagansiz · {dashboard.profile.currentStreak}{" "}
-              kunlik seriya · {dashboard.pendingHomework.length} ta vazifa kutilmoqda
-            </>
+            dashboard.pendingHomework.length > 0
+              ? `${dashboard.pendingHomework.length} ta vazifani topshirish kerak. Seriyangiz ${dashboard.profile.currentStreak} kun — uzmang.`
+              : `Hamma vazifalar topshirilgan. Seriyangiz ${dashboard.profile.currentStreak} kun.`
           }
           actions={
             <>

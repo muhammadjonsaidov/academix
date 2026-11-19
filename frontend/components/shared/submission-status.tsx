@@ -29,7 +29,7 @@ export const FULL_STATUS_META: Record<FullSubmissionStatus, StatusMeta> = {
     badgeVariant: "status-processing",
     rail: "rail-processing",
   },
-  AI_DONE: { label: "AI tekshirdi", badgeVariant: "status-done", rail: "rail-verified" },
+  AI_DONE: { label: "AI tekshirdi", badgeVariant: "status-done", rail: "" },
   AI_SKIPPED: {
     label: "Qo'lda baholanadi",
     badgeVariant: "status-skipped",

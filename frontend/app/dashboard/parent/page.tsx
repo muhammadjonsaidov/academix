@@ -7,7 +7,6 @@ import { DashboardHero } from "@/components/shared/DashboardHero";
 import { DashboardShell } from "@/components/shell/DashboardShell";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { GradeMark } from "@/components/shared/GradeMark";
-import { TelegramConnect } from "@/components/shared/TelegramConnect";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useParentStore } from "@/stores/useParentStore";
@@ -110,14 +109,6 @@ export default function ParentDashboardPage() {
           </ul>
         ) : null}
 
-        {dashboard ? (
-          <section aria-labelledby="telegram-heading" className="max-w-xl space-y-2">
-            <h2 id="telegram-heading" className="text-lg font-semibold">
-              Baholarni Telegram&apos;da olish
-            </h2>
-            <TelegramConnect />
-          </section>
-        ) : null}
       </div>
     </DashboardShell>
   );

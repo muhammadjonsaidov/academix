@@ -136,7 +136,7 @@ export const NAV_CONFIG: Record<Role, NavGroup[]> = {
   PARENT: [
     {
       items: [
-        { href: "/dashboard/parent", label: "O'quvchilar ro'yxati", icon: Users },
+        { href: "/dashboard/parent", label: "Farzandlarim", icon: Users },
         { href: "/dashboard/account", label: "Sozlamalar", icon: Settings },
       ],
     },

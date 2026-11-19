@@ -41,7 +41,7 @@ export default function AdminDashboardPage() {
   }, [fetchDashboard]);
 
   const heroDescription = dashboard
-    ? `${dashboard.totalStudents} o'quvchi · ${dashboard.totalTeachers} o'qituvchi · bugun ${dashboard.activeToday} faol`
+    ? `Bugun ${dashboard.activeToday} kishi tizimda ishladi. Oxirgi 30 kunda vazifalarning ${Math.round(dashboard.homeworkSubmissionRate)}% topshirildi.`
     : "Maktab bo'yicha umumiy holat.";
   const isNewSchool = dashboard !== null && dashboard.totalClasses === 0;
 
@@ -49,7 +49,7 @@ export default function AdminDashboardPage() {
     <DashboardShell role="ADMIN">
       <div className="space-y-6">
         <DashboardHero
-          title={firstName ? `Salom, ${firstName}!` : "Salom!"}
+          title={firstName ? `Salom, ${firstName}` : "Salom"}
           description={heroDescription}
           actions={
             <>

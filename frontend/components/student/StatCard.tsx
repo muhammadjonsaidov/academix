@@ -25,13 +25,8 @@ export function StatCard({ icon: Icon, value, label, className }: StatCardProps)
       value
     );
   return (
-    <Card className={cn("card-lift hover-glow relative overflow-hidden", className)}>
-      {/* Soft role-accent corner wash — matches StatTile's treatment */}
-      <span
-        aria-hidden
-        className="bg-accent-role/10 absolute -top-8 -right-8 size-24 rounded-full blur-2xl"
-      />
-      <CardContent className="relative flex items-center gap-4 py-5">
+    <Card className={cn("relative", className)}>
+      <CardContent className="flex items-center gap-4 py-4">
         {/* Chip hue comes from the shell's data-role accent layer (resolves to the
             student tokens here) — no hardcoded role class. */}
         <span className="bg-accent-role-muted text-accent-role flex size-11 shrink-0 items-center justify-center rounded-full ring-1 ring-current">
