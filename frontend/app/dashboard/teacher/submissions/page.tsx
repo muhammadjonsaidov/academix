@@ -28,7 +28,7 @@ const TABS: { status: SubmissionStatus | "ALL"; label: string; empty: string }[]
   {
     status: "AI_SKIPPED",
     label: "Qo'lda baholash",
-    empty: "Qo'lda baholanadigan ish yo'q. AI limiti tugaganda ishlar shu yerga tushadi.",
+    empty: "Qo'lda baholanadigan ish yo'q. AI tekshira olmagan ishlar shu yerga tushadi.",
   },
   {
     status: "AI_PROCESSING",

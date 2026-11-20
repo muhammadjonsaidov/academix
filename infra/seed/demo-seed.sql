@@ -17,8 +17,8 @@
 --   * 8 new students (3 into 7-A, 5 into 8-B) + Aziz/Jasur moved into 7-A;
 --     varied XP/streaks; student_count kept in sync
 --   * 12 homework assignments (6 per class, last 6 weeks, 2 with future
---     deadlines), ~45 submissions (GRADED / AI_DONE / one AI_SKIPPED / one
---     SUBMITTED), grades, ai_feedbacks with real criteriaScores/stepAnalyses
+--     deadlines), ~45 submissions (GRADED / AI_DONE / one AI_SKIPPED),
+--     grades, ai_feedbacks with real criteriaScores/stepAnalyses
 --     JSON; ONE submission flagged plagiarism_type=AI_GENERATED (score 78)
 --   * 2 exams ("1-chorak nazorat ishi", ~2 weeks ago) + exam_submissions,
 --     exam_grades, exam_ai_feedbacks (school_id set — RLS table)
@@ -185,7 +185,7 @@ INSERT INTO _seed_subs VALUES
   -- A4 Ko'phadlar (7-A Math, deadline in the FUTURE — fresh AI results, not yet graded)
   ('b2000000-0000-4000-8000-000000000014','b1000000-0000-4000-8000-000000000004','a1000000-0000-4000-8000-000000000001','AI_DONE',89,false,'M',2),
   ('b2000000-0000-4000-8000-000000000015','b1000000-0000-4000-8000-000000000004','f2245ba6-6ee5-4161-bcc5-c22ac742459f','AI_DONE',81,false,'M',3),
-  ('b2000000-0000-4000-8000-000000000016','b1000000-0000-4000-8000-000000000004','a1000000-0000-4000-8000-000000000003','SUBMITTED',NULL,false,'M',3),
+  ('b2000000-0000-4000-8000-000000000016','b1000000-0000-4000-8000-000000000004','a1000000-0000-4000-8000-000000000003','AI_DONE',77,false,'M',3),
   -- A5 Nyuton qonunlari (7-A Fizika)
   ('b2000000-0000-4000-8000-000000000017','b1000000-0000-4000-8000-000000000005','f2245ba6-6ee5-4161-bcc5-c22ac742459f','GRADED',84,false,'F',3),
   ('b2000000-0000-4000-8000-000000000018','b1000000-0000-4000-8000-000000000005','0969224c-1348-4d49-91c3-034dcea56490','GRADED',58,false,'F',6),

@@ -196,7 +196,10 @@ export default function TeacherSubmissionDetailPage() {
                     <Spinner />
                     AI tekshirmoqda
                   </Badge>
-                  <span className="text-sm text-muted-foreground">Natija tayyor bo&apos;lishi bilan shu yerda chiqadi.</span>
+                  <span className="text-sm text-muted-foreground">
+                    Odatda bir-ikki daqiqa oladi. 30 daqiqada natija chiqmasa, ish &laquo;Qo&apos;lda baholash&raquo;ga
+                    o&apos;tadi. Hozir ham o&apos;zingiz baholashingiz mumkin.
+                  </span>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
                   <RefreshCw className={isRefreshing ? "size-4 animate-spin" : "size-4"} strokeWidth={1.75} />
@@ -211,7 +214,8 @@ export default function TeacherSubmissionDetailPage() {
                 <div>
                   <p className="font-medium">Bu ishni o&apos;zingiz baholaysiz</p>
                   <p className="text-sm text-muted-foreground">
-                    Maktabning shu oylik AI limiti tugagan, shuning uchun AI bu ishni tekshirmadi. Ish qabul qilingan.
+                    AI bu ishni tekshira olmadi: maktabning oylik AI limiti tugagan yoki xizmat vaqtida javob
+                    bermadi. Ish qabul qilingan.
                   </p>
                 </div>
               </div>
