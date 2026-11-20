@@ -1,27 +1,55 @@
+import Markdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Bot, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Lightweight rich-text rendering for AI Tutor answers — Qwen replies use markdown-ish
- * `**bold**`, `$inline math$` and newlines. A full markdown/KaTeX stack is overkill for a
- * tutoring chat; this covers what the model actually emits: bold → <strong>, $…$ → a
- * font-data span (reads as notation), newlines preserved by whitespace-pre-wrap.
+ * AI Tutor answers are markdown: headings, lists, bold, the odd table, `$…$` for math. They render
+ * as chat text, not a document: headings stay small, lists keep their markers, math reads as
+ * notation (`$…$` becomes inline code, styled with the data font). Raw HTML and images are not
+ * rendered.
  */
-function renderRichText(text: string): React.ReactNode[] {
-  const parts = text.split(/(\*\*[^*]+\*\*|\$[^$\n]+\$)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i}>{part.slice(2, -2)}</strong>;
-    }
-    if (part.startsWith("$") && part.endsWith("$") && part.length > 2) {
-      return (
-        <span key={i} className="font-data text-[0.92em]">
-          {part.slice(1, -1)}
-        </span>
-      );
-    }
-    return part;
-  });
+const MATH = /\$([^$\n]+)\$/g;
+
+const TUTOR_COMPONENTS: Components = {
+  h1: ({ children }) => <p className="mt-3 mb-1 text-[0.9375rem] font-semibold first:mt-0">{children}</p>,
+  h2: ({ children }) => <p className="mt-3 mb-1 font-semibold first:mt-0">{children}</p>,
+  h3: ({ children }) => <p className="mt-2 mb-1 font-semibold first:mt-0">{children}</p>,
+  h4: ({ children }) => <p className="mt-2 mb-1 font-medium first:mt-0">{children}</p>,
+  p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0">{children}</p>,
+  ul: ({ children }) => <ul className="my-2 list-disc space-y-1 pl-5 first:mt-0 last:mb-0">{children}</ul>,
+  ol: ({ children }) => <ol className="my-2 list-decimal space-y-1 pl-5 first:mt-0 last:mb-0">{children}</ol>,
+  li: ({ children }) => <li className="pl-0.5 marker:text-muted-foreground">{children}</li>,
+  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+  code: ({ children }) => <code className="font-data text-[0.92em]">{children}</code>,
+  pre: ({ children }) => (
+    <pre className="my-2 overflow-x-auto rounded-md bg-muted px-3 py-2 whitespace-pre">{children}</pre>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="my-2 border-l-2 border-katak pl-3 text-muted-foreground">{children}</blockquote>
+  ),
+  hr: () => <hr className="my-3 border-border" />,
+  a: ({ href, children }) => (
+    <a href={href} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+      {children}
+    </a>
+  ),
+  table: ({ children }) => (
+    <div className="my-2 overflow-x-auto">
+      <table className="border-collapse text-left">{children}</table>
+    </div>
+  ),
+  th: ({ children }) => <th className="border border-border px-2 py-1 font-semibold">{children}</th>,
+  td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
+  img: () => null,
+};
+
+export function TutorText({ text }: { text: string }) {
+  return (
+    <Markdown remarkPlugins={[remarkGfm]} components={TUTOR_COMPONENTS}>
+      {text.replace(MATH, "`$1`")}
+    </Markdown>
+  );
 }
 
 export function UserBubble({ text }: { text: string }) {
@@ -46,7 +74,7 @@ export function TutorBubble({
       </span>
       <div
         className={cn(
-          "rounded-2xl rounded-bl-md px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap",
+          "min-w-0 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm leading-relaxed",
           isBlocked
             ? "bg-severity-medium-bg text-severity-medium"
             : "bg-card border border-border",
@@ -58,7 +86,7 @@ export function TutorBubble({
             Javob cheklandi
           </span>
         ) : null}
-        {renderRichText(text)}
+        <TutorText text={text} />
       </div>
     </div>
   );
